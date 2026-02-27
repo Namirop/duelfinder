@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma migrate:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(timeout:*)",
+      "Bash(docker exec:*)",
+      "Bash(set DATABASE_URL=postgresql://tcg_user:tcg_password@localhost:5432/tcg_matchmaking?schema=public)",
+      "Bash(findstr:*)",
+      "Bash(powershell -Command \"$env:DATABASE_URL=''postgresql://tcg_user:tcg_password@127.0.0.1:5432/tcg_matchmaking?schema=public''; npx prisma migrate dev --name init\")",
+      "Bash(npx prisma db push)",
+      "Bash(npx prisma:*)",
+      "Bash(npx dotenv:*)",
+      "Bash(node -e:*)",
+      "Bash(npm install:*)",
+      "Bash(netstat:*)",
+      "Bash(tasklist:*)",
+      "Bash(npm run dev:*)",
+      "Bash(cmd /c \"taskkill /PID 61612 /F && taskkill /PID 17840 /F\")",
+      "Bash(powershell -Command:*)"
+    ]
+  }
+}

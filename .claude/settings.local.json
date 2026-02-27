@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma studio)",
+      "Bash(node -e:*)",
+      "Bash(node temp_delete_users.js:*)",
+      "Bash(del \"C:\\\\Users\\\\romai\\\\Desktop\\\\App TCG de mise en relation\\\\backend\\\\temp_delete_users.js\")",
+      "Bash(node scripts/seed_test_games.js:*)",
+      "Bash(dart run build_runner build:*)",
+      "Bash(flutter clean:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(adb uninstall:*)",
+      "Bash(adb emu geo fix:*)",
+      "Bash(ls:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter devices:*)",
+      "Bash(flutter run:*)",
+      "Bash(./gradlew:*)",
+      "Bash(xargs:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(dir:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

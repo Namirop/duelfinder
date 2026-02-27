@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  passwordHash   String?
+  username       String          @unique
+  avatar         String?
+  fcmToken       String?
+  facebookId     String?         @unique
+  instagramId    String?         @unique
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  gamesCreated   Game[]          @relation("GameCreator")
+  sentMessages   Message[]       @relation("SentMessages")
+  notifications  Notification[]
+  participations Participation[]
+
+  @@map("users")
+}
+
+model Game {
+  id             String          @id @default(uuid())
+  gameType       GameType
+  description    String?
+  address        String
+  latitude       Float
+  longitude      Float
+  scheduledAt    DateTime
+  duration       Int
+  maxPlayers     Int             @default(2)
+  status         GameStatus      @default(OPEN)
+  creatorId      String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  creator        User            @relation("GameCreator", fields: [creatorId], references: [id])
+  messages       Message[]
+  participations Participation[]
+
+  @@map("games")
+}
+
+model Participation {
+  id        String              @id @default(uuid())
+  status    ParticipationStatus @default(PENDING)
+  userId    String
+  gameId    String
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  game      Game                @relation(fields: [gameId], references: [id])
+  user      User                @relation(fields: [userId], references: [id])
+
+  @@unique([userId, gameId])
+  @@map("participations")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  senderId  String
+  gameId    String
+  createdAt DateTime @default(now())
+  game      Game     @relation(fields: [gameId], references: [id])
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  read      Boolean          @default(false)
+  userId    String
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+enum GameType {
+  ONE_PIECE
+  POKEMON
+  YUGIOH
+  NARUTO
+}
+
+enum GameStatus {
+  OPEN
+  FULL
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum NotificationType {
+  PARTICIPATION_REQUEST
+  PARTICIPATION_ACCEPTED
+  PARTICIPATION_REJECTED
+  NEW_MESSAGE
+}
