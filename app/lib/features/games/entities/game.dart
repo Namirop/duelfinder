@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:tcg_matchmaker/core/theme/app_theme.dart';
 import 'package:tcg_matchmaker/features/auth/entities/user_summary.dart';
 
 class Game {
@@ -11,9 +13,12 @@ class Game {
   final int duration;
   final int maxPlayers;
   final GameStatus status;
+  final GameStatus effectiveStatus;
+  final int currentPlayers;
   final UserSummary creator;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final double? distance;
 
   const Game({
     required this.id,
@@ -26,14 +31,18 @@ class Game {
     required this.duration,
     required this.maxPlayers,
     required this.status,
+    required this.effectiveStatus,
+    required this.currentPlayers,
     required this.creator,
     required this.createdAt,
     required this.updatedAt,
+    this.distance,
   });
 
-  bool get isFull => false; // TODO: implémenter avec participations
+  bool get isFull => currentPlayers >= maxPlayers;
+  bool get hasAvailableSpots => currentPlayers < maxPlayers;
   bool get isUpcoming => scheduledAt.isAfter(DateTime.now());
-  bool get isOpen => status == GameStatus.OPEN;
+  bool get isOpen => effectiveStatus == GameStatus.OPEN;
 
   Game copyWith({
     String? id,
@@ -46,9 +55,12 @@ class Game {
     int? duration,
     int? maxPlayers,
     GameStatus? status,
+    GameStatus? effectiveStatus,
+    int? currentPlayers,
     UserSummary? creator,
     DateTime? createdAt,
     DateTime? updatedAt,
+    double? distance,
   }) {
     return Game(
       id: id ?? this.id,
@@ -61,9 +73,12 @@ class Game {
       duration: duration ?? this.duration,
       maxPlayers: maxPlayers ?? this.maxPlayers,
       status: status ?? this.status,
+      effectiveStatus: effectiveStatus ?? this.effectiveStatus,
+      currentPlayers: currentPlayers ?? this.currentPlayers,
       creator: creator ?? this.creator,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      distance: distance ?? this.distance,
     );
   }
 
@@ -88,7 +103,7 @@ enum GameStatus {
   OPEN,
   FULL,
   IN_PROGRESS,
-  COMPLETED,
+  FINISHED,
   CANCELLED,
 }
 
@@ -116,10 +131,52 @@ extension GameStatusExtension on GameStatus {
         return 'Complet';
       case GameStatus.IN_PROGRESS:
         return 'En cours';
-      case GameStatus.COMPLETED:
+      case GameStatus.FINISHED:
         return 'Terminé';
       case GameStatus.CANCELLED:
         return 'Annulé';
     }
   }
+
+  Color get color {
+    switch (this) {
+      case GameStatus.OPEN:
+        return AppTheme.statusOpen;
+      case GameStatus.FULL:
+        return AppTheme.statusFull;
+      case GameStatus.IN_PROGRESS:
+        return AppTheme.statusInProgress;
+      case GameStatus.FINISHED:
+        return AppTheme.statusFinished;
+      case GameStatus.CANCELLED:
+        return AppTheme.statusCancelled;
+    }
+  }
+
+  /// Couleur pour les marqueurs sur la map (bordure)
+  /// OPEN = vert, CANCELLED = rouge, autres = blanc
+  Color get markerColor {
+    switch (this) {
+      case GameStatus.OPEN:
+        return AppTheme.statusOpen;
+      case GameStatus.CANCELLED:
+        return AppTheme.statusCancelled;
+      case GameStatus.FULL:
+      case GameStatus.IN_PROGRESS:
+      case GameStatus.FINISHED:
+        return Colors.white;
+    }
+  }
+
+  /// Retourne true si la partie est visible (vert = en attente de joueurs)
+  bool get isOpen => this == GameStatus.OPEN;
+
+  /// Retourne true si la partie est "blanche" (complète, en cours ou terminée)
+  bool get isWhite =>
+      this == GameStatus.FULL ||
+      this == GameStatus.IN_PROGRESS ||
+      this == GameStatus.FINISHED;
+
+  /// Retourne true si la partie est annulée (rouge)
+  bool get isCancelled => this == GameStatus.CANCELLED;
 }

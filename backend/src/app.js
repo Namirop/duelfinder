@@ -4,7 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 
 import routes from "./routes/index.js";
-import { errorHandler, notFound } from "./middlewares/index.js";
+import { errorHandler, notFound, globalLimiter } from "./middlewares/index.js";
 
 const app = express();
 
@@ -13,6 +13,9 @@ const app = express();
 // ===========================================
 app.use(helmet());
 app.use(cors());
+
+// Rate limiting global (100 requêtes/min par IP)
+app.use(globalLimiter);
 
 // ===========================================
 // Middlewares de parsing

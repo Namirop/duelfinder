@@ -15,9 +15,7 @@ class GamesNotifier extends _$GamesNotifier {
     return const GamesState(isLoadingExisting: true);
   }
 
-  Future<void> fetchExistingGames({
-    double distance = 30,
-  }) async {
+  Future<void> fetchExistingGames() async {
     state = state.copyWith(isLoadingExisting: true, clearErrorExisting: true);
     try {
       final position = await ref.read(currentPositionProvider.future);
@@ -34,7 +32,7 @@ class GamesNotifier extends _$GamesNotifier {
       final games = await ref.read(gamesRepositoryProvider).fetchExistingGames(
             latitude: lat,
             longitude: lng,
-            distance: distance,
+            distance: state.distanceFilter,
           );
       state = state.copyWith(
         existingGames: games,
@@ -50,6 +48,11 @@ class GamesNotifier extends _$GamesNotifier {
       state = state.copyWith(
           errorExisting: 'Erreur inconnue', isLoadingExisting: false);
     }
+  }
+
+  void setDistanceFilter(double distance) {
+    state = state.copyWith(distanceFilter: distance);
+    fetchExistingGames();
   }
 
   Future<void> fetchCreatedGames() async {

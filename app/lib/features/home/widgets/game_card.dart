@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:tcg_matchmaker/core/theme/app_theme.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
+import 'package:tcg_matchmaker/features/home/widgets/game_details_sheet.dart';
 
 class GameCard extends ConsumerWidget {
   final Game game;
@@ -10,8 +11,14 @@ class GameCard extends ConsumerWidget {
 
   const GameCard({super.key, required this.game, this.index = 0});
 
-  static const Color _cardColor1 = Color(0xFF2A2D4E); // Bleu-gris foncé
-  static const Color _cardColor2 = Color(0xFF1E3A3A); // Teal foncé
+  void _showGameDetails(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => GameDetailsSheet(game: game),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,12 +26,14 @@ class GameCard extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
 
     // Couleur alternée selon l'index (pair ou impair)
-    final cardColor = index.isEven ? _cardColor1 : _cardColor2;
-    final highlightColor =
-        index.isEven ? const Color(0xFF3D4070) : const Color(0xFF2A4F4F);
+    final cardColor =
+        index.isEven ? AppTheme.gameCardColor1 : AppTheme.gameCardColor2;
+    final highlightColor = index.isEven
+        ? AppTheme.gameCardHighlight1
+        : AppTheme.gameCardHighlight2;
 
     return GestureDetector(
-      onTap: () => context.push('/games/${game.id}'),
+      onTap: () => _showGameDetails(context),
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
@@ -255,39 +264,15 @@ class GameCard extends ConsumerWidget {
   }
 
   Widget _buildStatusChip(BuildContext context, ColorScheme colorScheme) {
-    final Color chipColor;
-    final Color dotColor;
-
-    switch (game.status) {
-      case GameStatus.OPEN:
-        chipColor = const Color(0xFF4CAF50).withValues(alpha: 0.2);
-        dotColor = const Color(0xFF4CAF50);
-        break;
-      case GameStatus.FULL:
-        chipColor = const Color(0xFFFF9800).withValues(alpha: 0.2);
-        dotColor = const Color(0xFFFF9800);
-        break;
-      case GameStatus.IN_PROGRESS:
-        chipColor = colorScheme.primary.withValues(alpha: 0.2);
-        dotColor = colorScheme.primary;
-        break;
-      case GameStatus.COMPLETED:
-        chipColor = Colors.grey.withValues(alpha: 0.2);
-        dotColor = Colors.grey;
-        break;
-      case GameStatus.CANCELLED:
-        chipColor = colorScheme.error.withValues(alpha: 0.2);
-        dotColor = colorScheme.error;
-        break;
-    }
+    final statusColor = game.effectiveStatus.color;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: chipColor,
+        color: statusColor.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: dotColor.withValues(alpha: 0.5),
+          color: statusColor.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -298,11 +283,11 @@ class GameCard extends ConsumerWidget {
             width: 6,
             height: 6,
             decoration: BoxDecoration(
-              color: dotColor,
+              color: statusColor,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: dotColor.withValues(alpha: 0.5),
+                  color: statusColor.withValues(alpha: 0.5),
                   blurRadius: 4,
                 ),
               ],
@@ -310,9 +295,9 @@ class GameCard extends ConsumerWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            game.status.label,
+            game.effectiveStatus.label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: dotColor,
+                  color: statusColor,
                   fontWeight: FontWeight.w600,
                 ),
           ),

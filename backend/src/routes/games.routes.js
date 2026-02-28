@@ -4,7 +4,12 @@ import {
   participationsController,
   messagesController,
 } from "../controllers/index.js";
-import { authenticate, optionalAuth } from "../middlewares/index.js";
+import {
+  authenticate,
+  optionalAuth,
+  createGameLimiter,
+  participationLimiter,
+} from "../middlewares/index.js";
 
 const router = Router();
 
@@ -17,8 +22,8 @@ router.get("/my-games", authenticate, gamesController.getMyGames);
 // GET /api/games/:id - Détails d'une partie
 router.get("/:id", optionalAuth, gamesController.getGameById);
 
-// POST /api/games - Créer une partie
-router.post("/", authenticate, gamesController.createGame);
+// POST /api/games - Créer une partie (5 max par heure)
+router.post("/", authenticate, createGameLimiter, gamesController.createGame);
 
 // PUT /api/games/:id - Modifier une partie
 router.put("/:id", authenticate, gamesController.updateGame);
@@ -37,10 +42,11 @@ router.get(
   participationsController.getGameParticipations,
 );
 
-// POST /api/games/:gameId/participations - Demander à participer
+// POST /api/games/:gameId/participations - Demander à participer (20 max par heure)
 router.post(
   "/:gameId/participations",
   authenticate,
+  participationLimiter,
   participationsController.requestParticipation,
 );
 

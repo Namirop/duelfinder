@@ -16,6 +16,23 @@ class AppTheme {
   static const Color _purpleDark = Color(0xFF5E5791);
 
   // ==========================================================================
+  // COULEURS DES STATUTS DE PARTIES
+  // ==========================================================================
+  static const Color statusOpen = Color(0xFF4CAF50); // Vert
+  static const Color statusFull = Color(0xFFFF9800); // Orange
+  static const Color statusInProgress = _purple; // Violet (primary)
+  static const Color statusFinished = Color(0xFF9E9E9E); // Gris
+  static const Color statusCancelled = Color(0xFFF44336); // Rouge
+
+  // ==========================================================================
+  // COULEURS DES CARTES DE PARTIES
+  // ==========================================================================
+  static const Color gameCardColor1 = Color(0xFF2A2D4E); // Bleu-gris foncé
+  static const Color gameCardColor2 = Color(0xFF1E3A3A); // Teal foncé
+  static const Color gameCardHighlight1 = Color(0xFF3D4070);
+  static const Color gameCardHighlight2 = Color(0xFF2A4F4F);
+
+  // ==========================================================================
   // DARK THEME (Principal - correspond au logo)
   // ==========================================================================
   static const _darkColorScheme = ColorScheme(

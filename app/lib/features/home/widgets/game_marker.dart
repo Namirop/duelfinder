@@ -13,23 +13,6 @@ class GameMarker extends StatelessWidget {
     this.size = 50,
   });
 
-  /// Retourne la couleur de la bordure selon le statut de la partie.
-  /// - Vert : partie ouverte
-  /// - Rouge : partie annulée
-  /// - Blanc : partie complète ou autre statut
-  Color get borderColor {
-    switch (game.status) {
-      case GameStatus.OPEN:
-        return const Color(0xFF4CAF50); // Vert
-      case GameStatus.CANCELLED:
-        return const Color(0xFFF44336); // Rouge
-      case GameStatus.FULL:
-      case GameStatus.IN_PROGRESS:
-      case GameStatus.COMPLETED:
-        return Colors.white;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -40,7 +23,7 @@ class GameMarker extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: borderColor,
+            color: game.effectiveStatus.markerColor,
             width: 3,
           ),
           boxShadow: [

@@ -50,7 +50,8 @@ class _GameMapState extends ConsumerState<GameMap> {
     );
 
     // Créer le gestionnaire d'annotations
-    _annotationManager = await _mapboxMap?.annotations.createPointAnnotationManager();
+    _annotationManager =
+        await _mapboxMap?.annotations.createPointAnnotationManager();
 
     // Écouter les taps sur les marqueurs
     // ignore: deprecated_member_use
@@ -67,12 +68,14 @@ class _GameMapState extends ConsumerState<GameMap> {
   }
 
   Future<void> _centerOnUser() async {
-    final position = await ref.read(locationServiceProvider).getCurrentPosition();
+    final position =
+        await ref.read(locationServiceProvider).getCurrentPosition();
     if (position == null) return;
 
     await _mapboxMap?.flyTo(
       CameraOptions(
-        center: Point(coordinates: Position(position.longitude, position.latitude)),
+        center:
+            Point(coordinates: Position(position.longitude, position.latitude)),
         zoom: 13,
       ),
       MapAnimationOptions(duration: 1000),
@@ -80,7 +83,8 @@ class _GameMapState extends ConsumerState<GameMap> {
   }
 
   Future<void> _loadMarkers() async {
-    if (_annotationManager == null || _markersLoaded && widget.games.isEmpty) return;
+    if (_annotationManager == null || _markersLoaded && widget.games.isEmpty)
+      return;
 
     // Supprimer les anciens marqueurs
     await _annotationManager?.deleteAll();
@@ -123,7 +127,7 @@ class _GameMapState extends ConsumerState<GameMap> {
     const double borderWidth = 4;
 
     // Couleur de la bordure selon le statut
-    final borderColor = _getBorderColor(game.status);
+    final borderColor = game.effectiveStatus.markerColor;
 
     try {
       // Télécharger l'image de profil
@@ -241,19 +245,6 @@ class _GameMapState extends ConsumerState<GameMap> {
     return byteData?.buffer.asUint8List();
   }
 
-  Color _getBorderColor(GameStatus status) {
-    switch (status) {
-      case GameStatus.OPEN:
-        return const Color(0xFF4CAF50); // Vert
-      case GameStatus.CANCELLED:
-        return const Color(0xFFF44336); // Rouge
-      case GameStatus.FULL:
-      case GameStatus.IN_PROGRESS:
-      case GameStatus.COMPLETED:
-        return Colors.white;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
@@ -262,7 +253,8 @@ class _GameMapState extends ConsumerState<GameMap> {
         onMapCreated: _onMapCreated,
         styleUri: MapboxStyles.DARK,
         cameraOptions: CameraOptions(
-          center: Point(coordinates: Position(2.3522, 48.8566)), // Paris par défaut
+          center:
+              Point(coordinates: Position(2.3522, 48.8566)), // Paris par défaut
           zoom: 11,
         ),
       ),

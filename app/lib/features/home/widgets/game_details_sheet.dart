@@ -79,6 +79,8 @@ class GameDetailsSheet extends StatelessWidget {
   }
 
   Widget _buildHeader(ThemeData theme, ColorScheme colorScheme) {
+    final statusColor = game.effectiveStatus.markerColor;
+
     return Row(
       children: [
         // Avatar avec bordure de statut
@@ -87,7 +89,7 @@ class GameDetailsSheet extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: _getStatusColor(),
+              color: statusColor,
               width: 3,
             ),
           ),
@@ -112,13 +114,13 @@ class GameDetailsSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _getStatusColor().withValues(alpha: 0.2),
+                  color: statusColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  game.status.label,
+                  game.effectiveStatus.label,
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: _getStatusColor(),
+                    color: statusColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -251,7 +253,7 @@ class GameDetailsSheet extends StatelessWidget {
   }
 
   Widget _buildJoinButton(ThemeData theme, ColorScheme colorScheme) {
-    final canJoin = game.status == GameStatus.OPEN;
+    final canJoin = game.effectiveStatus == GameStatus.OPEN;
 
     return SizedBox(
       width: double.infinity,
@@ -281,30 +283,17 @@ class GameDetailsSheet extends StatelessWidget {
   }
 
   String _getDisabledButtonText() {
-    switch (game.status) {
+    switch (game.effectiveStatus) {
       case GameStatus.FULL:
         return 'Partie complète';
       case GameStatus.CANCELLED:
         return 'Partie annulée';
       case GameStatus.IN_PROGRESS:
         return 'Partie en cours';
-      case GameStatus.COMPLETED:
+      case GameStatus.FINISHED:
         return 'Partie terminée';
       default:
         return 'Non disponible';
-    }
-  }
-
-  Color _getStatusColor() {
-    switch (game.status) {
-      case GameStatus.OPEN:
-        return const Color(0xFF4CAF50); // Vert
-      case GameStatus.CANCELLED:
-        return const Color(0xFFF44336); // Rouge
-      case GameStatus.FULL:
-      case GameStatus.IN_PROGRESS:
-      case GameStatus.COMPLETED:
-        return Colors.white;
     }
   }
 }

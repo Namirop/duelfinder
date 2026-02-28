@@ -7,9 +7,10 @@ import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/games/entities/game_state.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
+import 'package:tcg_matchmaker/features/home/widgets/distance_filter.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_card.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_details_sheet.dart';
-import 'package:tcg_matchmaker/features/home/widgets/map.dart';
+import 'package:tcg_matchmaker/features/home/widgets/game_map.dart';
 import 'package:tcg_matchmaker/shared/widgets/app_error_widget.dart';
 import 'package:tcg_matchmaker/shared/widgets/loading_widget.dart';
 
@@ -22,6 +23,10 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   ViewMode _viewMode = ViewMode.list;
+
+  void _onDistanceChanged(double distance) {
+    ref.read(gamesNotifierProvider.notifier).setDistanceFilter(distance);
+  }
 
   void _showGameDetails(Game game) {
     showModalBottomSheet(
@@ -110,7 +115,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               _buildToggle(theme, colorScheme),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              DistanceFilter(
+                currentDistance: gamesState.distanceFilter,
+                onDistanceChanged: _onDistanceChanged,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Expanded(
             child: _viewMode == ViewMode.list
                 ? _buildExistingGamesList(gamesState)

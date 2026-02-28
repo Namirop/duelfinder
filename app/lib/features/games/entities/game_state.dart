@@ -6,6 +6,9 @@ class GamesState {
   final List<Game> joinedGames;
   final Game? selectedGame;
 
+  // Filtres
+  final double distanceFilter;
+
   // Loading states pour les listes
   final bool isLoadingExisting;
   final bool isLoadingMyGames;
@@ -33,6 +36,7 @@ class GamesState {
     this.myGames = const [],
     this.joinedGames = const [],
     this.selectedGame,
+    this.distanceFilter = 30,
     this.isLoadingExisting = false,
     this.isLoadingMyGames = false,
     this.isLoadingJoined = false,
@@ -59,6 +63,7 @@ class GamesState {
     List<Game>? myGames,
     List<Game>? joinedGames,
     Game? selectedGame,
+    double? distanceFilter,
     bool? isLoadingExisting,
     bool? isLoadingMyGames,
     bool? isLoadingJoined,
@@ -88,6 +93,7 @@ class GamesState {
       joinedGames: joinedGames ?? this.joinedGames,
       selectedGame:
           clearSelectedGame ? null : (selectedGame ?? this.selectedGame),
+      distanceFilter: distanceFilter ?? this.distanceFilter,
       isLoadingExisting: isLoadingExisting ?? this.isLoadingExisting,
       isLoadingMyGames: isLoadingMyGames ?? this.isLoadingMyGames,
       isLoadingJoined: isLoadingJoined ?? this.isLoadingJoined,
