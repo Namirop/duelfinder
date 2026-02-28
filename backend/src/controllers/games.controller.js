@@ -14,6 +14,8 @@ const getExistingGames = async (req, res, next) => {
       return res.status(400).json({ error: "Latitude et longitude requises" });
     }
 
+    console.log("DISTANCE : " + distance);
+
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
     const distanceKm = distance ? parseFloat(distance) : 30; // Défaut 30km
@@ -97,6 +99,16 @@ const createGame = async (req, res, next) => {
       return res.status(400).json({ error: "Maximum de joueurs non défini" });
     }
 
+    // Vérifier la règle anti-spam
+    const { canCreate, reason } = await gameService.canCreateGame(
+      req.user.userId,
+      new Date(scheduledAt),
+    );
+
+    if (!canCreate) {
+      return res.status(429).json({ error: reason });
+    }
+
     const game = await prisma.game.create({
       data: {
         gameType,
@@ -115,9 +127,12 @@ const createGame = async (req, res, next) => {
         },
       },
     });
-    // TODO: Créer automatiquement une participation pour le créateur
 
-    res.status(201).json(game);
+    // Retourner avec le statut effectif
+    res.status(201).json({
+      ...gameService.withEffectiveStatus(game),
+      currentPlayers: 1, // Le créateur
+    });
   } catch (error) {
     next(error);
   }
@@ -134,14 +149,46 @@ const updateGame = async (req, res, next) => {
   res.status(501).json({ message: "TODO: Implémenter updateGame" });
 };
 
-// DELETE /api/games/:id
+// DELETE /api/games/:id (annulation)
 const deleteGame = async (req, res, next) => {
-  // TODO: Vérifier que l'utilisateur est le créateur
-  // TODO: Supprimer la partie (ou la marquer comme annulée)
-  // TODO: Notifier les participants
-  // TODO: Retourner confirmation
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
 
-  res.status(501).json({ message: "TODO: Implémenter deleteGame" });
+    // Vérifier que la partie existe et appartient à l'utilisateur
+    const game = await prisma.game.findUnique({
+      where: { id },
+      include: {
+        participations: {
+          where: { status: "ACCEPTED" },
+          include: { user: { select: { id: true, fcmToken: true } } },
+        },
+      },
+    });
+
+    if (!game) {
+      return res.status(404).json({ error: "Partie introuvable" });
+    }
+
+    if (game.creatorId !== userId) {
+      return res
+        .status(403)
+        .json({ error: "Vous n'êtes pas le créateur de cette partie" });
+    }
+
+    if (game.status === "CANCELLED") {
+      return res.status(400).json({ error: "Cette partie est déjà annulée" });
+    }
+
+    // Annuler la partie
+    await gameService.cancelGame(id);
+
+    // TODO: Notifier les participants (GAME_CANCELLED)
+
+    res.status(200).json({ message: "Partie annulée" });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export default {

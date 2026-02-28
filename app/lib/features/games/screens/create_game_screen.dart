@@ -249,6 +249,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         return Icons.catching_pokemon_rounded;
       case GameType.YUGIOH:
         return Icons.auto_awesome_rounded;
+      case GameType.NARUTO:
+        return Icons.nature;
     }
   }
 

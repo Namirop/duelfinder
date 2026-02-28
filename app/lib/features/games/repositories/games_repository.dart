@@ -13,7 +13,7 @@ class GamesRepository {
   Future<List<Game>> fetchExistingGames({
     required double latitude,
     required double longitude,
-    double distance = 100,
+    double distance = 30,
   }) async {
     try {
       final response = await _dio.get(

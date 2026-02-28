@@ -8,20 +8,23 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(uuid())
-  email          String          @unique
-  passwordHash   String?
-  username       String          @unique
-  avatar         String?
-  fcmToken       String?
-  facebookId     String?         @unique
-  instagramId    String?         @unique
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  gamesCreated   Game[]          @relation("GameCreator")
-  sentMessages   Message[]       @relation("SentMessages")
-  notifications  Notification[]
-  participations Participation[]
+  id               String          @id @default(uuid())
+  email            String          @unique
+  passwordHash     String?
+  username         String          @unique
+  avatar           String?
+  fcmToken         String?
+  facebookId       String?         @unique
+  instagramId      String?         @unique
+  role             UserRole        @default(USER)
+  totalGamesPlayed Int             @default(0)
+  badgeLevel       BadgeLevel?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  gamesCreated     Game[]          @relation("GameCreator")
+  sentMessages     Message[]       @relation("SentMessages")
+  notifications    Notification[]
+  participations   Participation[]
 
   @@map("users")
 }
@@ -37,6 +40,8 @@ model Game {
   duration       Int
   maxPlayers     Int             @default(2)
   status         GameStatus      @default(OPEN)
+  wasFilledOnce  Boolean         @default(false)
+  finishedAt     DateTime?
   creatorId      String
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -48,14 +53,15 @@ model Game {
 }
 
 model Participation {
-  id        String              @id @default(uuid())
-  status    ParticipationStatus @default(PENDING)
-  userId    String
-  gameId    String
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-  game      Game                @relation(fields: [gameId], references: [id])
-  user      User                @relation(fields: [userId], references: [id])
+  id         String              @id @default(uuid())
+  status     ParticipationStatus @default(PENDING)
+  userId     String
+  gameId     String
+  acceptedAt DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  game       Game                @relation(fields: [gameId], references: [id])
+  user       User                @relation(fields: [userId], references: [id])
 
   @@unique([userId, gameId])
   @@map("participations")
@@ -97,8 +103,6 @@ enum GameType {
 enum GameStatus {
   OPEN
   FULL
-  IN_PROGRESS
-  COMPLETED
   CANCELLED
 }
 
@@ -114,4 +118,18 @@ enum NotificationType {
   PARTICIPATION_ACCEPTED
   PARTICIPATION_REJECTED
   NEW_MESSAGE
+  GAME_CANCELLED
+  GAME_FULL
+}
+
+enum UserRole {
+  USER
+  PARTNER
+  ADMIN
+}
+
+enum BadgeLevel {
+  BRONZE
+  SILVER
+  GOLD
 }

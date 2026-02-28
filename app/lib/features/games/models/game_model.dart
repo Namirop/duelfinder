@@ -12,9 +12,12 @@ class GameModel {
   final int duration;
   final int maxPlayers;
   final GameStatus status;
+  final GameStatus effectiveStatus;
+  final int currentPlayers;
   final UserSummaryModel creator;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final double? distance;
 
   const GameModel({
     required this.id,
@@ -27,12 +30,25 @@ class GameModel {
     required this.duration,
     required this.maxPlayers,
     required this.status,
+    required this.effectiveStatus,
+    required this.currentPlayers,
     required this.creator,
     required this.createdAt,
     required this.updatedAt,
+    this.distance,
   });
 
   factory GameModel.fromJson(Map<String, dynamic> json) {
+    // Le backend renvoie effectiveStatus (calculé) et status (stocké en base)
+    final storedStatus = GameStatus.values.firstWhere(
+      (e) => e.name == json['status'],
+      orElse: () => GameStatus.OPEN,
+    );
+    final effectiveStatus = GameStatus.values.firstWhere(
+      (e) => e.name == json['effectiveStatus'],
+      orElse: () => storedStatus,
+    );
+
     return GameModel(
       id: json['id'] as String,
       gameType: GameType.values.firstWhere(
@@ -46,14 +62,16 @@ class GameModel {
       scheduledAt: DateTime.parse(json['scheduledAt'] as String),
       duration: json['duration'] as int,
       maxPlayers: json['maxPlayers'] as int,
-      status: GameStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => GameStatus.OPEN,
-      ),
+      status: storedStatus,
+      effectiveStatus: effectiveStatus,
+      currentPlayers: json['currentPlayers'] as int? ?? 1,
       creator:
           UserSummaryModel.fromJson(json['creator'] as Map<String, dynamic>),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      distance: json['distance'] != null
+          ? (json['distance'] as num).toDouble()
+          : null,
     );
   }
 
@@ -69,9 +87,12 @@ class GameModel {
       duration: duration,
       maxPlayers: maxPlayers,
       status: status,
+      effectiveStatus: effectiveStatus,
+      currentPlayers: currentPlayers,
       creator: creator.toEntity(),
       createdAt: createdAt,
       updatedAt: updatedAt,
+      distance: distance,
     );
   }
 
@@ -87,8 +108,11 @@ class GameModel {
       'duration': duration,
       'maxPlayers': maxPlayers,
       'status': status.name,
+      'effectiveStatus': effectiveStatus.name,
+      'currentPlayers': currentPlayers,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      if (distance != null) 'distance': distance,
     };
   }
 }

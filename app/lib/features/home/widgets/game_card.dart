@@ -48,13 +48,11 @@ class GameCard extends ConsumerWidget {
             stops: const [0.0, 0.8],
           ),
           boxShadow: [
-            // Ombre principale
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
-            // Lueur subtile en haut
             BoxShadow(
               color: highlightColor.withValues(alpha: 0.3),
               blurRadius: 8,
