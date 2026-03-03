@@ -3,21 +3,38 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:tcg_matchmaker/features/auth/entities/user_summary.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
-import 'package:tcg_matchmaker/features/participations/entities/game_requests_state.dart';
-import 'package:tcg_matchmaker/features/participations/providers/game_requests_notifier.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation.dart';
+import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
 import 'package:tcg_matchmaker/shared/widgets/loading_widget.dart';
 
-class GameRequestsSheet extends ConsumerWidget {
+class GameRequestsSheet extends ConsumerStatefulWidget {
   final Game game;
 
   const GameRequestsSheet({super.key, required this.game});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GameRequestsSheet> createState() => _GameRequestsSheetState();
+}
+
+class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref
+        .read(participationsNotifierProvider.notifier)
+        .fetchGameParticipations(widget.game.id));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final state = ref.watch(gameRequestsNotifierProvider(game.id));
+    final state = ref.watch(participationsNotifierProvider);
+
+    final isLoading = state.isLoadingGame(widget.game.id);
+    final error = state.gameRequestsError;
+    final pending = state.getPendingForGame(widget.game.id);
+    final accepted = state.getAcceptedForGame(widget.game.id);
 
     return Container(
       decoration: BoxDecoration(
@@ -50,18 +67,18 @@ class GameRequestsSheet extends ConsumerWidget {
                 children: [
                   _buildHeader(theme, colorScheme),
                   const SizedBox(height: 24),
-                  if (state.isLoading)
+                  if (isLoading)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 40),
                       child: LoadingWidget(),
                     )
-                  else if (state.error != null)
-                    _buildError(theme, colorScheme, state.error!, ref)
+                  else if (error != null)
+                    _buildError(theme, colorScheme, error)
                   else ...[
-                    _buildPendingSection(theme, colorScheme, state, ref),
-                    if (state.accepted.isNotEmpty) ...[
+                    _buildPendingSection(theme, colorScheme, pending, state),
+                    if (accepted.isNotEmpty) ...[
                       const SizedBox(height: 24),
-                      _buildAcceptedSection(theme, colorScheme, state.accepted),
+                      _buildAcceptedSection(theme, colorScheme, accepted),
                     ],
                   ],
                 ],
@@ -74,7 +91,7 @@ class GameRequestsSheet extends ConsumerWidget {
   }
 
   Widget _buildHeader(ThemeData theme, ColorScheme colorScheme) {
-    final statusColor = game.effectiveStatus.color;
+    final statusColor = widget.game.effectiveStatus.color;
 
     return Row(
       children: [
@@ -91,7 +108,7 @@ class GameRequestsSheet extends ConsumerWidget {
                   color: colorScheme.primary, size: 18),
               const SizedBox(width: 8),
               Text(
-                game.gameType.label,
+                widget.game.gameType.label,
                 style: theme.textTheme.titleSmall?.copyWith(
                   color: colorScheme.primary,
                   fontWeight: FontWeight.bold,
@@ -103,7 +120,7 @@ class GameRequestsSheet extends ConsumerWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            _formatDate(game.scheduledAt),
+            _formatDate(widget.game.scheduledAt),
             style: theme.textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
@@ -117,7 +134,7 @@ class GameRequestsSheet extends ConsumerWidget {
             border: Border.all(color: statusColor.withValues(alpha: 0.4)),
           ),
           child: Text(
-            '${game.currentPlayers}/${game.maxPlayers} joueurs',
+            '${widget.game.currentPlayers}/${widget.game.maxPlayers} joueurs',
             style: theme.textTheme.labelSmall?.copyWith(
               color: statusColor,
               fontWeight: FontWeight.w600,
@@ -131,8 +148,8 @@ class GameRequestsSheet extends ConsumerWidget {
   Widget _buildPendingSection(
     ThemeData theme,
     ColorScheme colorScheme,
-    GameRequestsState state,
-    WidgetRef ref,
+    List<Participation> pending,
+    dynamic state,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,11 +158,11 @@ class GameRequestsSheet extends ConsumerWidget {
           theme,
           colorScheme,
           'Demandes en attente',
-          state.pending.length,
+          pending.length,
           Colors.orange,
         ),
         const SizedBox(height: 12),
-        if (state.pending.isEmpty)
+        if (pending.isEmpty)
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -158,12 +175,11 @@ class GameRequestsSheet extends ConsumerWidget {
             ),
           )
         else
-          ...state.pending.map((p) => _buildRequestRow(
+          ...pending.map((p) => _buildRequestRow(
                 theme,
                 colorScheme,
                 p,
-                state.isProcessing(p.id),
-                ref,
+                ref.watch(participationsNotifierProvider).isProcessing(p.id),
               )),
       ],
     );
@@ -229,7 +245,6 @@ class GameRequestsSheet extends ConsumerWidget {
     ColorScheme colorScheme,
     Participation participation,
     bool isProcessing,
-    WidgetRef ref,
   ) {
     final requester = participation.requester;
 
@@ -278,16 +293,16 @@ class GameRequestsSheet extends ConsumerWidget {
               icon: Icons.check_rounded,
               color: Colors.green,
               onTap: () => ref
-                  .read(gameRequestsNotifierProvider(game.id).notifier)
-                  .accept(participation.id),
+                  .read(participationsNotifierProvider.notifier)
+                  .acceptParticipation(participation.id, widget.game.id),
             ),
             const SizedBox(width: 8),
             _buildActionButton(
               icon: Icons.close_rounded,
               color: Colors.red,
               onTap: () => ref
-                  .read(gameRequestsNotifierProvider(game.id).notifier)
-                  .reject(participation.id),
+                  .read(participationsNotifierProvider.notifier)
+                  .rejectParticipation(participation.id, widget.game.id),
             ),
           ],
         ],
@@ -369,7 +384,6 @@ class GameRequestsSheet extends ConsumerWidget {
     ThemeData theme,
     ColorScheme colorScheme,
     String error,
-    WidgetRef ref,
   ) {
     return Center(
       child: Column(
@@ -379,8 +393,8 @@ class GameRequestsSheet extends ConsumerWidget {
                   ?.copyWith(color: colorScheme.error)),
           TextButton(
             onPressed: () => ref
-                .read(gameRequestsNotifierProvider(game.id).notifier)
-                .refresh(),
+                .read(participationsNotifierProvider.notifier)
+                .fetchGameParticipations(widget.game.id),
             child: const Text('Réessayer'),
           ),
         ],
