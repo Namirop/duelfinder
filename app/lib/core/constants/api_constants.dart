@@ -16,13 +16,13 @@ class ApiConstants {
   // Endpoints Games
   static const String existingGames = '/games/existing';
   static const String myGames = '/games/my-games';
-  static const String joinedGames = '/games/joined';
-  static const String game = '/games';
+  static const String games = '/games';
 
   // Endpoints Participations
-  // static const String participations = '/participations';
-  // static const String joinGame = '/participations/join';
-  // static const String leaveGame = '/participations/leave';
+  // Routes nested sous /games/:gameId → ApiConstants.games + '/$gameId/participations'
+  // Routes standalone sur :id     → ApiConstants.participations + '/$id/...'
+  static const String participations = '/participations';
+  static const String myParticipations = '/participations/my';
 
   // Endpoints Messages
   static const String messages = '/messages';

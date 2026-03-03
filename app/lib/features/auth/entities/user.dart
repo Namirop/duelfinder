@@ -3,6 +3,7 @@ class User {
   final String id;
   final String email;
   final String username;
+  final String? bio;
   final String avatar;
   final DateTime? createdAt;
 
@@ -10,6 +11,7 @@ class User {
     required this.id,
     required this.email,
     required this.username,
+    this.bio,
     required this.avatar,
     this.createdAt,
   });
@@ -18,6 +20,7 @@ class User {
     String? id,
     String? email,
     String? username,
+    String? bio,
     String? avatar,
     DateTime? createdAt,
   }) {
@@ -25,6 +28,7 @@ class User {
       id: id ?? this.id,
       email: email ?? this.email,
       username: username ?? this.username,
+      bio: bio ?? this.bio,
       avatar: avatar ?? this.avatar,
       createdAt: createdAt ?? this.createdAt,
     );

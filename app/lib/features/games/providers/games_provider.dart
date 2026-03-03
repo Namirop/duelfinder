@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
 import 'package:tcg_matchmaker/core/errors/exceptions.dart';
 import 'package:tcg_matchmaker/core/services/app_logger.dart';
+import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/games/entities/game_state.dart';
 import 'package:tcg_matchmaker/features/games/models/create_game_model.dart';
 
@@ -33,6 +34,8 @@ class GamesNotifier extends _$GamesNotifier {
             latitude: lat,
             longitude: lng,
             distance: state.distanceFilter,
+            hours: state.scheduleFilter,
+            gameType: state.gameTypeFilter?.name,
           );
       state = state.copyWith(
         existingGames: games,
@@ -50,11 +53,6 @@ class GamesNotifier extends _$GamesNotifier {
     }
   }
 
-  void setDistanceFilter(double distance) {
-    state = state.copyWith(distanceFilter: distance);
-    fetchExistingGames();
-  }
-
   Future<void> fetchCreatedGames() async {
     state = state.copyWith(isLoadingMyGames: true, clearErrorMyGames: true);
     try {
@@ -70,39 +68,6 @@ class GamesNotifier extends _$GamesNotifier {
       AppLogger.e('GamesNotifier', 'fetchCreatedGames failed', e, stackTrace);
       state = state.copyWith(
           errorMyGames: 'Erreur inconnue', isLoadingMyGames: false);
-    }
-  }
-
-  Future<void> fetchJoinedGames() async {
-    state = state.copyWith(isLoadingJoined: true, clearErrorJoined: true);
-    try {
-      final games = await ref.read(gamesRepositoryProvider).fetchJoinedGames();
-      state = state.copyWith(
-        joinedGames: games,
-        isLoadingJoined: false,
-      );
-    } on AppException catch (e) {
-      AppLogger.w('GamesNotifier', 'fetchJoinedGames failed: ${e.toString()}');
-      state = state.copyWith(errorJoined: e.message, isLoadingJoined: false);
-    } catch (e, stackTrace) {
-      AppLogger.e('GamesNotifier', 'fetchJoinedGames failed', e, stackTrace);
-      state = state.copyWith(
-          errorJoined: 'Erreur inconnue', isLoadingJoined: false);
-    }
-  }
-
-  Future<void> loadGameDetails(String gameId) async {
-    state = state.copyWith(isLoadingDetails: true, clearErrorDetails: true);
-    try {
-      final game = await ref.read(gamesRepositoryProvider).getGameById(gameId);
-      state = state.copyWith(selectedGame: game, isLoadingDetails: false);
-    } on AppException catch (e) {
-      AppLogger.w('GamesNotifier', 'loadGameDetails failed: ${e.toString()}');
-      state = state.copyWith(errorDetails: e.message, isLoadingDetails: false);
-    } catch (e, stackTrace) {
-      AppLogger.e('GamesNotifier', 'loadGameDetails failed', e, stackTrace);
-      state = state.copyWith(
-          errorDetails: 'Erreur de chargement', isLoadingDetails: false);
     }
   }
 
@@ -152,6 +117,34 @@ class GamesNotifier extends _$GamesNotifier {
       state = state.copyWith(
           errorDeleting: 'Erreur de suppression', isDeleting: false);
     }
+  }
+
+  void setDistanceFilter(double distance) {
+    state = state.copyWith(distanceFilter: distance);
+    fetchExistingGames();
+  }
+
+  void setScheduleFilter(double schedule) {
+    state = state.copyWith(scheduleFilter: schedule);
+    fetchExistingGames();
+  }
+
+  void setGameTypeFilter(GameType? gameType) {
+    if (gameType == null) {
+      state = state.copyWith(clearGameTypeFilter: true);
+    } else {
+      state = state.copyWith(gameTypeFilter: gameType);
+    }
+    fetchExistingGames();
+  }
+
+  void resetFilters() {
+    state = state.copyWith(
+      distanceFilter: 30,
+      scheduleFilter: 1,
+      clearGameTypeFilter: true,
+    );
+    fetchExistingGames();
   }
 
   void clearSelectedGame() {

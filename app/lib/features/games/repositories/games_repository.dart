@@ -14,16 +14,23 @@ class GamesRepository {
     required double latitude,
     required double longitude,
     double distance = 30,
+    double? hours,
+    String? gameType,
   }) async {
     try {
+      final queryParams = {
+        'lat': latitude,
+        'lng': longitude,
+        'distance': distance,
+        'hours': hours,
+        if (gameType != null) 'gameType': gameType
+      };
+
       final response = await _dio.get(
         ApiConstants.existingGames,
-        queryParameters: {
-          'lat': latitude,
-          'lng': longitude,
-          'distance': distance,
-        },
+        queryParameters: queryParams,
       );
+
       return (response.data as List)
           .map((json) =>
               GameModel.fromJson(json as Map<String, dynamic>).toEntity())
@@ -45,32 +52,10 @@ class GamesRepository {
     }
   }
 
-  Future<List<Game>> fetchJoinedGames() async {
-    try {
-      return List.empty();
-      // final response = await _dio.get(ApiConstants.joinedGames);
-      // final List<dynamic> data = response.data['games'];
-      // final gamesModel = data.map((json) => GameModel.fromJson(json)).toList();
-      // return gamesModel.map((model) => model.toEntity()).toList();
-    } on DioException catch (e) {
-      throw _handleDioException(e);
-    }
-  }
-
-  Future<Game> getGameById(String id) async {
-    try {
-      final response = await _dio.get('${ApiConstants.game}/$id');
-      final gameModel = GameModel.fromJson(response.data['game']);
-      return gameModel.toEntity();
-    } on DioException catch (e) {
-      throw _handleDioException(e);
-    }
-  }
-
   Future<Game> createGame(CreateGameModel data) async {
     try {
       final response = await _dio.post(
-        ApiConstants.game,
+        ApiConstants.games,
         data: data.toJson(),
       );
       final gameModel =
@@ -84,21 +69,20 @@ class GamesRepository {
   Future<Game> updateGame(String id, CreateGameModel data) async {
     try {
       final response = await _dio.put(
-        '${ApiConstants.game}/$id',
+        '${ApiConstants.games}/$id',
         data: data.toJson(),
       );
       final gameModel =
           GameModel.fromJson(response.data as Map<String, dynamic>);
       return gameModel.toEntity();
     } on DioException catch (e) {
-      print("ici");
       throw _handleDioException(e);
     }
   }
 
   Future<void> deleteGame(String id) async {
     try {
-      await _dio.delete('${ApiConstants.game}/$id');
+      await _dio.delete('${ApiConstants.games}/$id');
     } on DioException catch (e) {
       throw _handleDioException(e);
     }

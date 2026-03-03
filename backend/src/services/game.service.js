@@ -12,31 +12,21 @@ import prisma from "../config/database.js";
  * @returns {string} Le statut effectif
  */
 const getEffectiveStatus = (game) => {
-  // CANCELLED reste CANCELLED
   if (game.status === "CANCELLED") return "CANCELLED";
 
-  // OPEN reste OPEN (pas encore remplie)
-  if (game.status === "OPEN") return "OPEN";
-
-  // Ici status = FULL, on calcule selon l'heure
   const now = new Date();
   const startTime = new Date(game.scheduledAt);
   const endTime = new Date(startTime.getTime() + game.duration * 60 * 1000);
 
+  // Partie terminée (heure de fin passée) → FINISHED
   if (now >= endTime) return "FINISHED";
-  if (now >= startTime) return "IN_PROGRESS";
-  return "FULL";
-};
 
-/**
- * Ajoute le statut effectif à une partie
- * @param {Object} game - La partie
- * @returns {Object} La partie avec effectiveStatus
- */
-const withEffectiveStatus = (game) => ({
-  ...game,
-  effectiveStatus: getEffectiveStatus(game),
-});
+  // Partie en cours (heure de début passée mais pas finie) → IN_PROGRESS
+  if (now >= startTime) return "IN_PROGRESS";
+
+  // Partie pas encore commencée → OPEN ou FULL selon le statut en base
+  return game.status;
+};
 
 /**
  * Vérifie si un utilisateur peut créer une nouvelle partie (règle anti-spam)
@@ -68,7 +58,8 @@ const canCreateGame = async (userId, date) => {
   if (unfilledGame) {
     return {
       canCreate: false,
-      reason: "Vous avez déjà une partie en attente de joueurs ce jour-là. Attendez qu'elle soit complète pour en créer une autre.",
+      reason:
+        "Vous avez déjà une partie en attente de joueurs ce jour-là. Attendez qu'elle soit complète pour en créer une autre.",
     };
   }
 
@@ -89,15 +80,21 @@ const findByCreator = async (userId) => {
       },
       participations: {
         where: { status: "ACCEPTED" },
-        select: { userId: true },
+        include: {
+          user: {
+            select: { id: true, username: true, avatar: true },
+          },
+        },
       },
     },
     orderBy: { createdAt: "desc" },
   });
 
   return games.map((game) => ({
-    ...withEffectiveStatus(game),
-    currentPlayers: game.participations.length + 1, // +1 pour le créateur
+    ...game,
+    effectiveStatus: getEffectiveStatus(game),
+    currentPlayers: game.participations.length + 1,
+    participants: game.participations.map((p) => p.user),
   }));
 };
 
@@ -119,26 +116,28 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 /**
- * Récupère les parties à proximité pour un jour donné
- * Règle d'affichage : parties du jour, sinon premier jour avec des parties
+ * Récupère les parties à proximité
  * @param {number} lat - Latitude de l'utilisateur
  * @param {number} lng - Longitude de l'utilisateur
  * @param {number} distanceKm - Rayon de recherche en km (défaut 30)
  * @param {string|null} excludeUserId - ID de l'utilisateur à exclure (ses propres parties)
- * @param {Date|null} targetDate - Date cible (défaut aujourd'hui)
+ * @param {number|null} hoursFilter - Filtrer les parties dans les X prochaines heures (null = pas de filtre)
+ * @param {string|null} gameTypeFilter - Filtrer par type de jeu (null = tous les jeux)
  * @returns {Promise<Array>} Liste des parties à proximité avec statut effectif
  */
-const findNearby = async (lat, lng, distanceKm = 30, excludeUserId = null, targetDate = null) => {
+const findNearby = async (
+  lat,
+  lng,
+  distanceKm = 30,
+  excludeUserId = null,
+  hoursFilter = null,
+  gameTypeFilter = null,
+) => {
   // Bounding box pour pré-filtrer (approximation)
   const latDelta = distanceKm / 111; // 1° lat ≈ 111 km
   const lngDelta = distanceKm / (111 * Math.cos((lat * Math.PI) / 180));
 
-  // Définir la plage de dates
   const now = new Date();
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
-  const endOfToday = new Date(now);
-  endOfToday.setHours(23, 59, 59, 999);
 
   const baseWhereClause = {
     latitude: {
@@ -156,71 +155,58 @@ const findNearby = async (lat, lng, distanceKm = 30, excludeUserId = null, targe
     baseWhereClause.creatorId = { not: excludeUserId };
   }
 
-  // D'abord chercher les parties d'aujourd'hui
-  let games = await prisma.game.findMany({
-    where: {
-      ...baseWhereClause,
-      scheduledAt: {
-        gte: startOfToday,
-        lte: endOfToday,
-      },
-    },
+  // Filtrer par type de jeu
+  if (gameTypeFilter) {
+    baseWhereClause.gameType = gameTypeFilter;
+  }
+
+  // Définir la plage de dates selon le filtre
+  // On commence depuis le début de la journée pour inclure les parties d'aujourd'hui
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  if (hoursFilter !== null && hoursFilter > 0) {
+    // Filtre horaire : parties depuis aujourd'hui jusqu'à X heures depuis maintenant
+    const maxTime = new Date(now.getTime() + hoursFilter * 60 * 60 * 1000);
+    baseWhereClause.scheduledAt = {
+      gte: startOfToday,
+      lte: maxTime,
+    };
+  } else {
+    // "Tout" : toutes les parties depuis aujourd'hui (pas de limite max)
+    baseWhereClause.scheduledAt = {
+      gte: startOfToday,
+    };
+  }
+
+  const games = await prisma.game.findMany({
+    where: baseWhereClause,
     include: {
       creator: {
         select: { id: true, username: true, avatar: true, badgeLevel: true },
       },
       participations: {
         where: { status: "ACCEPTED" },
-        select: { userId: true },
+        include: {
+          user: {
+            select: { id: true, username: true, avatar: true },
+          },
+        },
       },
     },
     orderBy: { scheduledAt: "asc" },
+    take: 100,
   });
-
-  // Si pas de parties aujourd'hui, chercher le prochain jour avec des parties
-  if (games.length === 0) {
-    games = await prisma.game.findMany({
-      where: {
-        ...baseWhereClause,
-        scheduledAt: {
-          gt: endOfToday,
-        },
-        status: { not: "CANCELLED" },
-      },
-      include: {
-        creator: {
-          select: { id: true, username: true, avatar: true, badgeLevel: true },
-        },
-        participations: {
-          where: { status: "ACCEPTED" },
-          select: { userId: true },
-        },
-      },
-      orderBy: { scheduledAt: "asc" },
-      take: 50, // Limiter pour perf
-    });
-
-    // Grouper par jour et prendre seulement le premier jour
-    if (games.length > 0) {
-      const firstGameDate = new Date(games[0].scheduledAt);
-      const startOfFirstDay = new Date(firstGameDate);
-      startOfFirstDay.setHours(0, 0, 0, 0);
-      const endOfFirstDay = new Date(firstGameDate);
-      endOfFirstDay.setHours(23, 59, 59, 999);
-
-      games = games.filter((game) => {
-        const gameDate = new Date(game.scheduledAt);
-        return gameDate >= startOfFirstDay && gameDate <= endOfFirstDay;
-      });
-    }
-  }
 
   // Filtrer par distance exacte et ajouter les infos calculées
   return games
     .map((game) => ({
-      ...withEffectiveStatus(game),
+      ...game,
+      effectiveStatus: getEffectiveStatus(game),
       distance: calculateDistance(lat, lng, game.latitude, game.longitude),
-      currentPlayers: game.participations.length + 1, // +1 pour le créateur
+      currentPlayers: game.participations.length + 1,
+      // Transformer participations en liste de participants (juste les users)
+      participants: game.participations.map((p) => p.user),
     }))
     .filter((game) => game.distance <= distanceKm)
     .sort((a, b) => a.distance - b.distance);
@@ -363,7 +349,8 @@ const updateGameStatusByPlayers = async (gameId) => {
   });
 
   return {
-    ...withEffectiveStatus(updatedGame),
+    ...updatedGame,
+    effectiveStatus: getEffectiveStatus(updatedGame),
     currentPlayers: updatedGame.participations.length + 1,
   };
 };
@@ -373,7 +360,6 @@ export default {
   findNearby,
   canCreateGame,
   getEffectiveStatus,
-  withEffectiveStatus,
   markAsFull,
   markAsOpen,
   cancelGame,

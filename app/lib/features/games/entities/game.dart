@@ -16,6 +16,7 @@ class Game {
   final GameStatus effectiveStatus;
   final int currentPlayers;
   final UserSummary creator;
+  final List<UserSummary> participants;
   final DateTime createdAt;
   final DateTime updatedAt;
   final double? distance;
@@ -34,6 +35,7 @@ class Game {
     required this.effectiveStatus,
     required this.currentPlayers,
     required this.creator,
+    this.participants = const [],
     required this.createdAt,
     required this.updatedAt,
     this.distance,
@@ -43,6 +45,9 @@ class Game {
   bool get hasAvailableSpots => currentPlayers < maxPlayers;
   bool get isUpcoming => scheduledAt.isAfter(DateTime.now());
   bool get isOpen => effectiveStatus == GameStatus.OPEN;
+
+  /// Heure de fin calculée (scheduledAt + duration)
+  DateTime get endTime => scheduledAt.add(Duration(minutes: duration));
 
   Game copyWith({
     String? id,
@@ -58,6 +63,7 @@ class Game {
     GameStatus? effectiveStatus,
     int? currentPlayers,
     UserSummary? creator,
+    List<UserSummary>? participants,
     DateTime? createdAt,
     DateTime? updatedAt,
     double? distance,
@@ -76,6 +82,7 @@ class Game {
       effectiveStatus: effectiveStatus ?? this.effectiveStatus,
       currentPlayers: currentPlayers ?? this.currentPlayers,
       creator: creator ?? this.creator,
+      participants: participants ?? this.participants,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       distance: distance ?? this.distance,
@@ -179,4 +186,23 @@ extension GameStatusExtension on GameStatus {
 
   /// Retourne true si la partie est annulée (rouge)
   bool get isCancelled => this == GameStatus.CANCELLED;
+
+  /// Peut-on demander à rejoindre cette partie ?
+  bool get canJoin => this == GameStatus.OPEN || this == GameStatus.FULL;
+
+  /// Texte du bouton quand on ne peut pas rejoindre
+  String get disabledButtonText {
+    switch (this) {
+      case GameStatus.OPEN:
+        return 'Rejoindre'; // Ne devrait pas arriver
+      case GameStatus.FULL:
+        return 'Partie complète';
+      case GameStatus.CANCELLED:
+        return 'Partie annulée';
+      case GameStatus.IN_PROGRESS:
+        return 'Partie en cours';
+      case GameStatus.FINISHED:
+        return 'Partie terminée';
+    }
+  }
 }

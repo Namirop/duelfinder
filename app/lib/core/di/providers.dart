@@ -61,6 +61,9 @@ final notificationsRepositoryProvider =
   return NotificationsRepository(ref.watch(dioProvider));
 });
 
+// Provider pour l'état des notifications (en mémoire pour V1)
+final notificationsEnabledProvider = StateProvider<bool>((ref) => true);
+
 /// Navigation
 final navigationIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -70,6 +73,15 @@ final locationServiceProvider = Provider<LocationService>((ref) {
 });
 
 final currentPositionProvider = FutureProvider<Position?>((ref) async {
+  // Vérifie d'abord si l'utilisateur a activé la géolocalisation
+  final locationEnabled = ref.watch(locationEnabledProvider);
+  if (!locationEnabled) {
+    return null;
+  }
+
   final locationService = ref.watch(locationServiceProvider);
   return locationService.getCurrentPosition();
 });
+
+// Provider pour la préférence utilisateur de géolocalisation (en mémoire pour V1)
+final locationEnabledProvider = StateProvider<bool>((ref) => true);

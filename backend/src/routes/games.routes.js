@@ -19,21 +19,11 @@ router.get("/existing", optionalAuth, gamesController.getExistingGames);
 // GET /api/games/my-games - Mes parties
 router.get("/my-games", authenticate, gamesController.getMyGames);
 
-// GET /api/games/:id - Détails d'une partie
-router.get("/:id", optionalAuth, gamesController.getGameById);
-
-// POST /api/games - Créer une partie (5 max par heure)
+// POST /api/games - Créer une partie
 router.post("/", authenticate, createGameLimiter, gamesController.createGame);
 
-// PUT /api/games/:id - Modifier une partie
-router.put("/:id", authenticate, gamesController.updateGame);
-
-// DELETE /api/games/:id - Supprimer une partie
-router.delete("/:id", authenticate, gamesController.deleteGame);
-
-// ===========================================
-// Routes des participations (nested)
-// ===========================================
+// DELETE /api/games/:gameId - Supprimer une partie
+router.delete("/:gameId", authenticate, gamesController.deleteGame);
 
 // GET /api/games/:gameId/participations - Participants d'une partie
 router.get(

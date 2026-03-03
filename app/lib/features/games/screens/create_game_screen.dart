@@ -38,7 +38,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         latitude: 50.20418040498222,
         longitude: 3.180598730339395,
         scheduledAt: DateTime(_selectedDate.year, _selectedDate.month,
-            _selectedDate.day, _selectedDate.hour, _selectedDate.minute),
+            _selectedDate.day, _selectedTime.hour, _selectedTime.minute),
         duration: _duration,
         maxPlayers: _maxPlayers);
 
@@ -167,9 +167,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         final isSelected = _selectedGameType == type;
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(
-              right: type != GameType.values.last ? 10 : 0,
-            ),
+            padding: const EdgeInsets.all(5),
             child: GestureDetector(
               onTap: () => setState(() => _selectedGameType = type),
               child: AnimatedContainer(
@@ -201,7 +199,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     Text(
                       type.label,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 13,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
@@ -224,13 +222,6 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                 .withValues(alpha: 0.6),
                       ),
                     ),
-                    // Icon(
-                    //   _getGameTypeIcon(type),
-                    //   size: 32,
-                    //   color: isSelected
-                    //       ? colorScheme.onPrimary
-                    //       : colorScheme.onSurface,
-                    // ),
                   ],
                 ),
               ),
@@ -239,19 +230,6 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         );
       }).toList(),
     );
-  }
-
-  IconData _getGameTypeIcon(GameType type) {
-    switch (type) {
-      case GameType.ONE_PIECE:
-        return Icons.sailing_rounded;
-      case GameType.POKEMON:
-        return Icons.catching_pokemon_rounded;
-      case GameType.YUGIOH:
-        return Icons.auto_awesome_rounded;
-      case GameType.NARUTO:
-        return Icons.nature;
-    }
   }
 
   Widget _buildDateTimeSelector(ThemeData theme, ColorScheme colorScheme) {

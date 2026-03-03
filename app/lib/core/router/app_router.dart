@@ -5,6 +5,7 @@ import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/screens/create_game_screen.dart';
 import 'package:tcg_matchmaker/features/games/screens/my_games_screen.dart';
 import 'package:tcg_matchmaker/features/profile/screens/profile_screen.dart';
+import 'package:tcg_matchmaker/features/settings/screens/settings_screen.dart';
 import 'package:tcg_matchmaker/features/shell/main_shell.dart';
 
 import '../../features/auth/screens/login_screen.dart';
@@ -39,6 +40,9 @@ abstract class AppRoutes {
   // Profile
   static const String profile = '/profile';
   static const String editProfile = '/profile/edit';
+
+  // Settings
+  static const String settings = '/settings';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -95,6 +99,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: AppRoutes.profile,
           name: 'profile',
           builder: (context, state) => const ProfileScreen()),
+
+      // Settings
+      GoRoute(
+          path: AppRoutes.settings,
+          name: 'settings',
+          builder: (context, state) => const SettingsScreen()),
 
       // Games routes
       GoRoute(

@@ -11,6 +11,8 @@ import 'package:tcg_matchmaker/features/home/widgets/distance_filter.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_card.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_details_sheet.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_map.dart';
+import 'package:tcg_matchmaker/features/home/widgets/game_type_filter.dart';
+import 'package:tcg_matchmaker/features/home/widgets/schedule_filter.dart';
 import 'package:tcg_matchmaker/shared/widgets/app_error_widget.dart';
 import 'package:tcg_matchmaker/shared/widgets/loading_widget.dart';
 
@@ -28,6 +30,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.read(gamesNotifierProvider.notifier).setDistanceFilter(distance);
   }
 
+  void _onScheduleChanged(double schedule) {
+    ref.read(gamesNotifierProvider.notifier).setScheduleFilter(schedule);
+  }
+
+  void _onGameTypeChanged(GameType? gameType) {
+    ref.read(gamesNotifierProvider.notifier).setGameTypeFilter(gameType);
+  }
+
+  void _onResetFilters() {
+    ref.read(gamesNotifierProvider.notifier).resetFilters();
+  }
+
   void _showGameDetails(Game game) {
     showModalBottomSheet(
       context: context,
@@ -41,6 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final gamesState = ref.watch(gamesNotifierProvider);
+    final locationEnabled = ref.watch(locationEnabledProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -55,6 +70,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               colorScheme,
               authState.user?.username ?? 'Utilisateur',
               gamesState,
+              locationEnabled,
             ),
           ),
         ],
@@ -70,7 +86,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () => ref.read(navigationIndexProvider.notifier).state = 2,
+            onTap: () => ref.read(navigationIndexProvider.notifier).state = 4,
             child: CircleAvatar(
               backgroundColor: colorScheme.primaryContainer,
               backgroundImage: NetworkImage(
@@ -97,6 +113,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ColorScheme colorScheme,
     String username,
     GamesState gamesState,
+    bool locationEnabled,
   ) {
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -116,22 +133,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              DistanceFilter(
-                currentDistance: gamesState.distanceFilter,
-                onDistanceChanged: _onDistanceChanged,
-              ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                DistanceFilter(
+                  currentDistance: gamesState.distanceFilter,
+                  onDistanceChanged: _onDistanceChanged,
+                ),
+                const SizedBox(width: 8),
+                ScheduleFilter(
+                  currentSchedule: gamesState.scheduleFilter,
+                  onScheduleChanged: _onScheduleChanged,
+                ),
+                const SizedBox(width: 8),
+                GameTypeFilter(
+                  currentGameType: gamesState.gameTypeFilter,
+                  onGameTypeChanged: _onGameTypeChanged,
+                ),
+                const SizedBox(width: 8),
+                _buildResetButton(colorScheme),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: _viewMode == ViewMode.list
                 ? _buildExistingGamesList(gamesState)
-                : GameMap(
-                    games: gamesState.existingGames,
-                    onGameTap: _showGameDetails,
-                  ),
+                // POURVOIR GERER LOCATIONENABLED EN REPO NORMALEMENT
+                : locationEnabled
+                    ? GameMap(
+                        key: ValueKey(locationEnabled),
+                        games: gamesState.existingGames,
+                        onGameTap: _showGameDetails,
+                        distanceKm: gamesState.distanceFilter,
+                      )
+                    : Center(
+                        child: Text(
+                        'Position non disponible',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      )),
           ),
         ],
       ),
@@ -146,8 +189,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (gamesState.errorExisting != null && gamesState.existingGames.isEmpty) {
       return AppErrorWidget(
         message: gamesState.errorExisting!,
-        onRetry: () =>
-            ref.read(gamesNotifierProvider.notifier).fetchExistingGames(),
       );
     }
 
@@ -171,6 +212,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final game = gamesState.existingGames[index];
         return GameCard(game: game, index: index);
       },
+    );
+  }
+
+  Widget _buildResetButton(ColorScheme colorScheme) {
+    return GestureDetector(
+      onTap: _onResetFilters,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        child: Icon(
+          Icons.refresh,
+          size: 18,
+          color: colorScheme.primary,
+        ),
+      ),
     );
   }
 

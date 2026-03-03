@@ -1,27 +1,27 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
 import 'package:tcg_matchmaker/core/errors/exceptions.dart';
 import 'package:tcg_matchmaker/core/services/app_logger.dart';
+import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation_state.dart';
-import 'package:tcg_matchmaker/features/participations/repositories/participations_repository.dart';
 
-/// Provider pour les participations
-final participationsNotifierProvider =
-    StateNotifierProvider<ParticipationsNotifier, ParticipationsState>((ref) {
-  return ParticipationsNotifier(ref.watch(participationsRepositoryProvider));
-});
+part 'participations_notifier.g.dart';
 
-class ParticipationsNotifier extends StateNotifier<ParticipationsState> {
-  final ParticipationsRepository _repository;
+@Riverpod(keepAlive: true)
+class ParticipationsNotifier extends _$ParticipationsNotifier {
+  @override
+  ParticipationsState build() {
+    Future.microtask(fetchMyParticipations);
+    return const ParticipationsState(isLoading: true);
+  }
 
-  ParticipationsNotifier(this._repository) : super(const ParticipationsState());
-
-  /// Charge mes participations
   Future<void> fetchMyParticipations() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final participations = await _repository.getMyParticipations();
+      final participations = await ref
+          .read(participationsRepositoryProvider)
+          .getMyParticipations();
       state = state.copyWith(
         myParticipations: participations,
         isLoading: false,
@@ -36,72 +36,72 @@ class ParticipationsNotifier extends StateNotifier<ParticipationsState> {
     }
   }
 
-  /// Demander à rejoindre une partie
-  Future<bool> requestToJoin(String gameId) async {
+  Future<void> requestToJoin(String gameId, Game game) async {
     state = state.copyWith(isRequesting: true, clearError: true);
     try {
-      final participation = await _repository.requestToJoin(gameId);
-      // Mettre à jour ou ajouter à la liste locale (évite les doublons)
+      final participation = await ref
+          .read(participationsRepositoryProvider)
+          .requestToJoin(gameId);
       final existingIndex =
           state.myParticipations.indexWhere((p) => p.gameId == gameId);
       final updatedList = List<Participation>.from(state.myParticipations);
+      final withGame = Participation(
+        id: participation.id,
+        userId: participation.userId,
+        gameId: participation.gameId,
+        status: participation.status,
+        createdAt: participation.createdAt,
+        game: game,
+      );
       if (existingIndex != -1) {
-        updatedList[existingIndex] = participation;
+        updatedList[existingIndex] = withGame;
       } else {
-        updatedList.add(participation);
+        updatedList.add(withGame);
       }
       state = state.copyWith(
         myParticipations: updatedList,
         isRequesting: false,
       );
-      return true;
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'requestToJoin failed: $e');
       state = state.copyWith(error: e.message, isRequesting: false);
-      return false;
     } catch (e, stackTrace) {
       AppLogger.e(
           'ParticipationsNotifier', 'requestToJoin failed', e, stackTrace);
       state = state.copyWith(error: 'Erreur inconnue', isRequesting: false);
-      return false;
     }
   }
 
-  /// Annuler sa participation
-  Future<bool> cancelParticipation(String participationId) async {
+  Future<void> cancelParticipation(String participationId) async {
     state = state.copyWith(isRequesting: true, clearError: true);
     try {
-      await _repository.cancelParticipation(participationId);
-      // Retirer de la liste locale
+      final cancelled = await ref
+          .read(participationsRepositoryProvider)
+          .cancelParticipation(participationId);
+      final existingIndex =
+          state.myParticipations.indexWhere((p) => p.id == participationId);
+      final updatedList = List<Participation>.from(state.myParticipations);
+      updatedList[existingIndex] = state.myParticipations[existingIndex]
+          .copyWith(status: cancelled.status);
       state = state.copyWith(
-        myParticipations: state.myParticipations
-            .where((p) => p.id != participationId)
-            .toList(),
+        myParticipations: updatedList,
         isRequesting: false,
       );
-      return true;
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'cancelParticipation failed: $e');
       state = state.copyWith(error: e.message, isRequesting: false);
-      return false;
     } catch (e, stackTrace) {
       AppLogger.e('ParticipationsNotifier', 'cancelParticipation failed', e,
           stackTrace);
       state = state.copyWith(error: 'Erreur inconnue', isRequesting: false);
-      return false;
     }
   }
 
-  /// Vérifie si l'utilisateur a déjà une participation pour cette partie
   Participation? getParticipationForGame(String gameId) {
-    try {
-      return state.myParticipations.firstWhere((p) => p.gameId == gameId);
-    } catch (_) {
-      return null;
-    }
+    final matches = state.myParticipations.where((p) => p.gameId == gameId);
+    return matches.isEmpty ? null : matches.first;
   }
 
-  /// Efface l'erreur
   void clearError() {
     state = state.copyWith(clearError: true);
   }

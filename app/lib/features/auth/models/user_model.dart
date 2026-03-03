@@ -4,6 +4,7 @@ class UserModel {
   final String id;
   final String email;
   final String username;
+  final String? bio;
   final String avatar;
   final DateTime? createdAt;
 
@@ -11,6 +12,7 @@ class UserModel {
     required this.id,
     required this.email,
     required this.username,
+    this.bio,
     required this.avatar,
     this.createdAt,
   });
@@ -20,6 +22,7 @@ class UserModel {
       id: json['id'] as String,
       email: json['email'] as String,
       username: json['username'] as String,
+      bio: json['bio'] as String?,
       avatar: json['avatar'] as String,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
@@ -32,6 +35,7 @@ class UserModel {
       id: id,
       email: email,
       username: username,
+      bio: bio,
       avatar: avatar,
       createdAt: createdAt,
     );
@@ -42,6 +46,7 @@ class UserModel {
       'id': id,
       'email': email,
       'username': username,
+      'bio': bio,
       'avatar': avatar,
       'createdAt': createdAt?.toIso8601String(),
     };

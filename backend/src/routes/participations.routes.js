@@ -8,13 +8,28 @@ const router = Router();
 // Routes des participations (standalone)
 // ===========================================
 
+// GET /api/participations/my - Mes participations
+router.get("/my", authenticate, participationsController.getMyParticipations);
+
 // PUT /api/participations/:id/accept - Accepter une participation
-router.put("/:id/accept", authenticate, participationsController.acceptParticipation);
+router.put(
+  "/:id/accept",
+  authenticate,
+  participationsController.acceptParticipation,
+);
 
 // PUT /api/participations/:id/reject - Refuser une participation
-router.put("/:id/reject", authenticate, participationsController.rejectParticipation);
+router.put(
+  "/:id/reject",
+  authenticate,
+  participationsController.rejectParticipation,
+);
 
-// DELETE /api/participations/:id - Annuler sa participation
-router.delete("/:id", authenticate, participationsController.cancelParticipation);
+// PATCH /api/participations/:id/cancel - Annuler sa participation
+router.patch(
+  "/:id/cancel",
+  authenticate,
+  participationsController.cancelParticipation,
+);
 
 export default router;

@@ -75,7 +75,8 @@ export const globalLimiter = createRateLimiter({
 export const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: "Trop de tentatives de connexion, veuillez réessayer dans 15 minutes",
+  message:
+    "Trop de tentatives de connexion, veuillez réessayer dans 15 minutes",
 });
 
 // Rate limiter pour la création de parties (5 par heure)

@@ -8,17 +8,17 @@ import gameService from "../services/game.service.js";
 // GET /api/games/existing
 const getExistingGames = async (req, res, next) => {
   try {
-    const { lat, lng, distance } = req.query;
+    const { lat, lng, distance, hours, gameType } = req.query;
 
     if (!lat || !lng) {
       return res.status(400).json({ error: "Latitude et longitude requises" });
     }
 
-    console.log("DISTANCE : " + distance);
-
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
-    const distanceKm = distance ? parseFloat(distance) : 30; // Défaut 30km
+    const distanceKm = distance ? parseFloat(distance) : 30;
+    const hoursFilter = hours ? parseFloat(hours) : 1;
+    const gameTypeFilter = gameType || null;
 
     if (isNaN(latitude) || isNaN(longitude)) {
       return res.status(400).json({ error: "Coordonnées invalides" });
@@ -31,6 +31,8 @@ const getExistingGames = async (req, res, next) => {
       longitude,
       distanceKm,
       excludeUserId,
+      hoursFilter,
+      gameTypeFilter,
     );
 
     res.status(200).json(games);
@@ -48,15 +50,6 @@ const getMyGames = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
-
-// GET /api/games/:id
-const getGameById = async (req, res, next) => {
-  // TODO: Valider l'ID
-  // TODO: Récupérer la partie avec ses relations (creator, participations)
-  // TODO: Retourner les détails de la partie
-
-  res.status(501).json({ message: "TODO: Implémenter getGameById" });
 };
 
 // POST /api/games
@@ -128,36 +121,24 @@ const createGame = async (req, res, next) => {
       },
     });
 
-    // Retourner avec le statut effectif
     res.status(201).json({
-      ...gameService.withEffectiveStatus(game),
-      currentPlayers: 1, // Le créateur
+      ...gameService.getEffectiveStatus(game),
+      currentPlayers: 1,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// PUT /api/games/:id
-const updateGame = async (req, res, next) => {
-  // TODO: Valider les données
-  // TODO: Vérifier que l'utilisateur est le créateur
-  // TODO: Mettre à jour la partie
-  // TODO: Notifier les participants si changement important
-  // TODO: Retourner la partie mise à jour
-
-  res.status(501).json({ message: "TODO: Implémenter updateGame" });
-};
-
-// DELETE /api/games/:id (annulation)
+// DELETE /api/games/:gameId (annulation)
 const deleteGame = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { gameId } = req.params;
     const userId = req.user.userId;
 
     // Vérifier que la partie existe et appartient à l'utilisateur
     const game = await prisma.game.findUnique({
-      where: { id },
+      where: { gameId },
       include: {
         participations: {
           where: { status: "ACCEPTED" },
@@ -180,8 +161,7 @@ const deleteGame = async (req, res, next) => {
       return res.status(400).json({ error: "Cette partie est déjà annulée" });
     }
 
-    // Annuler la partie
-    await gameService.cancelGame(id);
+    await gameService.cancelGame(gameId);
 
     // TODO: Notifier les participants (GAME_CANCELLED)
 
@@ -193,9 +173,7 @@ const deleteGame = async (req, res, next) => {
 
 export default {
   getExistingGames,
-  getGameById,
-  createGame,
-  updateGame,
-  deleteGame,
   getMyGames,
+  createGame,
+  deleteGame,
 };

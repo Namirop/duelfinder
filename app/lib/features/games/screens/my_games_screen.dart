@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:tcg_matchmaker/features/games/entities/game.dart';
+import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/entities/game_state.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_card.dart';
+import 'package:tcg_matchmaker/features/participations/entities/participation_state.dart';
+import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
+import 'package:tcg_matchmaker/features/participations/widgets/participation_card.dart';
 import 'package:tcg_matchmaker/shared/widgets/app_error_widget.dart';
 import 'package:tcg_matchmaker/shared/widgets/loading_widget.dart';
 
@@ -21,13 +24,15 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
-      ref.read(gamesNotifierProvider.notifier).fetchJoinedGames();
+      // Les participations sont déjà chargées dans le build() du provider
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
     final gamesState = ref.watch(gamesNotifierProvider);
+    final participationsState = ref.watch(participationsNotifierProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -37,19 +42,20 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
         bottom: false,
         child: Column(
           children: [
-            _buildAppBar(theme, colorScheme),
-            const SizedBox(
-              height: 10,
+            _buildAppBar(theme, colorScheme, authState.user!.avatar),
+            const SizedBox(height: 10),
+            _buildTabBar(gamesState, participationsState),
+            Expanded(
+              child: _buildTabBarView(theme, gamesState, participationsState),
             ),
-            _buildTabBar(gamesState),
-            Expanded(child: _buildTabBarView(theme, gamesState)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildAppBar(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildAppBar(
+      ThemeData theme, ColorScheme colorScheme, String avatarUrl) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -57,9 +63,7 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
         children: [
           CircleAvatar(
             backgroundColor: colorScheme.primaryContainer,
-            backgroundImage: const NetworkImage(
-              "https://api.dicebear.com/7.x/avataaars/png?seed=jbcoso",
-            ),
+            backgroundImage: NetworkImage(avatarUrl),
           ),
           Text("Mes parties",
               style: theme.textTheme.titleMedium?.copyWith(fontSize: 25)),
@@ -75,63 +79,46 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
     );
   }
 
-  Widget _buildTabBar(GamesState gamesState) {
+  Widget _buildTabBar(
+      GamesState gamesState, ParticipationsState participationsState) {
     return TabBar(
       overlayColor: WidgetStateColor.transparent,
       padding: const EdgeInsets.only(bottom: 10),
       tabs: [
         Tab(text: GameView.created.label(gamesState.myGames.length)),
-        Tab(text: GameView.joined.label(gamesState.joinedGames.length)),
+        Tab(
+            text: GameView.participations
+                .label(participationsState.visibleParticipations.length)),
       ],
     );
   }
 
-  Widget _buildTabBarView(ThemeData theme, GamesState gamesState) {
+  Widget _buildTabBarView(ThemeData theme, GamesState gamesState,
+      ParticipationsState participationsState) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 5, 5, 0),
       child: TabBarView(
         children: [
-          _buildGamesList(
-            games: gamesState.myGames,
-            isLoading: gamesState.isLoadingMyGames,
-            error: gamesState.errorMyGames,
-            onRetry: () =>
-                ref.read(gamesNotifierProvider.notifier).fetchCreatedGames(),
-            emptyMessage: "Aucune partie créée",
-            emptyAction: TextButton(
-              onPressed: () => context.push('/games/create'),
-              child: const Text("Créer une partie"),
-            ),
-          ),
-          _buildGamesList(
-            games: gamesState.joinedGames,
-            isLoading: gamesState.isLoadingJoined,
-            error: gamesState.errorJoined,
-            onRetry: () =>
-                ref.read(gamesNotifierProvider.notifier).fetchJoinedGames(),
-            emptyMessage: "Aucune partie rejointe",
-          ),
+          _buildGamesList(gamesState),
+          _buildParticipationsList(participationsState),
         ],
       ),
     );
   }
 
-  Widget _buildGamesList({
-    required List<Game> games,
-    required bool isLoading,
-    required String? error,
-    required VoidCallback onRetry,
-    required String emptyMessage,
-    Widget? emptyAction,
-  }) {
+  Widget _buildGamesList(GamesState state) {
     final theme = Theme.of(context);
+    final games = state.myGames;
 
-    if (isLoading && games.isEmpty) {
+    if (state.isLoadingExisting && games.isEmpty) {
       return const LoadingWidget();
     }
 
-    if (error != null && games.isEmpty) {
-      return AppErrorWidget(message: error, onRetry: onRetry);
+    if (state.errorExisting != null && games.isEmpty) {
+      return AppErrorWidget(
+          message: state.errorExisting!,
+          onRetry: () =>
+              ref.read(gamesNotifierProvider.notifier).fetchCreatedGames());
     }
 
     if (games.isEmpty) {
@@ -140,15 +127,17 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              emptyMessage,
+              "Aucune partie créée",
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
-            if (emptyAction != null) ...[
-              const SizedBox(height: 8),
-              emptyAction,
-            ],
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () =>
+                  ref.read(navigationIndexProvider.notifier).state = 2,
+              child: const Text("Créer une partie"),
+            ),
           ],
         ),
       );
@@ -159,6 +148,46 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
       itemCount: games.length,
       itemBuilder: (context, index) {
         return GameCard(game: games[index], index: index);
+      },
+    );
+  }
+
+  Widget _buildParticipationsList(ParticipationsState state) {
+    final theme = Theme.of(context);
+    final participations = state.visibleParticipations;
+
+    if (state.isLoading && participations.isEmpty) {
+      return const LoadingWidget();
+    }
+
+    if (state.error != null && participations.isEmpty) {
+      return AppErrorWidget(
+        message: state.error!,
+        onRetry: () => ref
+            .read(participationsNotifierProvider.notifier)
+            .fetchMyParticipations(),
+      );
+    }
+
+    if (participations.isEmpty) {
+      return Center(
+        child: Text(
+          "Aucune participation",
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: participations.length,
+      itemBuilder: (context, index) {
+        return ParticipationCard(
+          participation: participations[index],
+          index: index,
+        );
       },
     );
   }

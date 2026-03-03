@@ -35,6 +35,12 @@ class LocationService {
     );
   }
 
+  Future<bool> checkPermission() async {
+    final permission = await Geolocator.checkPermission();
+    return permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always;
+  }
+
   /// Calcule la distance entre deux points en km
   double calculateDistance(
     double startLat,

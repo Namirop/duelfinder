@@ -3,16 +3,16 @@ import 'package:tcg_matchmaker/features/games/entities/game.dart';
 class GamesState {
   final List<Game> existingGames;
   final List<Game> myGames;
-  final List<Game> joinedGames;
   final Game? selectedGame;
 
   // Filtres
   final double distanceFilter;
+  final double scheduleFilter;
+  final GameType? gameTypeFilter; // null = tous les jeux
 
   // Loading states pour les listes
   final bool isLoadingExisting;
   final bool isLoadingMyGames;
-  final bool isLoadingJoined;
 
   // Loading states pour les opérations CRUD
   final bool isLoadingDetails;
@@ -23,7 +23,6 @@ class GamesState {
   // Erreurs pour les listes
   final String? errorExisting;
   final String? errorMyGames;
-  final String? errorJoined;
 
   // Erreurs pour les opérations CRUD
   final String? errorDetails;
@@ -34,19 +33,18 @@ class GamesState {
   const GamesState({
     this.existingGames = const [],
     this.myGames = const [],
-    this.joinedGames = const [],
     this.selectedGame,
     this.distanceFilter = 30,
+    this.scheduleFilter = 1,
+    this.gameTypeFilter, // null = tous les jeux
     this.isLoadingExisting = false,
     this.isLoadingMyGames = false,
-    this.isLoadingJoined = false,
     this.isLoadingDetails = false,
     this.isCreating = false,
     this.isUpdating = false,
     this.isDeleting = false,
     this.errorExisting,
     this.errorMyGames,
-    this.errorJoined,
     this.errorDetails,
     this.errorCreating,
     this.errorUpdating,
@@ -55,33 +53,31 @@ class GamesState {
 
   bool get hasExistingGames => existingGames.isNotEmpty;
   bool get hasCreatedGames => myGames.isNotEmpty;
-  bool get hasJoinedGames => joinedGames.isNotEmpty;
   bool get hasSelectedGame => selectedGame != null;
 
   GamesState copyWith({
     List<Game>? existingGames,
     List<Game>? myGames,
-    List<Game>? joinedGames,
     Game? selectedGame,
     double? distanceFilter,
+    double? scheduleFilter,
+    GameType? gameTypeFilter,
     bool? isLoadingExisting,
     bool? isLoadingMyGames,
-    bool? isLoadingJoined,
     bool? isLoadingDetails,
     bool? isCreating,
     bool? isUpdating,
     bool? isDeleting,
     String? errorExisting,
     String? errorMyGames,
-    String? errorJoined,
     String? errorDetails,
     String? errorCreating,
     String? errorUpdating,
     String? errorDeleting,
     bool clearSelectedGame = false,
+    bool clearGameTypeFilter = false,
     bool clearErrorExisting = false,
     bool clearErrorMyGames = false,
-    bool clearErrorJoined = false,
     bool clearErrorDetails = false,
     bool clearErrorCreating = false,
     bool clearErrorUpdating = false,
@@ -90,13 +86,14 @@ class GamesState {
     return GamesState(
       existingGames: existingGames ?? this.existingGames,
       myGames: myGames ?? this.myGames,
-      joinedGames: joinedGames ?? this.joinedGames,
       selectedGame:
           clearSelectedGame ? null : (selectedGame ?? this.selectedGame),
       distanceFilter: distanceFilter ?? this.distanceFilter,
+      scheduleFilter: scheduleFilter ?? this.scheduleFilter,
+      gameTypeFilter:
+          clearGameTypeFilter ? null : (gameTypeFilter ?? this.gameTypeFilter),
       isLoadingExisting: isLoadingExisting ?? this.isLoadingExisting,
       isLoadingMyGames: isLoadingMyGames ?? this.isLoadingMyGames,
-      isLoadingJoined: isLoadingJoined ?? this.isLoadingJoined,
       isLoadingDetails: isLoadingDetails ?? this.isLoadingDetails,
       isCreating: isCreating ?? this.isCreating,
       isUpdating: isUpdating ?? this.isUpdating,
@@ -105,7 +102,6 @@ class GamesState {
           clearErrorExisting ? null : (errorExisting ?? this.errorExisting),
       errorMyGames:
           clearErrorMyGames ? null : (errorMyGames ?? this.errorMyGames),
-      errorJoined: clearErrorJoined ? null : (errorJoined ?? this.errorJoined),
       errorDetails:
           clearErrorDetails ? null : (errorDetails ?? this.errorDetails),
       errorCreating:
@@ -120,10 +116,10 @@ class GamesState {
 
 enum GameView {
   created,
-  joined;
+  participations;
 
   String label(int count) => switch (this) {
         GameView.created => 'Créées ($count)',
-        GameView.joined => 'Rejointes ($count)',
+        GameView.participations => 'Participations ($count)',
       };
 }

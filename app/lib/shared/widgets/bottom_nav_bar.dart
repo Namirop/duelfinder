@@ -41,7 +41,7 @@ class BottomNavBar extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildIcon(Icons.home_rounded, 0, colorScheme),
-                      _buildIcon(Icons.gamepad_outlined, 1, colorScheme),
+                      _buildIcon(Icons.sports_esports_outlined, 1, colorScheme),
                       const SizedBox(width: 80),
                       _buildIcon(Icons.chat_bubble_rounded, 3, colorScheme),
                       _buildIcon(Icons.person_rounded, 4, colorScheme),

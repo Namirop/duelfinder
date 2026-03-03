@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -12,10 +13,12 @@ import 'package:http/http.dart' as http;
 class GameMap extends ConsumerStatefulWidget {
   final List<Game> games;
   final void Function(Game game)? onGameTap;
+  final double distanceKm;
 
   const GameMap({
     super.key,
     required this.games,
+    required this.distanceKm,
     this.onGameTap,
   });
 
@@ -29,32 +32,64 @@ class _GameMapState extends ConsumerState<GameMap> {
   final Map<String, Game> _annotationToGame = {};
   bool _markersLoaded = false;
 
+  /// Convertit une distance en km vers un niveau de zoom Mapbox
+  /// Formule logarithmique pour une correspondance plus précise
+  double _distanceToZoom(double distanceKm) {
+    // Mapbox zoom : chaque niveau divise la distance visible par 2
+    // zoom 14 ≈ 1-2km visible, zoom 7 ≈ 150-200km visible
+    // Formule : zoom = 14 - log2(distanceKm) avec ajustement
+    final zoom = 14.5 - (math.log(distanceKm) / math.ln2) * 1.1;
+    return zoom.clamp(6.0, 15.0);
+  }
+
   @override
   void didUpdateWidget(GameMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.games != widget.games && _mapboxMap != null) {
-      _loadMarkers();
+    _markersLoaded = false;
+
+    if (_mapboxMap != null) {
+      // Recharger les marqueurs si les games changent
+      if (oldWidget.games != widget.games) {
+        _loadMarkers();
+      }
+
+      // Mettre à jour le zoom si le rayon change
+      if (oldWidget.distanceKm != widget.distanceKm) {
+        _updateCameraForDistance();
+      }
     }
+  }
+
+  /// Met à jour la caméra pour s'adapter au rayon de recherche
+  Future<void> _updateCameraForDistance() async {
+    final zoom = _distanceToZoom(widget.distanceKm);
+    await _mapboxMap?.flyTo(
+      CameraOptions(zoom: zoom, pitch: 45),
+      MapAnimationOptions(duration: 500),
+    );
   }
 
   void _onMapCreated(MapboxMap mapboxMap) async {
     _mapboxMap = mapboxMap;
 
-    // Activer la localisation de l'utilisateur
+    // Vérifier si la géolocalisation est activée par l'utilisateur
+    final locationEnabled = ref.read(locationEnabledProvider);
+
+    // Activer la localisation de l'utilisateur seulement si autorisé
     await _mapboxMap?.location.updateSettings(
       LocationComponentSettings(
-        enabled: true,
-        pulsingEnabled: true,
+        enabled: locationEnabled,
+        pulsingEnabled: locationEnabled,
         pulsingColor: Theme.of(context).colorScheme.primary.toARGB32(),
       ),
     );
 
-    // Créer le gestionnaire d'annotations
+    // Créer le gestionnaire de marqueurs
     _annotationManager =
         await _mapboxMap?.annotations.createPointAnnotationManager();
 
-    // Écouter les taps sur les marqueurs
-    // ignore: deprecated_member_use
+    // Écouter les clics sur les marqueurs
+    // ignore: deprecated_member_us
     _annotationManager?.addOnPointAnnotationClickListener(
       _MarkerClickListener(
         annotationToGame: _annotationToGame,
@@ -68,15 +103,20 @@ class _GameMapState extends ConsumerState<GameMap> {
   }
 
   Future<void> _centerOnUser() async {
+    final locationEnabled = ref.read(locationEnabledProvider);
+    if (!locationEnabled) return;
+
     final position =
         await ref.read(locationServiceProvider).getCurrentPosition();
     if (position == null) return;
 
+    final zoom = _distanceToZoom(widget.distanceKm);
     await _mapboxMap?.flyTo(
       CameraOptions(
         center:
             Point(coordinates: Position(position.longitude, position.latitude)),
-        zoom: 13,
+        zoom: zoom,
+        pitch: 45, // Inclinaison 3D
       ),
       MapAnimationOptions(duration: 1000),
     );
@@ -247,15 +287,21 @@ class _GameMapState extends ConsumerState<GameMap> {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: MapWidget(
-        onMapCreated: _onMapCreated,
-        styleUri: MapboxStyles.DARK,
-        cameraOptions: CameraOptions(
-          center:
-              Point(coordinates: Position(2.3522, 48.8566)), // Paris par défaut
-          zoom: 11,
+    final initialZoom = _distanceToZoom(widget.distanceKm);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: MapWidget(
+          onMapCreated: _onMapCreated,
+          styleUri: MapboxStyles.DARK,
+          cameraOptions: CameraOptions(
+            center: Point(
+                coordinates: Position(2.3522, 48.8566)), // Paris par défaut
+            zoom: initialZoom,
+            pitch: 45, // Inclinaison 3D
+          ),
         ),
       ),
     );

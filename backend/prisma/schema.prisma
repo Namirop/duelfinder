@@ -12,6 +12,7 @@ model User {
   email            String          @unique
   passwordHash     String?
   username         String          @unique
+  bio              String?
   avatar           String?
   fcmToken         String?
   facebookId       String?         @unique
