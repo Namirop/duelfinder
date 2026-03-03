@@ -4,6 +4,7 @@ class GameRequestsState {
   final List<Participation> participations;
   final bool isLoading;
   final String? error;
+
   /// IDs des participations en cours de traitement (accept/reject)
   final Set<String> processingIds;
 

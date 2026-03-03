@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:tcg_matchmaker/features/auth/entities/user_summary.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
-import 'package:tcg_matchmaker/features/games/entities/game_requests_state.dart';
-import 'package:tcg_matchmaker/features/games/providers/game_requests_notifier.dart';
+import 'package:tcg_matchmaker/features/participations/entities/game_requests_state.dart';
+import 'package:tcg_matchmaker/features/participations/providers/game_requests_notifier.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation.dart';
 import 'package:tcg_matchmaker/shared/widgets/loading_widget.dart';
 
