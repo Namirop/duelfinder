@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -29,6 +30,18 @@ Future<void> main() async {
 
   // Enregistre le handler background APRÈS l'init Firebase
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Crée le canal Android dès le démarrage — indépendamment de l'auth.
+  // Si la notif arrive avant la connexion, le canal doit déjà exister
+  // sinon Android la supprime silencieusement.
+  await FlutterLocalNotificationsPlugin()
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(const AndroidNotificationChannel(
+        'duelfinder_high',
+        'Notifications DuelFinder',
+        importance: Importance.high,
+      ));
 
   // Configuration MapBox
   MapboxOptions.setAccessToken(mapboxAccessToken);
