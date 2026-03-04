@@ -56,15 +56,18 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
       length: 2,
       child: SafeArea(
         bottom: false,
-        child: Column(
-          children: [
-            _buildAppBar(theme, colorScheme, authState.user!.avatar),
-            const SizedBox(height: 10),
-            _buildTabBar(gamesState, participationsState),
-            Expanded(
-              child: _buildTabBarView(theme, gamesState, participationsState),
-            ),
-          ],
+        child: Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+          child: Column(
+            children: [
+              _buildAppBar(theme, colorScheme, authState.user!.avatar),
+              const SizedBox(height: 10),
+              _buildTabBar(gamesState, participationsState),
+              Expanded(
+                child: _buildTabBarView(theme, gamesState, participationsState),
+              ),
+            ],
+          ),
         ),
       ),
     );

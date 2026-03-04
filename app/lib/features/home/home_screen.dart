@@ -242,7 +242,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         child: Icon(
-          Icons.refresh,
+          Icons.remove,
           size: 18,
           color: colorScheme.primary,
         ),

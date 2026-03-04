@@ -123,8 +123,9 @@ class _GameMapState extends ConsumerState<GameMap> {
   }
 
   Future<void> _loadMarkers() async {
-    if (_annotationManager == null || _markersLoaded && widget.games.isEmpty)
+    if (_annotationManager == null || _markersLoaded && widget.games.isEmpty) {
       return;
+    }
 
     // Supprimer les anciens marqueurs
     await _annotationManager?.deleteAll();
