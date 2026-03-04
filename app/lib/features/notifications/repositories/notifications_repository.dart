@@ -1,16 +1,19 @@
 import 'package:dio/dio.dart';
+import 'package:tcg_matchmaker/core/errors/exceptions.dart';
 
-/// Repository pour la gestion des notifications
-/// TODO: Implémenter les méthodes de gestion des notifications
 class NotificationsRepository {
   final Dio _dio;
 
   NotificationsRepository(this._dio);
 
-  // TODO: Implémenter getNotifications() - liste des notifications
-  // TODO: Implémenter markAsRead(notificationId)
-  // TODO: Implémenter markAllAsRead()
-  // TODO: Implémenter deleteNotification(notificationId)
-  // TODO: Implémenter registerFcmToken(token) - enregistrer le token FCM
-  // TODO: Implémenter unregisterFcmToken(token) - supprimer le token FCM
+  /// Enregistre ou met à jour le token FCM de l'utilisateur connecté
+  Future<void> registerFcmToken(String token) async {
+    try {
+      await _dio.put('/users/me/fcm-token', data: {'token': token});
+    } on DioException catch (e) {
+      throw ServerException(
+        message: e.response?.data?['error'] ?? 'Erreur enregistrement token FCM',
+      );
+    }
+  }
 }

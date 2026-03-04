@@ -3,6 +3,8 @@
  * Gère le profil et les infos utilisateur
  */
 
+import prisma from "../config/database.js";
+
 // GET /api/users/me
 const getMe = async (req, res, next) => {
   // TODO: Récupérer l'utilisateur connecté depuis req.user
@@ -31,11 +33,21 @@ const getUserById = async (req, res, next) => {
 
 // PUT /api/users/me/fcm-token
 const updateFcmToken = async (req, res, next) => {
-  // TODO: Valider le token FCM
-  // TODO: Mettre à jour le fcmToken de l'utilisateur
-  // TODO: Retourner confirmation
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ error: "Token FCM requis" });
+    }
 
-  res.status(501).json({ message: 'TODO: Implémenter updateFcmToken' });
+    await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { fcmToken: token },
+    });
+
+    res.status(200).json({ message: "Token FCM mis à jour" });
+  } catch (error) {
+    next(error);
+  }
 };
 
 // DELETE /api/users/me

@@ -1,36 +1,46 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/core/services/app_logger.dart';
+import 'package:tcg_matchmaker/features/auth/entities/auth_state.dart';
+import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
+import 'package:tcg_matchmaker/features/notifications/services/firebase_messaging_service.dart';
 
 part 'notifications_provider.g.dart';
 
-/// Provider pour les notifications
-/// TODO: Implémenter la logique de gestion des notifications
-@riverpod
-class NotificationsNotifier extends _$NotificationsNotifier {
+/// Initialise Firebase Messaging dès que l'utilisateur est authentifié.
+/// keepAlive: true → vit pour toute la durée de la session, jamais détruit.
+@Riverpod(keepAlive: true)
+class FcmInitializer extends _$FcmInitializer {
+  FirebaseMessagingService? _service;
+
   @override
-  AsyncValue<void> build() {
-    // TODO: Charger les notifications
-    return const AsyncValue.data(null);
+  bool build() {
+    // Écoute les changements d'état d'auth
+    ref.listen<AuthState>(authNotifierProvider, (prev, next) {
+      if (next.isAuthenticated && _service == null) {
+        _initFcm();
+      }
+    });
+
+    // Cas où l'utilisateur est déjà connecté au premier build
+    final auth = ref.read(authNotifierProvider);
+    if (auth.isAuthenticated && _service == null) {
+      Future.microtask(_initFcm);
+    }
+
+    return false;
   }
 
-  // TODO: Implémenter loadNotifications()
-  // TODO: Implémenter markAsRead(notificationId)
-  // TODO: Implémenter markAllAsRead()
-  // TODO: Implémenter refresh()
-}
-
-/// Provider pour le compteur de notifications non lues
-@riverpod
-int unreadNotificationsCount(UnreadNotificationsCountRef ref) {
-  // TODO: Calculer le nombre de notifications non lues
-  return 0;
-}
-
-/// Service pour gérer Firebase Messaging
-/// TODO: Implémenter la logique FCM
-class FirebaseMessagingService {
-  // TODO: Implémenter init() - initialiser FCM
-  // TODO: Implémenter getToken() - obtenir le token FCM
-  // TODO: Implémenter onTokenRefresh() - écouter le refresh du token
-  // TODO: Implémenter onMessage() - écouter les messages en foreground
-  // TODO: Implémenter onBackgroundMessage() - messages en background
+  Future<void> _initFcm() async {
+    try {
+      _service = FirebaseMessagingService(
+        ref.read(notificationsRepositoryProvider),
+        ref,
+      );
+      await _service!.init();
+      AppLogger.d('FcmInitializer', 'FCM initialisé');
+    } catch (e, st) {
+      AppLogger.e('FcmInitializer', 'FCM init failed', e, st);
+    }
+  }
 }
