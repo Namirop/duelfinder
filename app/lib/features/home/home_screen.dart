@@ -182,36 +182,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildExistingGamesList(GamesState gamesState) {
-    if (gamesState.isLoadingExisting) {
+    if (gamesState.isLoadingExisting && gamesState.existingGames.isEmpty) {
       return const LoadingWidget();
     }
 
     if (gamesState.errorExisting != null && gamesState.existingGames.isEmpty) {
       return AppErrorWidget(
         message: gamesState.errorExisting!,
+        onRetry: () =>
+            ref.read(gamesNotifierProvider.notifier).fetchExistingGames(),
       );
     }
 
-    if (gamesState.existingGames.isEmpty) {
-      return Center(
-        child: Text(
-          "Aucune partie disponible",
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.6),
-              ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: gamesState.existingGames.length,
-      itemBuilder: (context, index) {
-        final game = gamesState.existingGames[index];
-        return GameCard(game: game, index: index);
-      },
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(gamesNotifierProvider.notifier).fetchExistingGames(),
+      child: gamesState.existingGames.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(
+                  height: 300,
+                  child: Center(
+                    child: Text(
+                      "Aucune partie disponible",
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6),
+                          ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: gamesState.existingGames.length,
+              itemBuilder: (context, index) {
+                final game = gamesState.existingGames[index];
+                return GameCard(game: game, index: index);
+              },
+            ),
     );
   }
 

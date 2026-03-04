@@ -18,14 +18,30 @@ class MyGamesScreen extends ConsumerStatefulWidget {
   ConsumerState<MyGamesScreen> createState() => _MyGamesScreenState();
 }
 
-class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
+class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
-      // Les participations sont déjà chargées dans le build() du provider
+      ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+    if (lifecycleState == AppLifecycleState.resumed) {
+      ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
+      ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
+    }
   }
 
   @override
@@ -110,45 +126,59 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
     final theme = Theme.of(context);
     final games = state.myGames;
 
-    if (state.isLoadingExisting && games.isEmpty) {
+    if (state.isLoadingMyGames && games.isEmpty) {
       return const LoadingWidget();
     }
 
-    if (state.errorExisting != null && games.isEmpty) {
+    if (state.errorMyGames != null && games.isEmpty) {
       return AppErrorWidget(
-          message: state.errorExisting!,
+          message: state.errorMyGames!,
           onRetry: () =>
               ref.read(gamesNotifierProvider.notifier).fetchCreatedGames());
     }
 
-    if (games.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Aucune partie créée",
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(gamesNotifierProvider.notifier).fetchCreatedGames(),
+      child: games.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(
+                  height: 300,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Aucune partie créée",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () =>
+                              ref
+                                  .read(navigationIndexProvider.notifier)
+                                  .state = 2,
+                          child: const Text("Créer une partie"),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: games.length,
+              itemBuilder: (context, index) {
+                return GameCard(game: games[index], index: index);
+              },
             ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () =>
-                  ref.read(navigationIndexProvider.notifier).state = 2,
-              child: const Text("Créer une partie"),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: games.length,
-      itemBuilder: (context, index) {
-        return GameCard(game: games[index], index: index);
-      },
     );
   }
 
@@ -169,26 +199,39 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
       );
     }
 
-    if (participations.isEmpty) {
-      return Center(
-        child: Text(
-          "Aucune participation",
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: participations.length,
-      itemBuilder: (context, index) {
-        return ParticipationCard(
-          participation: participations[index],
-          index: index,
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: () => ref
+          .read(participationsNotifierProvider.notifier)
+          .fetchMyParticipations(),
+      child: participations.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(
+                  height: 300,
+                  child: Center(
+                    child: Text(
+                      "Aucune participation",
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: participations.length,
+              itemBuilder: (context, index) {
+                return ParticipationCard(
+                  participation: participations[index],
+                  index: index,
+                );
+              },
+            ),
     );
   }
 }
