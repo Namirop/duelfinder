@@ -1,9 +1,20 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tcg_matchmaker/core/services/app_logger.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 import 'package:tcg_matchmaker/features/notifications/repositories/notifications_repository.dart';
 import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
+
+/// Canal Android avec importance HIGH → déclenche les bannières popup
+const AndroidNotificationChannel _channel = AndroidNotificationChannel(
+  'duelfinder_high',
+  'Notifications DuelFinder',
+  importance: Importance.high,
+);
+
+final FlutterLocalNotificationsPlugin _localNotifications =
+    FlutterLocalNotificationsPlugin();
 
 class FirebaseMessagingService {
   final NotificationsRepository _repository;
@@ -21,6 +32,18 @@ class FirebaseMessagingService {
       sound: true,
     );
 
+    // Créer le canal Android HIGH importance (bannières popup)
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(_channel);
+
+    // Initialiser flutter_local_notifications
+    const initSettings = InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    );
+    await _localNotifications.initialize(initSettings);
+
     // Récupérer le token et l'enregistrer côté backend
     final token = await messaging.getToken();
     if (token != null) {
@@ -30,7 +53,7 @@ class FirebaseMessagingService {
     // Mettre à jour le token si Firebase le renouvelle
     messaging.onTokenRefresh.listen(_registerToken);
 
-    // Messages reçus quand l'app est en foreground → refresh silencieux
+    // Messages en foreground → afficher une bannière locale + refresh data
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
   }
 
@@ -46,8 +69,26 @@ class FirebaseMessagingService {
     final type = message.data['type'];
     AppLogger.d('FirebaseMessagingService', 'Foreground message: $type');
 
+    // Afficher une notification locale (bannière popup)
+    final notification = message.notification;
+    if (notification != null) {
+      _localNotifications.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channel.id,
+            _channel.name,
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+        ),
+      );
+    }
+
+    // Refresh silencieux des données selon le type
     switch (type) {
-      // Le créateur reçoit une demande → refresh ses demandes
       case 'PARTICIPATION_REQUEST':
       case 'PARTICIPATION_CANCELLED':
         _ref
@@ -55,8 +96,6 @@ class FirebaseMessagingService {
             .fetchMyParticipations();
         _ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
         break;
-
-      // Le joueur reçoit une réponse ou infos sur la partie
       case 'PARTICIPATION_ACCEPTED':
       case 'PARTICIPATION_REJECTED':
       case 'GAME_FULL':

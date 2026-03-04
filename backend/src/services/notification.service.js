@@ -32,15 +32,19 @@ const sendToUser = async (userId, { type, title, body, data = {} }) => {
       Object.entries(data).map(([k, v]) => [k, String(v)])
     )};
 
-    await admin.messaging().send({
+    const messageId = await admin.messaging().send({
       token: user.fcmToken,
       notification: { title, body },
       data: stringData,
-      android: { priority: "high" },
+      android: {
+        priority: "high",
+        notification: { channelId: "duelfinder_high" },
+      },
       apns: { payload: { aps: { sound: "default" } } },
     });
+    console.log(`[FCM] ✅ Envoyé à user ${userId} → messageId: ${messageId}`);
   } catch (err) {
-    console.error(`[FCM] Échec envoi à user ${userId}:`, err.message);
+    console.error(`[FCM] ❌ Échec envoi à user ${userId}:`, err.message);
     // Token invalide → on le supprime pour éviter de réessayer
     if (err.code === "messaging/registration-token-not-registered") {
       await prisma.user.update({
