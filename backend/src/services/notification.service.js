@@ -12,7 +12,6 @@ import { getFirebaseAdmin } from "../config/firebase.js";
  * @param {{ type: string, title: string, body: string, data?: object }} payload
  */
 const sendToUser = async (userId, { type, title, body, data = {} }) => {
-  // Sauvegarder en base (historique notifications)
   await prisma.notification.create({
     data: { type, title, body, data, userId },
   });

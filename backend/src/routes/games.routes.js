@@ -54,4 +54,7 @@ router.get(
 // POST /api/games/:gameId/messages - Envoyer un message
 router.post("/:gameId/messages", authenticate, messagesController.sendMessage);
 
+// PUT /api/games/:gameId/messages/read - Marquer comme lu
+router.put("/:gameId/messages/read", authenticate, messagesController.markRead);
+
 export default router;

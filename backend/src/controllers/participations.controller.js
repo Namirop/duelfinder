@@ -79,7 +79,6 @@ const acceptParticipation = async (req, res, next) => {
     const { participation, game } = result;
     const label = GAME_TYPE_LABELS[game.gameType] ?? game.gameType;
 
-    // Notifier le joueur accepté
     notificationService.sendToUser(participation.userId, {
       type: "PARTICIPATION_ACCEPTED",
       title: "Demande acceptée !",
@@ -117,7 +116,6 @@ const rejectParticipation = async (req, res, next) => {
       req.user.userId,
     );
 
-    // Notifier le joueur refusé
     const game = await prisma.game.findUnique({
       where: { id: participation.gameId },
       select: { gameType: true },
@@ -146,7 +144,6 @@ const cancelParticipation = async (req, res, next) => {
       req.user.userId,
     );
 
-    // Notifier le créateur de la partie
     const game = await prisma.game.findUnique({
       where: { id: participation.gameId },
       select: { creatorId: true, gameType: true },

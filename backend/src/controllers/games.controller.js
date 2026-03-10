@@ -16,7 +16,7 @@ const GAME_TYPE_LABELS = {
 // GET /api/games/existing
 const getExistingGames = async (req, res, next) => {
   try {
-    const { lat, lng, distance, hours, gameType } = req.query;
+    const { lat, lng, distance, dateFrom, dateTo, gameType } = req.query;
 
     if (!lat || !lng) {
       return res.status(400).json({ error: "Latitude et longitude requises" });
@@ -25,7 +25,8 @@ const getExistingGames = async (req, res, next) => {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
     const distanceKm = distance ? parseFloat(distance) : 30;
-    const hoursFilter = hours ? parseFloat(hours) : 1;
+    const dateFromFilter = dateFrom || null;
+    const dateToFilter = dateTo || null;
     const gameTypeFilter = gameType || null;
 
     if (isNaN(latitude) || isNaN(longitude)) {
@@ -39,7 +40,8 @@ const getExistingGames = async (req, res, next) => {
       longitude,
       distanceKm,
       excludeUserId,
-      hoursFilter,
+      dateFromFilter,
+      dateToFilter,
       gameTypeFilter,
     );
 

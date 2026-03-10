@@ -59,6 +59,7 @@ model Participation {
   userId     String
   gameId     String
   acceptedAt DateTime?
+  lastReadAt DateTime?
   createdAt  DateTime            @default(now())
   updatedAt  DateTime            @updatedAt
   game       Game                @relation(fields: [gameId], references: [id])
