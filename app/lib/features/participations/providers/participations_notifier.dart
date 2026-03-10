@@ -14,28 +14,28 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
   @override
   ParticipationsState build() {
     Future.microtask(fetchMyParticipations);
-    return const ParticipationsState(isLoading: true);
+    return const ParticipationsState(isLoadingMyParticipations: true);
   }
 
   // ── Vue joueur ────────────────────────────────────────────────
 
   Future<void> fetchMyParticipations() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoadingMyParticipations: true, clearError: true);
     try {
       final participations = await ref
           .read(participationsRepositoryProvider)
           .getMyParticipations();
       state = state.copyWith(
         myParticipations: participations,
-        isLoading: false,
+        isLoadingMyParticipations: false,
       );
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'fetchMyParticipations failed: $e');
-      state = state.copyWith(error: e.message, isLoading: false);
+      state = state.copyWith(getMyParticipationsError: e.message, isLoadingMyParticipations: false);
     } catch (e, stackTrace) {
       AppLogger.e('ParticipationsNotifier', 'fetchMyParticipations failed', e,
           stackTrace);
-      state = state.copyWith(error: 'Erreur inconnue', isLoading: false);
+      state = state.copyWith(getMyParticipationsError: 'Erreur inconnue', isLoadingMyParticipations: false);
     }
   }
 
@@ -67,36 +67,44 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
       );
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'requestToJoin failed: $e');
-      state = state.copyWith(error: e.message, isRequesting: false);
+      state = state.copyWith(getMyParticipationsError: e.message, isRequesting: false);
     } catch (e, stackTrace) {
       AppLogger.e(
           'ParticipationsNotifier', 'requestToJoin failed', e, stackTrace);
-      state = state.copyWith(error: 'Erreur inconnue', isRequesting: false);
+      state = state.copyWith(getMyParticipationsError: 'Erreur inconnue', isRequesting: false);
     }
   }
 
   Future<void> cancelParticipation(String participationId) async {
     state = state.copyWith(isRequesting: true, clearError: true);
     try {
-      final cancelled = await ref
+      await ref
           .read(participationsRepositoryProvider)
           .cancelParticipation(participationId);
       final existingIndex =
           state.myParticipations.indexWhere((p) => p.id == participationId);
+      final cancelled = state.myParticipations[existingIndex];
       final updatedList = List<Participation>.from(state.myParticipations);
-      updatedList[existingIndex] = state.myParticipations[existingIndex]
-          .copyWith(status: cancelled.status);
+      updatedList[existingIndex] =
+          cancelled.copyWith(status: ParticipationStatus.CANCELLED);
       state = state.copyWith(
         myParticipations: updatedList,
         isRequesting: false,
       );
+
+      // Mettre à jour currentPlayers dans les parties à proximité
+      if (cancelled.isAccepted) {
+        ref
+            .read(gamesNotifierProvider.notifier)
+            .decrementCurrentPlayers(cancelled.gameId);
+      }
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'cancelParticipation failed: $e');
-      state = state.copyWith(error: e.message, isRequesting: false);
+      state = state.copyWith(getMyParticipationsError: e.message, isRequesting: false);
     } catch (e, stackTrace) {
       AppLogger.e('ParticipationsNotifier', 'cancelParticipation failed', e,
           stackTrace);
-      state = state.copyWith(error: 'Erreur inconnue', isRequesting: false);
+      state = state.copyWith(getMyParticipationsError: 'Erreur inconnue', isRequesting: false);
     }
   }
 
@@ -111,36 +119,33 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
 
   Future<void> fetchGameParticipations(String gameId) async {
     state = state.copyWith(
-      loadingGameIds: {...state.loadingGameIds, gameId},
-      clearGameRequestsError: true,
+      isLoadingGameParticipants: true,
+      clearGetGameParticipantsError: true,
     );
     try {
       final participations = await ref
           .read(participationsRepositoryProvider)
           .getGameParticipations(gameId);
       final updated =
-          Map<String, List<Participation>>.from(state.gameParticipations);
+          Map<String, List<Participation>>.from(state.gameParticipants);
       updated[gameId] = participations;
       state = state.copyWith(
-        gameParticipations: updated,
-        loadingGameIds:
-            state.loadingGameIds.where((id) => id != gameId).toSet(),
+        gameParticipants: updated,
+        isLoadingGameParticipants: false,
       );
     } on AppException catch (e) {
       AppLogger.w(
           'ParticipationsNotifier', 'fetchGameParticipations failed: $e');
       state = state.copyWith(
-        gameRequestsError: e.message,
-        loadingGameIds:
-            state.loadingGameIds.where((id) => id != gameId).toSet(),
+        getGameParticipantsError: e.message,
+        isLoadingGameParticipants: false,
       );
     } catch (e, stackTrace) {
       AppLogger.e('ParticipationsNotifier', 'fetchGameParticipations failed',
           e, stackTrace);
       state = state.copyWith(
-        gameRequestsError: 'Erreur inconnue',
-        loadingGameIds:
-            state.loadingGameIds.where((id) => id != gameId).toSet(),
+        getGameParticipantsError: 'Erreur inconnue',
+        isLoadingGameParticipants: false,
       );
     }
   }
@@ -156,14 +161,14 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
           .acceptParticipation(participationId);
 
       final updated =
-          Map<String, List<Participation>>.from(state.gameParticipations);
+          Map<String, List<Participation>>.from(state.gameParticipants);
       updated[gameId] = (updated[gameId] ?? [])
           .map((p) => p.id == participationId
               ? p.copyWith(status: ParticipationStatus.ACCEPTED)
               : p)
           .toList();
       state = state.copyWith(
-        gameParticipations: updated,
+        gameParticipants: updated,
         processingIds:
             state.processingIds.where((id) => id != participationId).toSet(),
       );
@@ -173,7 +178,7 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'acceptParticipation failed: $e');
       state = state.copyWith(
-        gameRequestsError: e.message,
+        getGameParticipantsError: e.message,
         processingIds:
             state.processingIds.where((id) => id != participationId).toSet(),
       );
@@ -181,7 +186,7 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
       AppLogger.e(
           'ParticipationsNotifier', 'acceptParticipation failed', e, stackTrace);
       state = state.copyWith(
-        gameRequestsError: 'Erreur inconnue',
+        getGameParticipantsError: 'Erreur inconnue',
         processingIds:
             state.processingIds.where((id) => id != participationId).toSet(),
       );
@@ -199,21 +204,21 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
           .rejectParticipation(participationId);
 
       final updated =
-          Map<String, List<Participation>>.from(state.gameParticipations);
+          Map<String, List<Participation>>.from(state.gameParticipants);
       updated[gameId] = (updated[gameId] ?? [])
           .map((p) => p.id == participationId
               ? p.copyWith(status: ParticipationStatus.REJECTED)
               : p)
           .toList();
       state = state.copyWith(
-        gameParticipations: updated,
+        gameParticipants: updated,
         processingIds:
             state.processingIds.where((id) => id != participationId).toSet(),
       );
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'rejectParticipation failed: $e');
       state = state.copyWith(
-        gameRequestsError: e.message,
+        getGameParticipantsError: e.message,
         processingIds:
             state.processingIds.where((id) => id != participationId).toSet(),
       );
@@ -221,7 +226,7 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
       AppLogger.e(
           'ParticipationsNotifier', 'rejectParticipation failed', e, stackTrace);
       state = state.copyWith(
-        gameRequestsError: 'Erreur inconnue',
+        getGameParticipantsError: 'Erreur inconnue',
         processingIds:
             state.processingIds.where((id) => id != participationId).toSet(),
       );
