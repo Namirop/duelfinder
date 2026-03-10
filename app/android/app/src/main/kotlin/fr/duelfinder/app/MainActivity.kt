@@ -1,4 +1,4 @@
-package com.example.tcg_matchmaker
+package fr.duelfinder.app
 
 import io.flutter.embedding.android.FlutterActivity
 

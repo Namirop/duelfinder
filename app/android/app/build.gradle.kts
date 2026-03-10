@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.tcg_matchmaker"
+    namespace = "fr.duelfinder.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,8 +22,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.tcg_matchmaker"
+        applicationId = "fr.duelfinder.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
