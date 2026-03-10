@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/core/services/app_logger.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:http/http.dart' as http;
 
@@ -84,6 +85,11 @@ class _GameMapState extends ConsumerState<GameMap> {
       ),
     );
 
+    // Limiter le zoom minimum pour éviter la superposition des marqueurs
+    await _mapboxMap?.setBounds(
+      CameraBoundsOptions(minZoom: 9.0),
+    );
+
     // Créer le gestionnaire de marqueurs
     _annotationManager =
         await _mapboxMap?.annotations.createPointAnnotationManager();
@@ -122,6 +128,18 @@ class _GameMapState extends ConsumerState<GameMap> {
     );
   }
 
+  /// Regroupe les parties par coordonnées proches (même lieu ≈ rayon 5m)
+  Map<String, List<Game>> _groupByLocation(List<Game> games) {
+    const precision = 4; // ~11m de précision (5 décimales = ~1m, 4 = ~11m)
+    final groups = <String, List<Game>>{};
+    for (final game in games) {
+      final key =
+          '${game.latitude.toStringAsFixed(precision)},${game.longitude.toStringAsFixed(precision)}';
+      groups.putIfAbsent(key, () => []).add(game);
+    }
+    return groups;
+  }
+
   Future<void> _loadMarkers() async {
     if (_annotationManager == null || _markersLoaded && widget.games.isEmpty) {
       return;
@@ -131,24 +149,43 @@ class _GameMapState extends ConsumerState<GameMap> {
     await _annotationManager?.deleteAll();
     _annotationToGame.clear();
 
-    // Créer les nouveaux marqueurs
-    for (final game in widget.games) {
-      await _addMarkerForGame(game);
+    // Grouper par lieu pour détecter les superpositions
+    final groups = _groupByLocation(widget.games);
+
+    for (final entry in groups.entries) {
+      final gamesAtLocation = entry.value;
+      if (gamesAtLocation.length == 1) {
+        await _addMarkerForGame(gamesAtLocation.first);
+      } else {
+        // Décaler les marqueurs en cercle autour du point central
+        const offsetDeg = 0.00018; // ~20m d'offset
+        for (int i = 0; i < gamesAtLocation.length; i++) {
+          final angle = (2 * math.pi / gamesAtLocation.length) * i;
+          final game = gamesAtLocation[i];
+          final offsetLat = game.latitude + offsetDeg * math.sin(angle);
+          final offsetLng = game.longitude + offsetDeg * math.cos(angle);
+          await _addMarkerForGame(game, latOverride: offsetLat, lngOverride: offsetLng);
+        }
+      }
     }
 
     _markersLoaded = true;
   }
 
-  Future<void> _addMarkerForGame(Game game) async {
+  Future<void> _addMarkerForGame(Game game,
+      {double? latOverride, double? lngOverride}) async {
     try {
       // Générer l'image du marqueur
       final markerImage = await _generateMarkerImage(game);
       if (markerImage == null) return;
 
+      final lat = latOverride ?? game.latitude;
+      final lng = lngOverride ?? game.longitude;
+
       // Créer l'annotation
       final annotation = await _annotationManager?.create(
         PointAnnotationOptions(
-          geometry: Point(coordinates: Position(game.longitude, game.latitude)),
+          geometry: Point(coordinates: Position(lng, lat)),
           image: markerImage,
           iconSize: 1.0,
           iconAnchor: IconAnchor.CENTER,
@@ -159,7 +196,7 @@ class _GameMapState extends ConsumerState<GameMap> {
         _annotationToGame[annotation.id] = game;
       }
     } catch (e) {
-      debugPrint('Erreur création marqueur pour ${game.id}: $e');
+      AppLogger.e('GameMap', 'Erreur création marqueur pour ${game.id}', e);
     }
   }
 
@@ -234,7 +271,7 @@ class _GameMapState extends ConsumerState<GameMap> {
 
       return byteData?.buffer.asUint8List();
     } catch (e) {
-      debugPrint('Erreur génération image marqueur: $e');
+      AppLogger.e('GameMap', 'Erreur génération image marqueur', e);
       return _generatePlaceholderMarker(borderColor, size, borderWidth);
     }
   }
