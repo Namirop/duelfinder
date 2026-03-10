@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/core/router/app_router.dart';
 import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/entities/game_state.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_card.dart';
+import 'package:tcg_matchmaker/features/notifications/widgets/notification_icon_button.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation_state.dart';
 import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
 import 'package:tcg_matchmaker/features/participations/widgets/participation_card.dart';
@@ -56,18 +59,15 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
       length: 2,
       child: SafeArea(
         bottom: false,
-        child: Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-          child: Column(
-            children: [
-              _buildAppBar(theme, colorScheme, authState.user!.avatar),
-              const SizedBox(height: 10),
-              _buildTabBar(gamesState, participationsState),
-              Expanded(
-                child: _buildTabBarView(theme, gamesState, participationsState),
-              ),
-            ],
-          ),
+        child: Column(
+          children: [
+            _buildAppBar(theme, colorScheme, authState.user!.avatar),
+            const SizedBox(height: 10),
+            _buildTabBar(gamesState, participationsState),
+            Expanded(
+              child: _buildTabBarView(theme, gamesState, participationsState),
+            ),
+          ],
         ),
       ),
     );
@@ -80,19 +80,16 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          CircleAvatar(
-            backgroundColor: colorScheme.primaryContainer,
-            backgroundImage: NetworkImage(avatarUrl),
+          GestureDetector(
+            onTap: () => ref.read(navigationIndexProvider.notifier).state = 4,
+            child: CircleAvatar(
+              backgroundColor: colorScheme.primaryContainer,
+              backgroundImage: NetworkImage(avatarUrl),
+            ),
           ),
           Text("Mes parties",
               style: theme.textTheme.titleMedium?.copyWith(fontSize: 25)),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.notifications_outlined,
-              color: colorScheme.onSurface,
-            ),
-          ),
+          NotificationIconButton(colorScheme: colorScheme),
         ],
       ),
     );
@@ -114,14 +111,11 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
 
   Widget _buildTabBarView(ThemeData theme, GamesState gamesState,
       ParticipationsState participationsState) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(5, 5, 5, 0),
-      child: TabBarView(
-        children: [
-          _buildGamesList(gamesState),
-          _buildParticipationsList(participationsState),
-        ],
-      ),
+    return TabBarView(
+      children: [
+        _buildGamesList(gamesState),
+        _buildParticipationsList(participationsState),
+      ],
     );
   }
 
@@ -162,10 +156,7 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
                         ),
                         const SizedBox(height: 8),
                         TextButton(
-                          onPressed: () =>
-                              ref
-                                  .read(navigationIndexProvider.notifier)
-                                  .state = 2,
+                          onPressed: () => context.push(AppRoutes.createGame) ,
                           child: const Text("Créer une partie"),
                         ),
                       ],
@@ -176,7 +167,11 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
             )
           : ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom,
+              ),
               itemCount: games.length,
               itemBuilder: (context, index) {
                 return GameCard(game: games[index], index: index);
@@ -189,13 +184,13 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
     final theme = Theme.of(context);
     final participations = state.visibleParticipations;
 
-    if (state.isLoading && participations.isEmpty) {
+    if (state.isLoadingMyParticipations && participations.isEmpty) {
       return const LoadingWidget();
     }
 
-    if (state.error != null && participations.isEmpty) {
+    if (state.getMyParticipationsError != null && participations.isEmpty) {
       return AppErrorWidget(
-        message: state.error!,
+        message: state.getMyParticipationsError!,
         onRetry: () => ref
             .read(participationsNotifierProvider.notifier)
             .fetchMyParticipations(),
@@ -226,7 +221,11 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
             )
           : ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom,
+              ),
               itemCount: participations.length,
               itemBuilder: (context, index) {
                 return ParticipationCard(

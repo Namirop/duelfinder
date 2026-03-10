@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tcg_matchmaker/features/home/widgets/distance_bottom_sheet.dart';
+import 'package:tcg_matchmaker/features/home/widgets/filters/distance_bottom_sheet.dart';
 
 class DistanceFilter extends StatelessWidget {
   final double currentDistance;

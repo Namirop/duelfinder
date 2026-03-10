@@ -1,22 +1,59 @@
-/// Entité métier Message
-/// TODO: Définir les propriétés du message
+import 'package:tcg_matchmaker/features/auth/entities/user_summary.dart';
+import 'package:tcg_matchmaker/features/games/entities/game.dart';
+
 class Message {
-  // TODO: Définir les champs métier
-  // - id, sender, content, sentAt, isRead
+  final String id;
+  final String content;
+  final UserSummary sender;
+  final DateTime createdAt;
 
-  const Message();
-
-  // TODO: Ajouter les méthodes utilitaires
-  // - isMine, isRead, etc.
+  const Message({
+    required this.id,
+    required this.content,
+    required this.sender,
+    required this.createdAt,
+  });
 }
 
-/// Entité métier Conversation
 class Conversation {
-  // TODO: Définir les champs métier
-  // - id, participants, lastMessage, unreadCount
+  final String gameId;
+  final GameType gameType;
+  final String address;
+  final DateTime scheduledAt;
+  final GameStatus status;
+  final UserSummary creator;
+  final List<UserSummary> participants;
+  final LastMessagePreview? lastMessage;
+  final int unreadCount;
 
-  const Conversation();
+  const Conversation({
+    required this.gameId,
+    required this.gameType,
+    required this.address,
+    required this.scheduledAt,
+    required this.status,
+    required this.creator,
+    required this.participants,
+    required this.lastMessage,
+    required this.unreadCount,
+  });
 
-  // TODO: Ajouter les méthodes utilitaires
-  // - hasUnread, otherParticipant, etc.
+  bool get isArchived =>
+      status == GameStatus.FINISHED || status == GameStatus.CANCELLED;
+}
+
+class LastMessagePreview {
+  final String id;
+  final String content;
+  final String senderId;
+  final String senderUsername;
+  final DateTime createdAt;
+
+  const LastMessagePreview({
+    required this.id,
+    required this.content,
+    required this.senderId,
+    required this.senderUsername,
+    required this.createdAt,
+  });
 }

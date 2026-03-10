@@ -24,7 +24,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Paramètres'),
+        title: Text('Paramètres', style: theme.textTheme.titleMedium?.copyWith(fontSize: 23)),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -49,14 +49,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               context,
               theme,
               colorScheme,
-              icon: Icons.photo_camera_outlined,
-              title: 'Changer la photo de profil',
-              onTap: () => _showChangePhotoDialog(context),
-            ),
-            _buildSettingsTile(
-              context,
-              theme,
-              colorScheme,
               icon: Icons.description_outlined,
               title: 'Modifier la bio',
               onTap: () => _showEditBioDialog(context, ref),
@@ -67,7 +59,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               colorScheme,
               icon: Icons.lock_outline,
               title: 'Changer le mot de passe',
-              onTap: () => _showChangePasswordDialog(context),
+              onTap: () => _showChangePasswordDialog(context, ref),
             ),
             _buildSettingsTile(
               context,
@@ -161,9 +153,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               colorScheme,
               icon: Icons.article_outlined,
               title: "Conditions d'utilisation",
-              onTap: () => {
-                // _launchUrl('https://duelfinder.com/cgu')
-              },
+              onTap: () {},
             ),
             _buildSettingsTile(
               context,
@@ -171,9 +161,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               colorScheme,
               icon: Icons.privacy_tip_outlined,
               title: 'Politique de confidentialité',
-              onTap: () => {
-                // _launchUrl('https://duelfinder.com/privacy')
-              },
+              onTap: () {},
             ),
             _buildSettingsTile(
               context,
@@ -181,9 +169,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               colorScheme,
               icon: Icons.info_outline,
               title: 'Mentions légales',
-              onTap: () => {
-                // _launchUrl('https://duelfinder.com/legal')
-              },
+              onTap: () {},
             ),
             _buildSettingsTile(
               context,
@@ -206,21 +192,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               context,
               theme,
               colorScheme,
-              icon: Icons.help_outline,
-              title: 'Contacter le support',
-              onTap: () => {
-                // _launchUrl('mailto:contact@duelfinder.com')
-              },
-            ),
-            _buildSettingsTile(
-              context,
-              theme,
-              colorScheme,
               icon: Icons.email_outlined,
               title: 'contact@duelfinder.com',
-              onTap: () => {
-                // _launchUrl('mailto:contact@duelfinder.com')
-              },
+              onTap: () {},
             ),
             const SizedBox(height: 32),
           ],
@@ -283,11 +257,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: colorScheme.primary,
-          ),
+          Icon(icon, size: 20, color: colorScheme.primary),
           const SizedBox(width: 8),
           Text(
             title,
@@ -318,9 +288,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       title: Text(
         title,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: titleColor,
-        ),
+        style: theme.textTheme.bodyLarge?.copyWith(color: titleColor),
       ),
       trailing: trailing ??
           (onTap != null
@@ -347,10 +315,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         icon,
         color: colorScheme.onSurface.withValues(alpha: 0.7),
       ),
-      title: Text(
-        title,
-        style: theme.textTheme.bodyLarge,
-      ),
+      title: Text(title, style: theme.textTheme.bodyLarge),
       value: value,
       onChanged: onChanged,
       activeThumbColor: colorScheme.primary,
@@ -378,7 +343,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               await ref.read(locationServiceProvider).checkPermission();
 
           if (!hasPermission) {
-            // Demander la permission
             final permission = await Geolocator.requestPermission();
             if (permission == LocationPermission.denied ||
                 permission == LocationPermission.deniedForever) {
@@ -394,7 +358,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 );
               }
-              return; // Ne pas activer si permission refusée
+              return;
             }
           }
 
@@ -426,47 +390,64 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  // Future<void> _launchUrl(String url) async {
-  //   final uri = Uri.parse(url);
-  //   if (await canLaunchUrl(uri)) {
-  //     await launchUrl(uri);
-  //   }
-  // }
-
   void _showEditPseudoDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController(
       text: ref.read(authNotifierProvider).user?.username ?? '',
     );
     final colorScheme = Theme.of(context).colorScheme;
+    bool isLoading = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Modifier le pseudo'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Nouveau pseudo',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Modifier le pseudo'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(labelText: 'Nouveau pseudo'),
+            autofocus: true,
           ),
-          autofocus: true,
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(context),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      final value = controller.text.trim();
+                      if (value.isEmpty) return;
+
+                      setDialogState(() => isLoading = true);
+                      final error = await ref
+                          .read(authNotifierProvider.notifier)
+                          .updateProfile(username: value);
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                error ?? 'Pseudo mis à jour'),
+                            backgroundColor:
+                                error != null ? colorScheme.error : null,
+                          ),
+                        );
+                      }
+                    },
+              style:
+                  TextButton.styleFrom(foregroundColor: colorScheme.primary),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Enregistrer'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () {
-              // TODO: Implémenter la mise à jour du pseudo via API
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pseudo mis à jour')),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
-            child: const Text('Enregistrer'),
-          ),
-        ],
       ),
     );
   }
@@ -476,79 +457,57 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       text: ref.read(authNotifierProvider).user?.bio ?? '',
     );
     final colorScheme = Theme.of(context).colorScheme;
+    bool isLoading = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Modifier la bio'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Votre bio',
-            hintText: 'Décrivez-vous en quelques mots...',
-          ),
-          maxLines: 3,
-          maxLength: 100,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () {
-              // TODO: Implémenter la mise à jour de la bio via API
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Bio mise à jour')),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
-            child: const Text('Enregistrer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showChangePhotoDialog(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choisir depuis la galerie'),
-              onTap: () {
-                // TODO: Implémenter la sélection depuis la galerie
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Sélection galerie - À implémenter')),
-                );
-              },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Modifier la bio'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Votre bio',
+              hintText: 'Décrivez-vous en quelques mots...',
             ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Prendre une photo'),
-              onTap: () {
-                // TODO: Implémenter la prise de photo
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Caméra - À implémenter')),
-                );
-              },
+            maxLines: 3,
+            maxLength: 100,
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(context),
+              child: const Text('Annuler'),
             ),
-            ListTile(
-              leading: Icon(Icons.cancel_outlined, color: colorScheme.error),
-              title:
-                  Text('Annuler', style: TextStyle(color: colorScheme.error)),
-              onTap: () => Navigator.pop(context),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      setDialogState(() => isLoading = true);
+                      final error = await ref
+                          .read(authNotifierProvider.notifier)
+                          .updateProfile(bio: controller.text.trim());
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(error ?? 'Bio mise à jour'),
+                            backgroundColor:
+                                error != null ? colorScheme.error : null,
+                          ),
+                        );
+                      }
+                    },
+              style:
+                  TextButton.styleFrom(foregroundColor: colorScheme.primary),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Enregistrer'),
             ),
           ],
         ),
@@ -556,61 +515,94 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context) {
+  void _showChangePasswordDialog(BuildContext context, WidgetRef ref) {
     final currentController = TextEditingController();
     final newController = TextEditingController();
     final confirmController = TextEditingController();
     final colorScheme = Theme.of(context).colorScheme;
+    bool isLoading = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Changer le mot de passe'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: currentController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Mot de passe actuel',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Changer le mot de passe'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: currentController,
+                obscureText: true,
+                decoration:
+                    const InputDecoration(labelText: 'Mot de passe actuel'),
               ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: newController,
+                obscureText: true,
+                decoration:
+                    const InputDecoration(labelText: 'Nouveau mot de passe'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: confirmController,
+                obscureText: true,
+                decoration:
+                    const InputDecoration(labelText: 'Confirmer le mot de passe'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(context),
+              child: const Text('Annuler'),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: newController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Nouveau mot de passe',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: confirmController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirmer le mot de passe',
-              ),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (newController.text != confirmController.text) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text(
+                                'Les mots de passe ne correspondent pas'),
+                            backgroundColor: colorScheme.error,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isLoading = true);
+                      final error = await ref
+                          .read(authNotifierProvider.notifier)
+                          .changePassword(
+                            currentPassword: currentController.text,
+                            newPassword: newController.text,
+                          );
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(error ?? 'Mot de passe modifié'),
+                            backgroundColor:
+                                error != null ? colorScheme.error : null,
+                          ),
+                        );
+                      }
+                    },
+              style:
+                  TextButton.styleFrom(foregroundColor: colorScheme.primary),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Changer'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () {
-              // TODO: Implémenter le changement de mot de passe via API
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Mot de passe modifié')),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
-            child: const Text('Changer'),
-          ),
-        ],
       ),
     );
   }
@@ -643,31 +635,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    bool isLoading = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Supprimer le compte'),
-        content: const Text(
-          'Cette action est irréversible. Toutes vos données seront supprimées définitivement.',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Supprimer le compte'),
+          content: const Text(
+            'Cette action est irréversible. Toutes vos données seront supprimées définitivement.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(context),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      setDialogState(() => isLoading = true);
+                      final error = await ref
+                          .read(authNotifierProvider.notifier)
+                          .deleteAccount();
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        if (error != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(error),
+                              backgroundColor: colorScheme.error,
+                            ),
+                          );
+                        }
+                        // Si succès, l'état auth est reset → GoRouter redirige vers login
+                      }
+                    },
+              style: TextButton.styleFrom(foregroundColor: colorScheme.error),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Supprimer'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () {
-              // TODO: Implémenter la suppression du compte via API
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Compte supprimé')),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
-            child: const Text('Supprimer'),
-          ),
-        ],
       ),
     );
   }

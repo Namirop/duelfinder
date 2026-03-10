@@ -1,5 +1,37 @@
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 
+enum ScheduleFilterOption {
+  all,
+  today,
+  tomorrow,
+  thisWeek,
+  custom;
+
+  String get label => switch (this) {
+        all => 'Tout',
+        today => "Aujourd'hui",
+        tomorrow => 'Demain',
+        thisWeek => 'Cette semaine',
+        custom => 'Date...',
+      };
+
+  /// Retourne [dateFrom, dateTo] pour ce filtre (null = pas de borne)
+  (DateTime?, DateTime?) get dateRange {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    return switch (this) {
+      all => (null, null),
+      today => (todayStart, todayStart.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1))),
+      tomorrow => (
+          todayStart.add(const Duration(days: 1)),
+          todayStart.add(const Duration(days: 2)).subtract(const Duration(milliseconds: 1)),
+        ),
+      thisWeek => (todayStart, todayStart.add(const Duration(days: 7)).subtract(const Duration(milliseconds: 1))),
+      custom => (null, null), // handled separately with customDate
+    };
+  }
+}
+
 class GamesState {
   final List<Game> existingGames;
   final List<Game> myGames;
@@ -7,7 +39,8 @@ class GamesState {
 
   // Filtres
   final double distanceFilter;
-  final double scheduleFilter;
+  final ScheduleFilterOption scheduleOption;
+  final DateTime? customScheduleDate; // utilisé quand scheduleOption == custom
   final GameType? gameTypeFilter; // null = tous les jeux
 
   // Loading states pour les listes
@@ -34,8 +67,9 @@ class GamesState {
     this.existingGames = const [],
     this.myGames = const [],
     this.selectedGame,
-    this.distanceFilter = 30,
-    this.scheduleFilter = 1,
+    this.distanceFilter = 5,
+    this.scheduleOption = ScheduleFilterOption.all,
+    this.customScheduleDate,
     this.gameTypeFilter, // null = tous les jeux
     this.isLoadingExisting = false,
     this.isLoadingMyGames = false,
@@ -60,7 +94,8 @@ class GamesState {
     List<Game>? myGames,
     Game? selectedGame,
     double? distanceFilter,
-    double? scheduleFilter,
+    ScheduleFilterOption? scheduleOption,
+    DateTime? customScheduleDate,
     GameType? gameTypeFilter,
     bool? isLoadingExisting,
     bool? isLoadingMyGames,
@@ -76,6 +111,7 @@ class GamesState {
     String? errorDeleting,
     bool clearSelectedGame = false,
     bool clearGameTypeFilter = false,
+    bool clearCustomScheduleDate = false,
     bool clearErrorExisting = false,
     bool clearErrorMyGames = false,
     bool clearErrorDetails = false,
@@ -89,7 +125,10 @@ class GamesState {
       selectedGame:
           clearSelectedGame ? null : (selectedGame ?? this.selectedGame),
       distanceFilter: distanceFilter ?? this.distanceFilter,
-      scheduleFilter: scheduleFilter ?? this.scheduleFilter,
+      scheduleOption: scheduleOption ?? this.scheduleOption,
+      customScheduleDate: clearCustomScheduleDate
+          ? null
+          : (customScheduleDate ?? this.customScheduleDate),
       gameTypeFilter:
           clearGameTypeFilter ? null : (gameTypeFilter ?? this.gameTypeFilter),
       isLoadingExisting: isLoadingExisting ?? this.isLoadingExisting,

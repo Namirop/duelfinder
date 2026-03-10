@@ -1,7 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:tcg_matchmaker/core/router/app_router.dart';
+import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dart';
+import 'package:tcg_matchmaker/features/notifications/providers/notifications_provider.dart';
 
-class BottomNavBar extends StatelessWidget {
+class BottomNavBar extends ConsumerWidget {
   final int currentScreen;
   final Function(int) onTap;
   const BottomNavBar({
@@ -11,8 +16,10 @@ class BottomNavBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final hasUnreadNotif = ref.watch(hasUnreadProvider).valueOrNull ?? false;
+    final unreadMessages = ref.watch(totalUnreadProvider);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 0, 15, 30),
@@ -22,7 +29,6 @@ class BottomNavBar extends StatelessWidget {
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            // Barre de fond
             ClipRRect(
               borderRadius: BorderRadius.circular(50),
               child: BackdropFilter(
@@ -40,11 +46,23 @@ class BottomNavBar extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildIcon(Icons.home_rounded, 0, colorScheme),
-                      _buildIcon(Icons.sports_esports_outlined, 1, colorScheme),
+                      _buildIcon(Icons.home_rounded, 0, colorScheme, ref),
+                      _buildIcon(Icons.calendar_month_outlined, 1, colorScheme, ref),
                       const SizedBox(width: 80),
-                      _buildIcon(Icons.chat_bubble_rounded, 3, colorScheme),
-                      _buildIcon(Icons.person_rounded, 4, colorScheme),
+                      _buildIconWithBadge(
+                        Icons.chat_bubble_rounded,
+                        3,
+                        colorScheme,
+                        ref,
+                        badgeCount: unreadMessages,
+                      ),
+                      _buildIconWithBadge(
+                        Icons.person_rounded,
+                        4,
+                        colorScheme,
+                        ref,
+                        hasDot: hasUnreadNotif,
+                      ),
                     ],
                   ),
                 ),
@@ -52,7 +70,7 @@ class BottomNavBar extends StatelessWidget {
             ),
             Positioned(
               top: -8,
-              child: _buildCenterButton(colorScheme, 2),
+              child: _buildCenterButton(colorScheme, 2, context),
             ),
           ],
         ),
@@ -60,7 +78,7 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildIcon(IconData icon, int index, ColorScheme colorScheme) {
+  Widget _buildIcon(IconData icon, int index, ColorScheme colorScheme, WidgetRef ref) {
     final isSelected = currentScreen == index;
 
     return GestureDetector(
@@ -86,13 +104,89 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildCenterButton(ColorScheme colorScheme, int index) {
+  Widget _buildIconWithBadge(
+    IconData icon,
+    int index,
+    ColorScheme colorScheme,
+    WidgetRef ref, {
+    int badgeCount = 0,
+    bool hasDot = false,
+  }) {
     final isSelected = currentScreen == index;
-    // Couleur foncée opaque pour l'état non sélectionné (violet grisé)
+    final showBadge = badgeCount > 0 || hasDot;
+
+    return GestureDetector(
+      onTap: () => onTap(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          color: isSelected ? colorScheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(50),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Center(
+              child: Icon(
+                icon,
+                size: isSelected ? 26 : 22,
+                color: isSelected
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            if (showBadge)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: hasDot
+                    ? Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: colorScheme.error,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: colorScheme.surface,
+                            width: 1.5,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: colorScheme.error,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: colorScheme.surface,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Text(
+                          badgeCount > 9 ? '9+' : '$badgeCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCenterButton(ColorScheme colorScheme, int index, BuildContext context) {
+    final isSelected = currentScreen == index;
     final unselectedColor = Color.lerp(colorScheme.primary, Colors.black, 0.5)!;
 
     return GestureDetector(
-      onTap: () => onTap(2),
+      onTap: () => context.push(AppRoutes.createGame),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: 65,

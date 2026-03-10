@@ -1,10 +1,351 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/games/models/create_game_model.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Modèle de suggestion d'adresse
+// ─────────────────────────────────────────────────────────────────────────────
+class _AddressSuggestion {
+  final String displayName;
+  final double lat;
+  final double lon;
+
+  const _AddressSuggestion({
+    required this.displayName,
+    required this.lat,
+    required this.lon,
+  });
+
+  factory _AddressSuggestion.fromJson(Map<String, dynamic> json) {
+    return _AddressSuggestion(
+      displayName: json['display_name'] as String,
+      lat: double.parse(json['lat'] as String),
+      lon: double.parse(json['lon'] as String),
+    );
+  }
+
+  /// Extrait un libellé court depuis display_name (ex: "Café de la Mairie, Paris")
+  String get shortLabel {
+    final parts = displayName.split(', ');
+    if (parts.length <= 2) return displayName;
+    // Garder nom + ville (dernier élément significatif)
+    return '${parts.first}, ${parts[parts.length > 3 ? parts.length - 3 : parts.length - 1]}';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Widget de recherche d'adresse avec autocomplete Nominatim
+// ─────────────────────────────────────────────────────────────────────────────
+class _AddressSearchField extends StatefulWidget {
+  final TextEditingController controller;
+  final ValueChanged<_AddressSuggestion> onSelected;
+
+  const _AddressSearchField({
+    required this.controller,
+    required this.onSelected,
+  });
+
+  @override
+  State<_AddressSearchField> createState() => _AddressSearchFieldState();
+}
+
+class _AddressSearchFieldState extends State<_AddressSearchField> {
+  List<_AddressSuggestion> _suggestions = [];
+  bool _isSearching = false;
+  bool _showDropdown = false;
+  Timer? _debounce;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        setState(() => _showDropdown = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String query) async {
+    if (query.length < 3) {
+      setState(() {
+        _suggestions = [];
+        _showDropdown = false;
+      });
+      return;
+    }
+
+    setState(() => _isSearching = true);
+
+    try {
+      final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
+        'q': query,
+        'format': 'json',
+        'limit': '5',
+        'addressdetails': '1',
+      });
+
+      final response = await http.get(
+        uri,
+        headers: {'User-Agent': 'DuelFinder/1.0'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body) as List<dynamic>;
+        final suggestions = data
+            .map((e) => _AddressSuggestion.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+        if (mounted) {
+          setState(() {
+            _suggestions = suggestions;
+            _showDropdown = suggestions.isNotEmpty;
+            _isSearching = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _isSearching = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isSearching = false);
+    }
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 450), () => _search(value));
+  }
+
+  void _selectSuggestion(_AddressSuggestion suggestion) {
+    widget.controller.text = suggestion.shortLabel;
+    widget.onSelected(suggestion);
+    setState(() {
+      _suggestions = [];
+      _showDropdown = false;
+    });
+    _focusNode.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _focusNode.hasFocus
+                  ? colorScheme.primary
+                  : colorScheme.outline.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.location_on_rounded,
+                color: colorScheme.primary,
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: widget.controller,
+                  focusNode: _focusNode,
+                  style: theme.textTheme.bodyMedium,
+                  onChanged: _onChanged,
+                  decoration: InputDecoration(
+                    hintText: "Adresse ou lieu",
+                    hintStyle: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                    border: InputBorder.none,
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              if (_isSearching)
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              if (!_isSearching && widget.controller.text.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    widget.controller.clear();
+                    setState(() {
+                      _suggestions = [];
+                      _showDropdown = false;
+                    });
+                  },
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (_showDropdown && _suggestions.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.2),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: _suggestions.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final suggestion = entry.value;
+                  return _SuggestionTile(
+                    suggestion: suggestion,
+                    isLast: i == _suggestions.length - 1,
+                    onTap: () => _selectSuggestion(suggestion),
+                    colorScheme: colorScheme,
+                    theme: theme,
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _SuggestionTile extends StatefulWidget {
+  final _AddressSuggestion suggestion;
+  final bool isLast;
+  final VoidCallback onTap;
+  final ColorScheme colorScheme;
+  final ThemeData theme;
+
+  const _SuggestionTile({
+    required this.suggestion,
+    required this.isLast,
+    required this.onTap,
+    required this.colorScheme,
+    required this.theme,
+  });
+
+  @override
+  State<_SuggestionTile> createState() => _SuggestionTileState();
+}
+
+class _SuggestionTileState extends State<_SuggestionTile> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _hovered = true),
+      onTapUp: (_) => setState(() => _hovered = false),
+      onTapCancel: () => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        color: _hovered
+            ? widget.colorScheme.primary.withValues(alpha: 0.08)
+            : Colors.transparent,
+        child: Column(
+          children: [
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.place_rounded,
+                    size: 18,
+                    color:
+                        widget.colorScheme.primary.withValues(alpha: 0.7),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.suggestion.shortLabel,
+                          style: widget.theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.suggestion.displayName,
+                          style: widget.theme.textTheme.bodySmall?.copyWith(
+                            color: widget.colorScheme.onSurface
+                                .withValues(alpha: 0.5),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (!widget.isLast)
+              Divider(
+                height: 1,
+                thickness: 1,
+                indent: 42,
+                color:
+                    widget.colorScheme.outline.withValues(alpha: 0.15),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Écran de création de partie
+// ─────────────────────────────────────────────────────────────────────────────
 class CreateGameScreen extends ConsumerStatefulWidget {
   const CreateGameScreen({super.key});
 
@@ -21,6 +362,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
 
+  double? _selectedLat;
+  double? _selectedLon;
+
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -35,8 +379,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             ? null
             : _descriptionController.text,
         address: _addressController.text,
-        latitude: 50.20418040498222,
-        longitude: 3.180598730339395,
+        latitude: _selectedLat!,
+        longitude: _selectedLon!,
         scheduledAt: DateTime(_selectedDate.year, _selectedDate.month,
             _selectedDate.day, _selectedTime.hour, _selectedTime.minute),
         duration: _duration,
@@ -84,7 +428,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   _buildHeader(theme, colorScheme),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 95),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -98,7 +442,15 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                           const SizedBox(height: 28),
                           _buildSectionTitle(theme, "Lieu"),
                           const SizedBox(height: 12),
-                          _buildLocationField(theme, colorScheme),
+                          _AddressSearchField(
+                            controller: _addressController,
+                            onSelected: (suggestion) {
+                              setState(() {
+                                _selectedLat = suggestion.lat;
+                                _selectedLon = suggestion.lon;
+                              });
+                            },
+                          ),
                           const SizedBox(height: 28),
                           _buildSectionTitle(theme, "Joueurs"),
                           const SizedBox(height: 12),
@@ -108,7 +460,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                           const SizedBox(height: 12),
                           _buildDurationSelector(theme, colorScheme),
                           const SizedBox(height: 28),
-                          _buildSectionTitle(theme, "Description (optionnel)"),
+                          _buildSectionTitle(
+                              theme, "Description (optionnel)"),
                           const SizedBox(height: 12),
                           _buildDescriptionField(theme, colorScheme),
                         ],
@@ -135,13 +488,13 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: Row(
         children: [
-          // IconButton(
-          //   onPressed: () => Navigator.of(context).pop(),
-          //   icon: Icon(
-          //     Icons.arrow_back_rounded,
-          //     color: colorScheme.onSurface,
-          //   ),
-          // ),
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: Icon(
+              Icons.arrow_back_rounded,
+              color: colorScheme.onSurface,
+            ),
+          ),
           const SizedBox(width: 8),
           Text(
             "Créer une partie",
@@ -187,7 +540,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: colorScheme.primary.withValues(alpha: 0.3),
+                            color:
+                                colorScheme.primary.withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -200,8 +554,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                       type.label,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                         color: isSelected
                             ? colorScheme.onPrimary
                             : colorScheme.onSurface,
@@ -275,11 +630,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 20,
-              color: colorScheme.primary,
-            ),
+            Icon(icon, size: 20, color: colorScheme.primary),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -297,43 +648,6 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     );
   }
 
-  Widget _buildLocationField(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.location_on_rounded,
-            color: colorScheme.primary,
-            size: 22,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _addressController,
-              style: theme.textTheme.bodyMedium,
-              decoration: InputDecoration(
-                hintText: "Adresse ou lieu",
-                hintStyle: TextStyle(
-                  color: colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPlayersSelector(ThemeData theme, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -346,10 +660,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.group_rounded,
-            color: colorScheme.primary,
-          ),
+          Icon(Icons.group_rounded, color: colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -381,7 +692,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           onTap: () => setState(() => _duration = duration),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
               color: isSelected
                   ? colorScheme.primary
@@ -395,7 +707,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: colorScheme.primary.withValues(alpha: 0.25),
+                        color:
+                            colorScheme.primary.withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -406,9 +719,11 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               _formatDuration(duration),
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color:
-                    isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+                fontWeight:
+                    isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSurface,
               ),
             ),
           ),
@@ -505,8 +820,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Widget _buildCreateButton(ThemeData theme, ColorScheme colorScheme) {
-    final isValid =
-        _selectedGameType != null && _addressController.text.isNotEmpty;
+    final isValid = _selectedGameType != null &&
+        _addressController.text.isNotEmpty &&
+        _selectedLat != null &&
+        _selectedLon != null;
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -524,7 +841,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             color: isValid ? null : colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withValues(alpha: isValid ? 0.35 : 0.1),
+              color:
+                  Colors.white.withValues(alpha: isValid ? 0.35 : 0.1),
               width: 1,
             ),
           ),
@@ -567,18 +885,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     }
 
     const months = [
-      'jan',
-      'fév',
-      'mar',
-      'avr',
-      'mai',
-      'juin',
-      'juil',
-      'août',
-      'sep',
-      'oct',
-      'nov',
-      'déc'
+      'jan', 'fév', 'mar', 'avr', 'mai', 'juin',
+      'juil', 'août', 'sep', 'oct', 'nov', 'déc'
     ];
     return "${date.day} ${months[date.month - 1]}";
   }
@@ -598,9 +906,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
-    }
+    if (picked != null) setState(() => _selectedDate = picked);
   }
 
   Future<void> _pickTime() async {
@@ -608,8 +914,6 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       context: context,
       initialTime: _selectedTime,
     );
-    if (picked != null) {
-      setState(() => _selectedTime = picked);
-    }
+    if (picked != null) setState(() => _selectedTime = picked);
   }
 }

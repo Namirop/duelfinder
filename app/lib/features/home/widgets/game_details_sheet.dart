@@ -28,7 +28,6 @@ class GameDetailsSheet extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
           Container(
             margin: const EdgeInsets.only(top: 12),
             width: 40,
@@ -389,20 +388,20 @@ class GameDetailsSheet extends ConsumerWidget {
             builder: (context) => GameRequestsSheet(game: game),
           );
         },
-        icon: const Icon(Icons.people_outline),
-        label: Text(
-          'Gérer les demandes',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onPrimary,
-          ),
-        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: const Icon(Icons.people_outline),
+        label: Text(
+          'Gérer les demandes',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onPrimary,
           ),
         ),
       ),
@@ -586,7 +585,7 @@ class GameDetailsSheet extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    final error = ref.read(participationsNotifierProvider).error;
+    final error = ref.read(participationsNotifierProvider).getMyParticipationsError;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -640,7 +639,7 @@ class GameDetailsSheet extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    final error = ref.read(participationsNotifierProvider).error;
+    final error = ref.read(participationsNotifierProvider).getMyParticipationsError;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

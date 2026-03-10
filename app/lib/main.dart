@@ -53,24 +53,17 @@ Future<void> main() async {
   );
 }
 
-/// Application principale TCG Matchmaker
 class TCGMatchmakerApp extends ConsumerWidget {
   const TCGMatchmakerApp({super.key});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
-
     return MaterialApp.router(
       title: 'TCG Matchmaker',
       debugShowCheckedModeBanner: false,
-
-      // Thème - Dark mode forcé pour correspondre au logo
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,
-
-      // Router
       routerConfig: router,
     );
   }

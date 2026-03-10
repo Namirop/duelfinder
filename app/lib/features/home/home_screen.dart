@@ -7,12 +7,13 @@ import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/games/entities/game_state.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
-import 'package:tcg_matchmaker/features/home/widgets/distance_filter.dart';
+import 'package:tcg_matchmaker/features/home/widgets/filters/distance_filter.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_card.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_details_sheet.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_map.dart';
-import 'package:tcg_matchmaker/features/home/widgets/game_type_filter.dart';
-import 'package:tcg_matchmaker/features/home/widgets/schedule_filter.dart';
+import 'package:tcg_matchmaker/features/home/widgets/filters/game_type_filter.dart';
+import 'package:tcg_matchmaker/features/home/widgets/filters/schedule_filter.dart';
+import 'package:tcg_matchmaker/features/notifications/widgets/notification_icon_button.dart';
 import 'package:tcg_matchmaker/shared/widgets/app_error_widget.dart';
 import 'package:tcg_matchmaker/shared/widgets/loading_widget.dart';
 
@@ -24,14 +25,14 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  ViewMode _viewMode = ViewMode.list;
+  ViewMode _viewMode = ViewMode.map;
 
   void _onDistanceChanged(double distance) {
     ref.read(gamesNotifierProvider.notifier).setDistanceFilter(distance);
   }
 
-  void _onScheduleChanged(double schedule) {
-    ref.read(gamesNotifierProvider.notifier).setScheduleFilter(schedule);
+  void _onScheduleChanged(ScheduleFilterOption option, {DateTime? customDate}) {
+    ref.read(gamesNotifierProvider.notifier).setScheduleFilter(option, customDate: customDate);
   }
 
   void _onGameTypeChanged(GameType? gameType) {
@@ -96,13 +97,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           Text("Parties disponibles",
               style: theme.textTheme.titleMedium?.copyWith(fontSize: 23)),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.notifications_outlined,
-              color: colorScheme.onSurface,
-            ),
-          ),
+          NotificationIconButton(colorScheme: colorScheme),
         ],
       ),
     );
@@ -143,7 +138,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(width: 8),
                 ScheduleFilter(
-                  currentSchedule: gamesState.scheduleFilter,
+                  currentOption: gamesState.scheduleOption,
+                  customDate: gamesState.customScheduleDate,
                   onScheduleChanged: _onScheduleChanged,
                 ),
                 const SizedBox(width: 8),
@@ -242,7 +238,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         child: Icon(
-          Icons.remove,
+          Icons.highlight_remove,
           size: 18,
           color: colorScheme.primary,
         ),
