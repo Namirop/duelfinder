@@ -21,12 +21,24 @@ enum ScheduleFilterOption {
     final todayStart = DateTime(now.year, now.month, now.day);
     return switch (this) {
       all => (null, null),
-      today => (todayStart, todayStart.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1))),
+      today => (
+          todayStart,
+          todayStart
+              .add(const Duration(days: 1))
+              .subtract(const Duration(milliseconds: 1))
+        ),
       tomorrow => (
           todayStart.add(const Duration(days: 1)),
-          todayStart.add(const Duration(days: 2)).subtract(const Duration(milliseconds: 1)),
+          todayStart
+              .add(const Duration(days: 2))
+              .subtract(const Duration(milliseconds: 1)),
         ),
-      thisWeek => (todayStart, todayStart.add(const Duration(days: 7)).subtract(const Duration(milliseconds: 1))),
+      thisWeek => (
+          todayStart,
+          todayStart
+              .add(const Duration(days: 7))
+              .subtract(const Duration(milliseconds: 1))
+        ),
       custom => (null, null), // handled separately with customDate
     };
   }
@@ -67,7 +79,7 @@ class GamesState {
     this.existingGames = const [],
     this.myGames = const [],
     this.selectedGame,
-    this.distanceFilter = 5,
+    this.distanceFilter = 20,
     this.scheduleOption = ScheduleFilterOption.all,
     this.customScheduleDate,
     this.gameTypeFilter, // null = tous les jeux

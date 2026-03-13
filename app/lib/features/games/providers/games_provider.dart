@@ -92,10 +92,12 @@ class GamesNotifier extends _$GamesNotifier {
   Future<void> updateGame(String gameId, CreateGameModel data) async {
     state = state.copyWith(isUpdating: true, clearErrorUpdating: true);
     try {
-      final updated = await ref.read(gamesRepositoryProvider).updateGame(gameId, data);
+      final updated =
+          await ref.read(gamesRepositoryProvider).updateGame(gameId, data);
       state = state.copyWith(
         isUpdating: false,
-        myGames: state.myGames.map((g) => g.id == gameId ? updated : g).toList(),
+        myGames:
+            state.myGames.map((g) => g.id == gameId ? updated : g).toList(),
       );
     } on AppException catch (e) {
       AppLogger.w('GamesNotifier', 'updateGame failed: ${e.toString()}');
@@ -169,7 +171,7 @@ class GamesNotifier extends _$GamesNotifier {
 
   void resetFilters() {
     state = state.copyWith(
-      distanceFilter: 5,
+      distanceFilter: 20,
       scheduleOption: ScheduleFilterOption.all,
       clearCustomScheduleDate: true,
       clearGameTypeFilter: true,

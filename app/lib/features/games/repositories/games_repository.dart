@@ -13,7 +13,7 @@ class GamesRepository {
   Future<List<Game>> fetchExistingGames({
     required double latitude,
     required double longitude,
-    double distance = 30,
+    double distance = 20,
     DateTime? dateFrom,
     DateTime? dateTo,
     String? gameType,
