@@ -132,8 +132,10 @@ const createGame = async (req, res, next) => {
     });
 
     res.status(201).json({
-      ...gameService.getEffectiveStatus(game),
+      ...game,
+      effectiveStatus: gameService.getEffectiveStatus(game),
       currentPlayers: 1,
+      participants: [],
     });
   } catch (error) {
     next(error);

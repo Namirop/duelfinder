@@ -80,7 +80,8 @@ final currentPositionProvider = FutureProvider<Position?>((ref) async {
   }
 
   final locationService = ref.watch(locationServiceProvider);
-  return locationService.getCurrentPosition();
+  return locationService.getCurrentPosition()
+      .timeout(const Duration(seconds: 15), onTimeout: () => null);
 });
 
 // Provider pour la préférence utilisateur de géolocalisation (en mémoire pour V1)

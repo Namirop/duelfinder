@@ -25,13 +25,6 @@ class FirebaseMessagingService {
   Future<void> init() async {
     final messaging = FirebaseMessaging.instance;
 
-    // Demander la permission (Android 13+, iOS)
-    await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
     // Créer le canal Android HIGH importance (bannières popup)
     await _localNotifications
         .resolvePlatformSpecificImplementation<

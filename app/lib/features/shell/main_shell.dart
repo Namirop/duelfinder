@@ -1,6 +1,8 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 import 'package:tcg_matchmaker/features/games/screens/create_game_screen.dart';
 import 'package:tcg_matchmaker/features/games/screens/my_games_screen.dart';
 import 'package:tcg_matchmaker/features/home/home_screen.dart';
@@ -31,6 +33,26 @@ class _MainShellState extends ConsumerState<MainShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initPermissionsAndLoad());
+  }
+
+  Future<void> _initPermissionsAndLoad() async {
+    // 1. Permission notifications (Android 13+)
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // 2. Permission localisation — après que la dialog notifs soit résolue
+    final locationService = ref.read(locationServiceProvider);
+    await locationService.requestPermission();
+
+    // 3. Fetch des parties (position null si refusée → message d'erreur)
+    if (mounted) {
+      ref.invalidate(currentPositionProvider);
+      ref.read(gamesNotifierProvider.notifier).fetchExistingGames();
+    }
   }
 
   @override

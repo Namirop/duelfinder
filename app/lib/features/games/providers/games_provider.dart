@@ -12,7 +12,6 @@ part 'games_provider.g.dart';
 class GamesNotifier extends _$GamesNotifier {
   @override
   GamesState build() {
-    Future.microtask(() => fetchExistingGames());
     return const GamesState(isLoadingExisting: true);
   }
 

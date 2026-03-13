@@ -23,9 +23,9 @@ class LocationService {
     return true;
   }
 
-  /// Récupère la position actuelle
+  /// Récupère la position actuelle (ne demande PAS la permission — appeler requestPermission() avant)
   Future<Position?> getCurrentPosition() async {
-    final hasPermission = await requestPermission();
+    final hasPermission = await checkPermission();
     if (!hasPermission) {
       return null;
     }
