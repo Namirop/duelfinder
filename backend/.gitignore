@@ -5,9 +5,6 @@ node_modules/
 .env
 .env.local
 
-# Prisma
-prisma/migrations/
-
 # Logs
 logs/
 *.log

@@ -2,8 +2,8 @@
 class ApiConstants {
   ApiConstants._();
 
-  //static const String baseUrl = 'https://api.tcg-matchmaker.com/v1';
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  static const String baseUrl =
+      'https://duelfinder-production.up.railway.app/api';
 
   // Endpoints Auth
   static const String login = '/auth/login';
