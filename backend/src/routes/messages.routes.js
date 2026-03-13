@@ -4,9 +4,8 @@ import { authenticate } from "../middlewares/index.js";
 
 const router = Router();
 
-// ===========================================
-// Routes des messages (standalone)
-// ===========================================
+// GET /api/messages/conversations - Toutes mes conversations
+router.get("/conversations", authenticate, messagesController.getConversations);
 
 // DELETE /api/messages/:id - Supprimer un message
 router.delete("/:id", authenticate, messagesController.deleteMessage);

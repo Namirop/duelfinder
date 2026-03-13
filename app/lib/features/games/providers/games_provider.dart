@@ -8,7 +8,7 @@ import 'package:tcg_matchmaker/features/games/models/create_game_model.dart';
 
 part 'games_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class GamesNotifier extends _$GamesNotifier {
   @override
   GamesState build() {
@@ -30,11 +30,13 @@ class GamesNotifier extends _$GamesNotifier {
       double lat = position.latitude;
       double lng = position.longitude;
 
+      final (dateFrom, dateTo) = _computeDateRange();
       final games = await ref.read(gamesRepositoryProvider).fetchExistingGames(
             latitude: lat,
             longitude: lng,
             distance: state.distanceFilter,
-            hours: state.scheduleFilter,
+            dateFrom: dateFrom,
+            dateTo: dateTo,
             gameType: state.gameTypeFilter?.name,
           );
       state = state.copyWith(
@@ -90,9 +92,11 @@ class GamesNotifier extends _$GamesNotifier {
   Future<void> updateGame(String gameId, CreateGameModel data) async {
     state = state.copyWith(isUpdating: true, clearErrorUpdating: true);
     try {
-      await ref.read(gamesRepositoryProvider).updateGame(gameId, data);
-      state = state.copyWith(isUpdating: false);
-      await fetchCreatedGames();
+      final updated = await ref.read(gamesRepositoryProvider).updateGame(gameId, data);
+      state = state.copyWith(
+        isUpdating: false,
+        myGames: state.myGames.map((g) => g.id == gameId ? updated : g).toList(),
+      );
     } on AppException catch (e) {
       AppLogger.w('GamesNotifier', 'updateGame failed: ${e.toString()}');
       state = state.copyWith(errorUpdating: e.message, isUpdating: false);
@@ -107,8 +111,10 @@ class GamesNotifier extends _$GamesNotifier {
     state = state.copyWith(isDeleting: true, clearErrorDeleting: true);
     try {
       await ref.read(gamesRepositoryProvider).deleteGame(gameId);
-      state = state.copyWith(isDeleting: false, clearSelectedGame: true);
-      await fetchCreatedGames();
+      state = state.copyWith(
+        isDeleting: false,
+        myGames: state.myGames.where((g) => g.id != gameId).toList(),
+      );
     } on AppException catch (e) {
       AppLogger.w('GamesNotifier', 'deleteGame failed: ${e.toString()}');
       state = state.copyWith(errorDeleting: e.message, isDeleting: false);
@@ -124,9 +130,32 @@ class GamesNotifier extends _$GamesNotifier {
     fetchExistingGames();
   }
 
-  void setScheduleFilter(double schedule) {
-    state = state.copyWith(scheduleFilter: schedule);
+  void setScheduleFilter(ScheduleFilterOption option, {DateTime? customDate}) {
+    if (option == ScheduleFilterOption.custom && customDate != null) {
+      state = state.copyWith(
+        scheduleOption: option,
+        customScheduleDate: customDate,
+      );
+    } else {
+      state = state.copyWith(
+        scheduleOption: option,
+        clearCustomScheduleDate: option != ScheduleFilterOption.custom,
+      );
+    }
     fetchExistingGames();
+  }
+
+  (DateTime?, DateTime?) _computeDateRange() {
+    if (state.scheduleOption == ScheduleFilterOption.custom &&
+        state.customScheduleDate != null) {
+      final d = state.customScheduleDate!;
+      final start = DateTime(d.year, d.month, d.day);
+      final end = start
+          .add(const Duration(days: 1))
+          .subtract(const Duration(milliseconds: 1));
+      return (start, end);
+    }
+    return state.scheduleOption.dateRange;
   }
 
   void setGameTypeFilter(GameType? gameType) {
@@ -140,8 +169,9 @@ class GamesNotifier extends _$GamesNotifier {
 
   void resetFilters() {
     state = state.copyWith(
-      distanceFilter: 30,
-      scheduleFilter: 1,
+      distanceFilter: 5,
+      scheduleOption: ScheduleFilterOption.all,
+      clearCustomScheduleDate: true,
       clearGameTypeFilter: true,
     );
     fetchExistingGames();
@@ -149,5 +179,15 @@ class GamesNotifier extends _$GamesNotifier {
 
   void clearSelectedGame() {
     state = state.copyWith(clearSelectedGame: true);
+  }
+
+  void decrementCurrentPlayers(String gameId) {
+    state = state.copyWith(
+      existingGames: state.existingGames
+          .map((g) => g.id == gameId && g.currentPlayers > 0
+              ? g.copyWith(currentPlayers: g.currentPlayers - 1)
+              : g)
+          .toList(),
+    );
   }
 }

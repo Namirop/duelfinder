@@ -1,7 +1,6 @@
 import 'package:tcg_matchmaker/features/auth/entities/user_summary.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 
-/// Entité métier Participation
 class Participation {
   final String id;
   final String userId;
@@ -12,7 +11,7 @@ class Participation {
   /// Inclus quand on récupère "mes participations" mais pas quand on crée/modifie
   final Game? game;
   /// Inclus quand le créateur récupère les participations de sa partie
-  final UserSummary? requester;
+  final UserSummary? participant;
 
   const Participation({
     required this.id,
@@ -22,7 +21,7 @@ class Participation {
     this.acceptedAt,
     required this.createdAt,
     this.game,
-    this.requester,
+    this.participant,
   });
 
   bool get isPending => status == ParticipationStatus.PENDING;
@@ -34,7 +33,7 @@ class Participation {
     ParticipationStatus? status,
     DateTime? acceptedAt,
     Game? game,
-    UserSummary? requester,
+    UserSummary? participant,
   }) {
     return Participation(
       id: id,
@@ -44,12 +43,11 @@ class Participation {
       acceptedAt: acceptedAt ?? this.acceptedAt,
       createdAt: createdAt,
       game: game ?? this.game,
-      requester: requester ?? this.requester,
+      participant: participant ?? this.participant,
     );
   }
 }
 
-/// Statut de participation (correspond au backend)
 enum ParticipationStatus {
   PENDING,
   ACCEPTED,

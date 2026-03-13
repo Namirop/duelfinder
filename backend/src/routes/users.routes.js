@@ -17,6 +17,9 @@ router.put("/me", authenticate, usersController.updateMe);
 // PUT /api/users/me/fcm-token - Mettre à jour mon token FCM
 router.put("/me/fcm-token", authenticate, usersController.updateFcmToken);
 
+// PUT /api/users/me/password - Changer le mot de passe
+router.put("/me/password", authenticate, usersController.changePassword);
+
 // DELETE /api/users/me - Supprimer mon compte
 router.delete("/me", authenticate, usersController.deleteMe);
 

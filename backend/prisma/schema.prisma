@@ -59,6 +59,7 @@ model Participation {
   userId     String
   gameId     String
   acceptedAt DateTime?
+  lastReadAt DateTime?
   createdAt  DateTime            @default(now())
   updatedAt  DateTime            @updatedAt
   game       Game                @relation(fields: [gameId], references: [id])
@@ -118,6 +119,7 @@ enum NotificationType {
   PARTICIPATION_REQUEST
   PARTICIPATION_ACCEPTED
   PARTICIPATION_REJECTED
+  PARTICIPATION_CANCELLED
   NEW_MESSAGE
   GAME_CANCELLED
   GAME_FULL

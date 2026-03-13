@@ -2,31 +2,27 @@ import 'package:tcg_matchmaker/features/participations/entities/participation.da
 
 class ParticipationsState {
   final List<Participation> myParticipations;
-  final bool isLoading;
-  final bool isRequesting; // Pour le bouton "Rejoindre"
-  final String? error;
+  final bool isLoadingMyParticipations;
+  final bool isRequesting;
+  final String? getMyParticipationsError;
 
   /// Participations par partie (vue créateur) : gameId → liste
-  final Map<String, List<Participation>> gameParticipations;
-
+  final Map<String, List<Participation>> gameParticipants;
   /// IDs des participations en cours de traitement (accept/reject)
+  /// => utile pour afficher le loader spécifiquement à ce participants.
   final Set<String> processingIds;
-
-  /// IDs des parties dont les participations sont en cours de chargement
-  final Set<String> loadingGameIds;
-
-  /// Erreur spécifique à la vue créateur (distincte de l'erreur "mes participations")
-  final String? gameRequestsError;
+  final bool isLoadingGameParticipants;
+  final String? getGameParticipantsError;
 
   const ParticipationsState({
     this.myParticipations = const [],
-    this.isLoading = false,
+    this.isLoadingMyParticipations = false,
     this.isRequesting = false,
-    this.error,
-    this.gameParticipations = const {},
+    this.getMyParticipationsError,
+    this.gameParticipants = const {},
     this.processingIds = const {},
-    this.loadingGameIds = const {},
-    this.gameRequestsError,
+    this.isLoadingGameParticipants = false,
+    this.getGameParticipantsError,
   });
 
   // ── Vue joueur ────────────────────────────────────────────────
@@ -49,42 +45,40 @@ class ParticipationsState {
 
   // ── Vue créateur ──────────────────────────────────────────────
   List<Participation> getPendingForGame(String gameId) =>
-      (gameParticipations[gameId] ?? [])
+      (gameParticipants[gameId] ?? [])
           .where((p) => p.isPending)
           .toList();
 
   List<Participation> getAcceptedForGame(String gameId) =>
-      (gameParticipations[gameId] ?? [])
+      (gameParticipants[gameId] ?? [])
           .where((p) => p.isAccepted)
           .toList();
-
-  bool isLoadingGame(String gameId) => loadingGameIds.contains(gameId);
 
   bool isProcessing(String id) => processingIds.contains(id);
 
   ParticipationsState copyWith({
     List<Participation>? myParticipations,
-    bool? isLoading,
+    bool? isLoadingMyParticipations,
     bool? isRequesting,
-    String? error,
+    String? getMyParticipationsError,
     bool clearError = false,
-    Map<String, List<Participation>>? gameParticipations,
+    Map<String, List<Participation>>? gameParticipants,
     Set<String>? processingIds,
-    Set<String>? loadingGameIds,
-    String? gameRequestsError,
-    bool clearGameRequestsError = false,
+    bool? isLoadingGameParticipants,
+    String? getGameParticipantsError,
+    bool clearGetGameParticipantsError = false,
   }) {
     return ParticipationsState(
       myParticipations: myParticipations ?? this.myParticipations,
-      isLoading: isLoading ?? this.isLoading,
+      isLoadingMyParticipations: isLoadingMyParticipations ?? this.isLoadingMyParticipations,
       isRequesting: isRequesting ?? this.isRequesting,
-      error: clearError ? null : (error ?? this.error),
-      gameParticipations: gameParticipations ?? this.gameParticipations,
+      getMyParticipationsError: clearError ? null : (getMyParticipationsError ?? this.getMyParticipationsError),
+      gameParticipants: gameParticipants ?? this.gameParticipants,
       processingIds: processingIds ?? this.processingIds,
-      loadingGameIds: loadingGameIds ?? this.loadingGameIds,
-      gameRequestsError: clearGameRequestsError
+      isLoadingGameParticipants: isLoadingGameParticipants ?? this.isLoadingGameParticipants,
+      getGameParticipantsError: clearGetGameParticipantsError
           ? null
-          : (gameRequestsError ?? this.gameRequestsError),
+          : (getGameParticipantsError ?? this.getGameParticipantsError),
     );
   }
 }

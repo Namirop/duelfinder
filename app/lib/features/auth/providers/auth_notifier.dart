@@ -85,4 +85,53 @@ class AuthNotifier extends _$AuthNotifier {
       state = const AuthState();
     }
   }
+
+  /// Met à jour le profil (username et/ou bio).
+  /// Retourne null si succès, sinon le message d'erreur.
+  Future<String?> updateProfile({String? username, String? bio}) async {
+    try {
+      final updatedUser = await ref
+          .read(profileRepositoryProvider)
+          .updateProfile(username: username, bio: bio);
+      state = state.copyWith(user: updatedUser);
+      return null;
+    } on AppException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'Erreur inconnue';
+    }
+  }
+
+  /// Change le mot de passe.
+  /// Retourne null si succès, sinon le message d'erreur.
+  Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await ref.read(profileRepositoryProvider).changePassword(
+            currentPassword: currentPassword,
+            newPassword: newPassword,
+          );
+      return null;
+    } on AppException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'Erreur inconnue';
+    }
+  }
+
+  /// Supprime le compte.
+  /// Retourne null si succès, sinon le message d'erreur.
+  Future<String?> deleteAccount() async {
+    try {
+      await ref.read(profileRepositoryProvider).deleteAccount();
+      state = const AuthState();
+      return null;
+    } on AppException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'Erreur inconnue';
+    }
+  }
 }

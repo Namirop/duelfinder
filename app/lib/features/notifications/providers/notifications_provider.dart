@@ -1,36 +1,75 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/core/services/app_logger.dart';
+import 'package:tcg_matchmaker/core/services/firebase_messaging_service.dart';
+import 'package:tcg_matchmaker/features/auth/entities/auth_state.dart';
+import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
+import 'package:tcg_matchmaker/features/notifications/entities/notification.dart';
 
 part 'notifications_provider.g.dart';
 
-/// Provider pour les notifications
-/// TODO: Implémenter la logique de gestion des notifications
-@riverpod
-class NotificationsNotifier extends _$NotificationsNotifier {
+/// Initialise Firebase Messaging dès que l'utilisateur est authentifié.
+/// keepAlive: true → vit pour toute la durée de la session, jamais détruit.
+@Riverpod(keepAlive: true)
+class FcmInitializer extends _$FcmInitializer {
+  FirebaseMessagingService? _service;
+
   @override
-  AsyncValue<void> build() {
-    // TODO: Charger les notifications
-    return const AsyncValue.data(null);
+  bool build() {
+    ref.listen<AuthState>(authNotifierProvider, (prev, next) {
+      if (next.isAuthenticated && _service == null) {
+        _initFcm();
+      }
+    });
+
+    final auth = ref.read(authNotifierProvider);
+    if (auth.isAuthenticated && _service == null) {
+      Future.microtask(_initFcm);
+    }
+
+    return false;
   }
 
-  // TODO: Implémenter loadNotifications()
-  // TODO: Implémenter markAsRead(notificationId)
-  // TODO: Implémenter markAllAsRead()
-  // TODO: Implémenter refresh()
+  Future<void> _initFcm() async {
+    try {
+      _service = FirebaseMessagingService(
+        ref.read(notificationsRepositoryProvider),
+        ref,
+      );
+      await _service!.init();
+      AppLogger.d('FcmInitializer', 'FCM initialisé');
+    } catch (e, st) {
+      AppLogger.e('FcmInitializer', 'FCM init failed', e, st);
+    }
+  }
 }
 
-/// Provider pour le compteur de notifications non lues
-@riverpod
-int unreadNotificationsCount(UnreadNotificationsCountRef ref) {
-  // TODO: Calculer le nombre de notifications non lues
-  return 0;
+final hasUnreadProvider = FutureProvider<bool>((ref) async {
+  return ref.read(notificationsRepositoryProvider).hasUnread();
+});
+
+class NotificationsListNotifier extends AsyncNotifier<List<AppNotification>> {
+  @override
+  Future<List<AppNotification>> build() async {
+    return ref.read(notificationsRepositoryProvider).getNotifications();
+  }
+
+  Future<void> markAllRead() async {
+    await ref.read(notificationsRepositoryProvider).markAllRead();
+    state = state.whenData(
+      (list) => list.map((n) => n.copyWith(read: true)).toList(),
+    );
+  }
+
+  Future<void> delete(String id) async {
+    await ref.read(notificationsRepositoryProvider).deleteNotification(id);
+    state = state.whenData(
+      (list) => list.where((n) => n.id != id).toList(),
+    );
+  }
 }
 
-/// Service pour gérer Firebase Messaging
-/// TODO: Implémenter la logique FCM
-class FirebaseMessagingService {
-  // TODO: Implémenter init() - initialiser FCM
-  // TODO: Implémenter getToken() - obtenir le token FCM
-  // TODO: Implémenter onTokenRefresh() - écouter le refresh du token
-  // TODO: Implémenter onMessage() - écouter les messages en foreground
-  // TODO: Implémenter onBackgroundMessage() - messages en background
-}
+final notificationsListProvider =
+    AsyncNotifierProvider<NotificationsListNotifier, List<AppNotification>>(
+  NotificationsListNotifier.new,
+);

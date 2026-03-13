@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/core/router/app_router.dart';
 import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/entities/game_state.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_card.dart';
+import 'package:tcg_matchmaker/features/notifications/widgets/notification_icon_button.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation_state.dart';
 import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
 import 'package:tcg_matchmaker/features/participations/widgets/participation_card.dart';
@@ -18,14 +21,30 @@ class MyGamesScreen extends ConsumerStatefulWidget {
   ConsumerState<MyGamesScreen> createState() => _MyGamesScreenState();
 }
 
-class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
+class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
-      // Les participations sont déjà chargées dans le build() du provider
+      ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+    if (lifecycleState == AppLifecycleState.resumed) {
+      ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
+      ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
+    }
   }
 
   @override
@@ -61,19 +80,16 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          CircleAvatar(
-            backgroundColor: colorScheme.primaryContainer,
-            backgroundImage: NetworkImage(avatarUrl),
+          GestureDetector(
+            onTap: () => ref.read(navigationIndexProvider.notifier).state = 4,
+            child: CircleAvatar(
+              backgroundColor: colorScheme.primaryContainer,
+              backgroundImage: NetworkImage(avatarUrl),
+            ),
           ),
           Text("Mes parties",
               style: theme.textTheme.titleMedium?.copyWith(fontSize: 25)),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.notifications_outlined,
-              color: colorScheme.onSurface,
-            ),
-          ),
+          NotificationIconButton(colorScheme: colorScheme),
         ],
       ),
     );
@@ -95,14 +111,11 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
 
   Widget _buildTabBarView(ThemeData theme, GamesState gamesState,
       ParticipationsState participationsState) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(5, 5, 5, 0),
-      child: TabBarView(
-        children: [
-          _buildGamesList(gamesState),
-          _buildParticipationsList(participationsState),
-        ],
-      ),
+    return TabBarView(
+      children: [
+        _buildGamesList(gamesState),
+        _buildParticipationsList(participationsState),
+      ],
     );
   }
 
@@ -110,45 +123,60 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
     final theme = Theme.of(context);
     final games = state.myGames;
 
-    if (state.isLoadingExisting && games.isEmpty) {
+    if (state.isLoadingMyGames && games.isEmpty) {
       return const LoadingWidget();
     }
 
-    if (state.errorExisting != null && games.isEmpty) {
+    if (state.errorMyGames != null && games.isEmpty) {
       return AppErrorWidget(
-          message: state.errorExisting!,
+          message: state.errorMyGames!,
           onRetry: () =>
               ref.read(gamesNotifierProvider.notifier).fetchCreatedGames());
     }
 
-    if (games.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Aucune partie créée",
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(gamesNotifierProvider.notifier).fetchCreatedGames(),
+      child: games.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(
+                  height: 300,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Aucune partie créée",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => context.push(AppRoutes.createGame) ,
+                          child: const Text("Créer une partie"),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom,
               ),
+              itemCount: games.length,
+              itemBuilder: (context, index) {
+                return GameCard(game: games[index], index: index);
+              },
             ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () =>
-                  ref.read(navigationIndexProvider.notifier).state = 2,
-              child: const Text("Créer une partie"),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: games.length,
-      itemBuilder: (context, index) {
-        return GameCard(game: games[index], index: index);
-      },
     );
   }
 
@@ -156,39 +184,56 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
     final theme = Theme.of(context);
     final participations = state.visibleParticipations;
 
-    if (state.isLoading && participations.isEmpty) {
+    if (state.isLoadingMyParticipations && participations.isEmpty) {
       return const LoadingWidget();
     }
 
-    if (state.error != null && participations.isEmpty) {
+    if (state.getMyParticipationsError != null && participations.isEmpty) {
       return AppErrorWidget(
-        message: state.error!,
+        message: state.getMyParticipationsError!,
         onRetry: () => ref
             .read(participationsNotifierProvider.notifier)
             .fetchMyParticipations(),
       );
     }
 
-    if (participations.isEmpty) {
-      return Center(
-        child: Text(
-          "Aucune participation",
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: participations.length,
-      itemBuilder: (context, index) {
-        return ParticipationCard(
-          participation: participations[index],
-          index: index,
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: () => ref
+          .read(participationsNotifierProvider.notifier)
+          .fetchMyParticipations(),
+      child: participations.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(
+                  height: 300,
+                  child: Center(
+                    child: Text(
+                      "Aucune participation",
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom,
+              ),
+              itemCount: participations.length,
+              itemBuilder: (context, index) {
+                return ParticipationCard(
+                  participation: participations[index],
+                  index: index,
+                );
+              },
+            ),
     );
   }
 }

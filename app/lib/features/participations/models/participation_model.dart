@@ -1,4 +1,4 @@
-import 'package:tcg_matchmaker/features/auth/entities/user_summary.dart';
+import 'package:tcg_matchmaker/features/auth/models/user_summary_model.dart';
 import 'package:tcg_matchmaker/features/games/models/game_model.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation.dart';
 
@@ -10,7 +10,7 @@ class ParticipationModel {
   final DateTime? acceptedAt;
   final DateTime createdAt;
   final GameModel? game;
-  final UserSummary? requester;
+  final UserSummaryModel? requester;
 
   const ParticipationModel({
     required this.id,
@@ -24,16 +24,6 @@ class ParticipationModel {
   });
 
   factory ParticipationModel.fromJson(Map<String, dynamic> json) {
-    UserSummary? requester;
-    if (json['user'] != null) {
-      final u = json['user'] as Map<String, dynamic>;
-      requester = UserSummary(
-        id: u['id'] as String,
-        username: u['username'] as String,
-        avatar: u['avatar'] as String,
-      );
-    }
-
     return ParticipationModel(
       id: json['id'] as String,
       userId: json['userId'] as String,
@@ -48,7 +38,7 @@ class ParticipationModel {
       game: json['game'] != null
           ? GameModel.fromJson(json['game'] as Map<String, dynamic>)
           : null,
-      requester: requester,
+      requester: json['user'] != null ? UserSummaryModel.fromJson(json['user'] as  Map<String, dynamic>) : null
     );
   }
 
@@ -61,7 +51,7 @@ class ParticipationModel {
       acceptedAt: acceptedAt,
       createdAt: createdAt,
       game: game?.toEntity(),
-      requester: requester,
+      participant: requester?.toEntity(),
     );
   }
 

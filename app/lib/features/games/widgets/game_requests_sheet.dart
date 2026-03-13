@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:tcg_matchmaker/features/auth/entities/user_summary.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation.dart';
 import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
@@ -30,9 +29,6 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final state = ref.watch(participationsNotifierProvider);
-
-    final isLoading = state.isLoadingGame(widget.game.id);
-    final error = state.gameRequestsError;
     final pending = state.getPendingForGame(widget.game.id);
     final accepted = state.getAcceptedForGame(widget.game.id);
 
@@ -44,7 +40,6 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle
           Container(
             margin: const EdgeInsets.only(top: 12),
             width: 40,
@@ -67,13 +62,13 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
                 children: [
                   _buildHeader(theme, colorScheme),
                   const SizedBox(height: 24),
-                  if (isLoading)
+                  if (state.isLoadingGameParticipants)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 40),
                       child: LoadingWidget(),
                     )
-                  else if (error != null)
-                    _buildError(theme, colorScheme, error)
+                  else if (state.getGameParticipantsError != null)
+                    _buildError(theme, colorScheme, state.getGameParticipantsError!)
                   else ...[
                     _buildPendingSection(theme, colorScheme, pending, state),
                     if (accepted.isNotEmpty) ...[
@@ -246,7 +241,6 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
     Participation participation,
     bool isProcessing,
   ) {
-    final requester = participation.requester;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -261,14 +255,18 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
       ),
       child: Row(
         children: [
-          _buildAvatar(colorScheme, requester, radius: 20),
+          CircleAvatar(
+            radius: 20,
+            backgroundImage: NetworkImage(participation.participant!.avatar),
+            backgroundColor: colorScheme.primaryContainer,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  requester?.username ?? 'Utilisateur',
+                  participation.participant!.username,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -315,7 +313,6 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
     ColorScheme colorScheme,
     Participation participation,
   ) {
-    final requester = participation.requester;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -326,11 +323,15 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
       ),
       child: Row(
         children: [
-          _buildAvatar(colorScheme, requester, radius: 18),
+          CircleAvatar(
+            radius: 20,
+            backgroundImage: NetworkImage(participation.participant!.avatar),
+            backgroundColor: colorScheme.primaryContainer,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              requester?.username ?? 'Utilisateur',
+              participation.participant!.username,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
               ),
@@ -358,25 +359,6 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
         ),
         child: Icon(icon, color: color, size: 18),
       ),
-    );
-  }
-
-  Widget _buildAvatar(
-    ColorScheme colorScheme,
-    UserSummary? user, {
-    required double radius,
-  }) {
-    if (user == null) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: colorScheme.primaryContainer,
-        child: Icon(Icons.person, size: radius, color: colorScheme.primary),
-      );
-    }
-    return CircleAvatar(
-      radius: radius,
-      backgroundImage: NetworkImage(user.avatar),
-      backgroundColor: colorScheme.primaryContainer,
     );
   }
 

@@ -100,9 +100,9 @@ class Game {
 }
 
 enum GameType {
-  ONE_PIECE,
   POKEMON,
   YUGIOH,
+  ONE_PIECE,
   NARUTO,
 }
 
@@ -125,6 +125,32 @@ extension GameTypeExtension on GameType {
         return 'Yu-Gi-Oh!';
       case GameType.NARUTO:
         return 'Naruto';
+    }
+  }
+
+  String get shortLabel {
+    switch (this) {
+      case GameType.ONE_PIECE:
+        return 'OP';
+      case GameType.POKEMON:
+        return 'PKM';
+      case GameType.YUGIOH:
+        return 'YGO';
+      case GameType.NARUTO:
+        return 'NRT';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case GameType.ONE_PIECE:
+        return const Color(0xFFE63946);
+      case GameType.POKEMON:
+        return const Color(0xFFFFCC00);
+      case GameType.YUGIOH:
+        return const Color(0xFFB8860B);
+      case GameType.NARUTO:
+        return const Color(0xFFFF6B35);
     }
   }
 }
@@ -188,7 +214,7 @@ extension GameStatusExtension on GameStatus {
   bool get isCancelled => this == GameStatus.CANCELLED;
 
   /// Peut-on demander à rejoindre cette partie ?
-  bool get canJoin => this == GameStatus.OPEN || this == GameStatus.FULL;
+  bool get canJoin => this == GameStatus.OPEN;
 
   /// Texte du bouton quand on ne peut pas rejoindre
   String get disabledButtonText {

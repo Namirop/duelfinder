@@ -121,7 +121,8 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
  * @param {number} lng - Longitude de l'utilisateur
  * @param {number} distanceKm - Rayon de recherche en km (défaut 30)
  * @param {string|null} excludeUserId - ID de l'utilisateur à exclure (ses propres parties)
- * @param {number|null} hoursFilter - Filtrer les parties dans les X prochaines heures (null = pas de filtre)
+ * @param {Date|null} dateFrom - Date de début du filtre (null = pas de filtre)
+ * @param {Date|null} dateTo - Date de fin du filtre (null = pas de filtre)
  * @param {string|null} gameTypeFilter - Filtrer par type de jeu (null = tous les jeux)
  * @returns {Promise<Array>} Liste des parties à proximité avec statut effectif
  */
@@ -130,7 +131,8 @@ const findNearby = async (
   lng,
   distanceKm = 30,
   excludeUserId = null,
-  hoursFilter = null,
+  dateFrom = null,
+  dateTo = null,
   gameTypeFilter = null,
 ) => {
   // Bounding box pour pré-filtrer (approximation)
@@ -140,6 +142,7 @@ const findNearby = async (
   const now = new Date();
 
   const baseWhereClause = {
+    status: { not: "CANCELLED" },
     latitude: {
       gte: lat - latDelta,
       lte: lat + latDelta,
@@ -161,19 +164,23 @@ const findNearby = async (
   }
 
   // Définir la plage de dates selon le filtre
-  // On commence depuis le début de la journée pour inclure les parties d'aujourd'hui
+  // Si aucun filtre, on affiche toutes les parties à partir d'aujourd'hui
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
 
-  if (hoursFilter !== null && hoursFilter > 0) {
-    // Filtre horaire : parties depuis aujourd'hui jusqu'à X heures depuis maintenant
-    const maxTime = new Date(now.getTime() + hoursFilter * 60 * 60 * 1000);
+  if (dateFrom && dateTo) {
+    // Filtre par plage de dates précise
     baseWhereClause.scheduledAt = {
-      gte: startOfToday,
-      lte: maxTime,
+      gte: new Date(dateFrom),
+      lte: new Date(dateTo),
+    };
+  } else if (dateFrom) {
+    // Filtre depuis une date (sans fin)
+    baseWhereClause.scheduledAt = {
+      gte: new Date(dateFrom),
     };
   } else {
-    // "Tout" : toutes les parties depuis aujourd'hui (pas de limite max)
+    // "Tout" : toutes les parties depuis aujourd'hui
     baseWhereClause.scheduledAt = {
       gte: startOfToday,
     };
@@ -324,7 +331,7 @@ const updateGameStatusByPlayers = async (gameId) => {
     throw new Error("Partie introuvable");
   }
 
-  const currentPlayers = game.participations.length + 1; // +1 pour le créateur
+  const currentPlayers = game.participations.length + 1;
 
   if (currentPlayers >= game.maxPlayers && game.status === "OPEN") {
     // Partie pleine
@@ -366,3 +373,4 @@ export default {
   finishGame,
   updateGameStatusByPlayers,
 };
+

@@ -31,4 +31,8 @@ class ApiConstants {
   // Endpoints Notifications
   static const String notifications = '/notifications';
   static const String markAsRead = '/notifications/read';
+
+  // Endpoints Users (profil)
+  static const String usersMe = '/users/me';
+  static const String usersMePassword = '/users/me/password';
 }

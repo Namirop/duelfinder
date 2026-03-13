@@ -5,12 +5,15 @@ import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/screens/create_game_screen.dart';
 import 'package:tcg_matchmaker/features/games/screens/my_games_screen.dart';
 import 'package:tcg_matchmaker/features/profile/screens/profile_screen.dart';
-import 'package:tcg_matchmaker/features/settings/screens/settings_screen.dart';
+import 'package:tcg_matchmaker/features/profile/screens/settings_screen.dart';
 import 'package:tcg_matchmaker/features/shell/main_shell.dart';
 
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
+import '../../features/messages/screens/chat_screen.dart';
+import '../../features/messages/screens/conversations_screen.dart';
+import '../../features/notifications/screens/notifications_screen.dart';
 
 /// Routes de l'application
 abstract class AppRoutes {
@@ -24,11 +27,7 @@ abstract class AppRoutes {
 
   // Games
   static const String myGames = '/mygames';
-  static const String gameDetails = '/games/:id';
   static const String createGame = '/games/create';
-
-  // Participations
-  static const String participations = '/participations';
 
   // Messages
   static const String messages = '/messages';
@@ -39,9 +38,6 @@ abstract class AppRoutes {
 
   // Profile
   static const String profile = '/profile';
-  static const String editProfile = '/profile/edit';
-
-  // Settings
   static const String settings = '/settings';
 }
 
@@ -89,24 +85,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'register',
         builder: (context, state) => const RegisterScreen(),
       ),
-
       GoRoute(
           path: AppRoutes.home,
           name: 'home',
           builder: (context, state) => const MainShell()),
-
-      GoRoute(
-          path: AppRoutes.profile,
-          name: 'profile',
-          builder: (context, state) => const ProfileScreen()),
-
-      // Settings
-      GoRoute(
-          path: AppRoutes.settings,
-          name: 'settings',
-          builder: (context, state) => const SettingsScreen()),
-
-      // Games routes
       GoRoute(
           path: AppRoutes.myGames,
           name: 'myGames',
@@ -115,53 +97,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: AppRoutes.createGame,
           name: 'createGame',
           builder: (context, state) => const CreateGameScreen()),
-      GoRoute(
-        path: AppRoutes.gameDetails,
-        name: 'gameDetails',
-        builder: (context, state) {
-          // TODO: Remplacer par GameDetailsScreen
-          // final gameId = state.pathParameters['id'];
-          return const Scaffold(
-            body: Center(child: Text('Game Details - TODO')),
-          );
-        },
-      ),
-
-      // Participations routes
-      GoRoute(
-        path: AppRoutes.participations,
-        name: 'participations',
-        builder: (context, state) {
-          // TODO: Remplacer par ParticipationsScreen
-          return const Scaffold(
-            body: Center(child: Text('Participations - TODO')),
-          );
-        },
-      ),
-
-      // Messages routes
-      GoRoute(
+          GoRoute(
         path: AppRoutes.messages,
         name: 'messages',
+        builder: (context, state) => const ConversationsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.conversation,
+        name: 'conversation',
         builder: (context, state) {
-          // TODO: Remplacer par MessagesScreen
-          return const Scaffold(
-            body: Center(child: Text('Messages - TODO')),
-          );
+          final gameId = state.pathParameters['id']!;
+          return ChatScreen(conversationId: gameId);
         },
       ),
-
-      // Notifications routes
       GoRoute(
         path: AppRoutes.notifications,
         name: 'notifications',
-        builder: (context, state) {
-          // TODO: Remplacer par NotificationsScreen
-          return const Scaffold(
-            body: Center(child: Text('Notifications - TODO')),
-          );
-        },
+        builder: (context, state) => const NotificationsScreen(),
       ),
+      GoRoute(
+          path: AppRoutes.profile,
+          name: 'profile',
+          builder: (context, state) => const ProfileScreen()),
+      GoRoute(
+          path: AppRoutes.settings,
+          name: 'settings',
+          builder: (context, state) => const SettingsScreen()),
     ],
     errorBuilder: (context, state) {
       return Scaffold(

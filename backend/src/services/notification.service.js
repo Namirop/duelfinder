@@ -1,20 +1,66 @@
 /**
  * Service des notifications
- * Contient la logique métier liée aux notifications push (FCM)
+ * Gère l'envoi de notifications push via FCM et la persistance en base
  */
 
-const prisma = require('../config/database');
-const { getFirebaseAdmin } = require('../config/firebase');
+import prisma from "../config/database.js";
+import { getFirebaseAdmin } from "../config/firebase.js";
 
-// TODO: Implémenter sendPushNotification(userId, title, body, data)
-// TODO: Implémenter sendToMultipleUsers(userIds, title, body, data)
-// TODO: Implémenter saveNotification(userId, title, body, data)
-// TODO: Implémenter findByUser(userId, pagination)
-// TODO: Implémenter markAsRead(id)
-// TODO: Implémenter markAllAsRead(userId)
-// TODO: Implémenter delete(id)
-// TODO: Implémenter getUnreadCount(userId)
+/**
+ * Envoie une notification push à un utilisateur et la sauvegarde en base
+ * @param {string} userId - ID du destinataire
+ * @param {{ type: string, title: string, body: string, data?: object }} payload
+ */
+const sendToUser = async (userId, { type, title, body, data = {} }) => {
+  await prisma.notification.create({
+    data: { type, title, body, data, userId },
+  });
 
-module.exports = {
-  // TODO: Exporter les fonctions implémentées
+  // Récupérer le token FCM de l'utilisateur
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { fcmToken: true },
+  });
+
+  if (!user?.fcmToken) return; // Pas de token → pas de push
+
+  try {
+    const admin = getFirebaseAdmin();
+    // Les valeurs dans data doivent être des strings pour FCM
+    const stringData = { type, ...Object.fromEntries(
+      Object.entries(data).map(([k, v]) => [k, String(v)])
+    )};
+
+    const messageId = await admin.messaging().send({
+      token: user.fcmToken,
+      notification: { title, body },
+      data: stringData,
+      android: {
+        priority: "high",
+        notification: { channelId: "duelfinder_high" },
+      },
+      apns: { payload: { aps: { sound: "default" } } },
+    });
+    console.log(`[FCM] ✅ Envoyé à user ${userId} → messageId: ${messageId}`);
+  } catch (err) {
+    console.error(`[FCM] ❌ Échec envoi à user ${userId}:`, err.message);
+    // Token invalide → on le supprime pour éviter de réessayer
+    if (err.code === "messaging/registration-token-not-registered") {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { fcmToken: null },
+      });
+    }
+  }
 };
+
+/**
+ * Envoie une notification à plusieurs utilisateurs
+ * @param {string[]} userIds
+ * @param {{ type: string, title: string, body: string, data?: object }} payload
+ */
+const sendToUsers = async (userIds, payload) => {
+  await Promise.all(userIds.map((userId) => sendToUser(userId, payload)));
+};
+
+export default { sendToUser, sendToUsers };

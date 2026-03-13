@@ -4,11 +4,19 @@
  */
 import prisma from "../config/database.js";
 import gameService from "../services/game.service.js";
+import notificationService from "../services/notification.service.js";
+
+const GAME_TYPE_LABELS = {
+  POKEMON: "Pokémon",
+  ONE_PIECE: "One Piece",
+  YUGIOH: "Yu-Gi-Oh!",
+  NARUTO: "Naruto",
+};
 
 // GET /api/games/existing
 const getExistingGames = async (req, res, next) => {
   try {
-    const { lat, lng, distance, hours, gameType } = req.query;
+    const { lat, lng, distance, dateFrom, dateTo, gameType } = req.query;
 
     if (!lat || !lng) {
       return res.status(400).json({ error: "Latitude et longitude requises" });
@@ -17,7 +25,8 @@ const getExistingGames = async (req, res, next) => {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
     const distanceKm = distance ? parseFloat(distance) : 30;
-    const hoursFilter = hours ? parseFloat(hours) : 1;
+    const dateFromFilter = dateFrom || null;
+    const dateToFilter = dateTo || null;
     const gameTypeFilter = gameType || null;
 
     if (isNaN(latitude) || isNaN(longitude)) {
@@ -31,7 +40,8 @@ const getExistingGames = async (req, res, next) => {
       longitude,
       distanceKm,
       excludeUserId,
-      hoursFilter,
+      dateFromFilter,
+      dateToFilter,
       gameTypeFilter,
     );
 
@@ -136,13 +146,12 @@ const deleteGame = async (req, res, next) => {
     const { gameId } = req.params;
     const userId = req.user.userId;
 
-    // Vérifier que la partie existe et appartient à l'utilisateur
     const game = await prisma.game.findUnique({
-      where: { gameId },
+      where: { id: gameId },
       include: {
         participations: {
           where: { status: "ACCEPTED" },
-          include: { user: { select: { id: true, fcmToken: true } } },
+          select: { userId: true },
         },
       },
     });
@@ -163,7 +172,17 @@ const deleteGame = async (req, res, next) => {
 
     await gameService.cancelGame(gameId);
 
-    // TODO: Notifier les participants (GAME_CANCELLED)
+    // Notifier tous les participants acceptés
+    const participantIds = game.participations.map((p) => p.userId);
+    if (participantIds.length > 0) {
+      const label = GAME_TYPE_LABELS[game.gameType] ?? game.gameType;
+      notificationService.sendToUsers(participantIds, {
+        type: "GAME_CANCELLED",
+        title: "Partie annulée",
+        body: `La partie de ${label} a été annulée par le créateur`,
+        data: { gameId },
+      });
+    }
 
     res.status(200).json({ message: "Partie annulée" });
   } catch (error) {

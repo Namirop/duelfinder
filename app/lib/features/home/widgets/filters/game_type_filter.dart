@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
-import 'package:tcg_matchmaker/features/home/widgets/game_type_bottom_sheet.dart';
+import 'package:tcg_matchmaker/features/home/widgets/filters/game_type_bottom_sheet.dart';
 
 class GameTypeFilter extends StatelessWidget {
   final GameType? currentGameType;

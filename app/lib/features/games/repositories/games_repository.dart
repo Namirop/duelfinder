@@ -14,7 +14,8 @@ class GamesRepository {
     required double latitude,
     required double longitude,
     double distance = 30,
-    double? hours,
+    DateTime? dateFrom,
+    DateTime? dateTo,
     String? gameType,
   }) async {
     try {
@@ -22,8 +23,9 @@ class GamesRepository {
         'lat': latitude,
         'lng': longitude,
         'distance': distance,
-        'hours': hours,
-        if (gameType != null) 'gameType': gameType
+        if (dateFrom != null) 'dateFrom': dateFrom.toUtc().toIso8601String(),
+        if (dateTo != null) 'dateTo': dateTo.toUtc().toIso8601String(),
+        if (gameType != null) 'gameType': gameType,
       };
 
       final response = await _dio.get(
