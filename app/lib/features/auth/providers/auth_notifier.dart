@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
 import 'package:tcg_matchmaker/core/errors/exceptions.dart';
@@ -83,6 +85,21 @@ class AuthNotifier extends _$AuthNotifier {
       AppLogger.e('AuthNotifier', 'logout failed', e, stackTrace);
     } finally {
       state = const AuthState();
+    }
+  }
+
+  /// Upload un nouvel avatar.
+  /// Retourne null si succès, sinon le message d'erreur.
+  Future<String?> updateAvatar(File imageFile) async {
+    try {
+      final updatedUser =
+          await ref.read(profileRepositoryProvider).uploadAvatar(imageFile);
+      state = state.copyWith(user: updatedUser);
+      return null;
+    } on AppException catch (e) {
+      return e.message;
+    } catch (e) {
+      return 'Erreur lors de la mise à jour de la photo';
     }
   }
 

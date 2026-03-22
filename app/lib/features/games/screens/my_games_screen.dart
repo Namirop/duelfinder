@@ -174,7 +174,7 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
               ),
               itemCount: games.length,
               itemBuilder: (context, index) {
-                return GameCard(game: games[index], index: index);
+                return GameCard(game: games[index], index: index, showFullAddress: true);
               },
             ),
     );

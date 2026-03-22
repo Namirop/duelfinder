@@ -11,6 +11,8 @@ import 'package:tcg_matchmaker/features/shell/main_shell.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
+import '../../features/legal/screens/privacy_screen.dart';
+import '../../features/legal/screens/terms_screen.dart';
 import '../../features/messages/screens/chat_screen.dart';
 import '../../features/messages/screens/conversations_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
@@ -39,6 +41,10 @@ abstract class AppRoutes {
   // Profile
   static const String profile = '/profile';
   static const String settings = '/settings';
+
+  // Legal
+  static const String terms = '/legal/terms';
+  static const String privacy = '/legal/privacy';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -123,6 +129,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: AppRoutes.settings,
           name: 'settings',
           builder: (context, state) => const SettingsScreen()),
+      GoRoute(
+          path: AppRoutes.terms,
+          name: 'terms',
+          builder: (context, state) => const TermsScreen()),
+      GoRoute(
+          path: AppRoutes.privacy,
+          name: 'privacy',
+          builder: (context, state) => const PrivacyScreen()),
     ],
     errorBuilder: (context, state) {
       return Scaffold(

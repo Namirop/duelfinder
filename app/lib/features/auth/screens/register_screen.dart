@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +20,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _termsAccepted = false;
 
   @override
   void dispose() {
@@ -30,6 +32,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    if (!_termsAccepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez accepter les Conditions d\'utilisation et la Politique de confidentialité'),
+        ),
+      );
+      return;
+    }
     if (_formKey.currentState?.validate() ?? false) {
       await ref.read(authNotifierProvider.notifier).register(
             email: _emailController.text,
@@ -190,9 +200,54 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Checkbox(
+                        value: _termsAccepted,
+                        onChanged: (v) =>
+                            setState(() => _termsAccepted = v ?? false),
+                      ),
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            style: Theme.of(context).textTheme.bodySmall,
+                            children: [
+                              const TextSpan(
+                                  text: 'En créant un compte, vous acceptez les '),
+                              TextSpan(
+                                text: 'Conditions d\'utilisation',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor:
+                                      Theme.of(context).colorScheme.primary,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () => context.push('/legal/terms'),
+                              ),
+                              const TextSpan(text: ' et la '),
+                              TextSpan(
+                                text: 'Politique de confidentialité',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor:
+                                      Theme.of(context).colorScheme.primary,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () => context.push('/legal/privacy'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: _register,
+                    onPressed: _termsAccepted ? _register : null,
                     child: const Text('S\'inscrire'),
                   ),
                   const SizedBox(height: 16),

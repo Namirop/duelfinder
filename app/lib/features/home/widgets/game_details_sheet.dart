@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
+import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 import 'package:tcg_matchmaker/features/games/widgets/game_requests_sheet.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation.dart';
 import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
@@ -49,7 +50,7 @@ class GameDetailsSheet extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildDateTime(theme, colorScheme),
                 const SizedBox(height: 12),
-                _buildLocation(theme, colorScheme),
+                _buildLocation(theme, colorScheme, ref),
                 const SizedBox(height: 12),
                 _buildPlayers(theme, colorScheme),
                 const SizedBox(height: 12),
@@ -182,7 +183,15 @@ class GameDetailsSheet extends ConsumerWidget {
     );
   }
 
-  Widget _buildLocation(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildLocation(ThemeData theme, ColorScheme colorScheme, WidgetRef ref) {
+    final currentUserId = ref.watch(authNotifierProvider).user?.id;
+    final isCreator = currentUserId == game.creator.id;
+    final existingParticipation = ref
+        .read(participationsNotifierProvider.notifier)
+        .getParticipationForGame(game.id);
+    final isAccepted = existingParticipation?.isAccepted ?? false;
+    final showFullAddress = isCreator || isAccepted;
+
     return Row(
       children: [
         Icon(
@@ -192,12 +201,43 @@ class GameDetailsSheet extends ConsumerWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            game.address,
-            style: theme.textTheme.bodyMedium,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+          child: showFullAddress
+              ? Text(
+                  game.address,
+                  style: theme.textTheme.bodyMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      game.streetOnly,
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lock_outline,
+                          size: 11,
+                          color: colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Lieu exact après acceptation',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.4),
+                            fontStyle: FontStyle.italic,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
         ),
       ],
     );
@@ -310,7 +350,7 @@ class GameDetailsSheet extends ConsumerWidget {
     // Vérifier si c'est la partie de l'utilisateur
     final isCreator = currentUserId == game.creator.id;
     if (isCreator) {
-      return _buildCreatorButton(context, theme, colorScheme);
+      return _buildCreatorButton(context, ref, theme, colorScheme);
     }
 
     // Vérifier si l'utilisateur a déjà une participation
@@ -373,38 +413,106 @@ class GameDetailsSheet extends ConsumerWidget {
 
   Widget _buildCreatorButton(
     BuildContext context,
+    WidgetRef ref,
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          Navigator.pop(context);
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => GameRequestsSheet(game: game),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+    final isCancellable = game.effectiveStatus != GameStatus.FINISHED &&
+        game.effectiveStatus != GameStatus.CANCELLED;
+
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => GameRequestsSheet(game: game),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.people_outline),
+            label: Text(
+              'Gérer les demandes',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onPrimary,
+              ),
+            ),
           ),
         ),
-        icon: const Icon(Icons.people_outline),
-        label: Text(
-          'Gérer les demandes',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onPrimary,
+        if (isCancellable) ...[
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _handleCancelGame(context, ref),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: colorScheme.error,
+                side: BorderSide(color: colorScheme.error),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.cancel_outlined, size: 20),
+              label: Text(
+                'Annuler la partie',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.error,
+                ),
+              ),
+            ),
           ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _handleCancelGame(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Annuler la partie'),
+        content: const Text(
+          'Êtes-vous sûr de vouloir annuler cette partie ? Les participants seront notifiés.',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Non'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('Annuler la partie'),
+          ),
+        ],
       ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    await ref.read(gamesNotifierProvider.notifier).cancelGame(game.id);
+
+    if (!context.mounted) return;
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Partie annulée')),
     );
   }
 

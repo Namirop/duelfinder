@@ -16,27 +16,44 @@ class _AddressSuggestion {
   final String displayName;
   final double lat;
   final double lon;
+  final String? road;
+  final String? houseNumber;
+  final String? city;
 
   const _AddressSuggestion({
     required this.displayName,
     required this.lat,
     required this.lon,
+    this.road,
+    this.houseNumber,
+    this.city,
   });
 
   factory _AddressSuggestion.fromJson(Map<String, dynamic> json) {
+    final addr = json['address'] as Map<String, dynamic>?;
     return _AddressSuggestion(
       displayName: json['display_name'] as String,
       lat: double.parse(json['lat'] as String),
       lon: double.parse(json['lon'] as String),
+      road: addr?['road'] as String?,
+      houseNumber: addr?['house_number'] as String?,
+      city: (addr?['city'] ?? addr?['town'] ?? addr?['village'] ??
+          addr?['municipality']) as String?,
     );
   }
 
-  /// Extrait un libellé court depuis display_name (ex: "Café de la Mairie, Paris")
+  /// Libellé structuré: "Boulevard Audent 12, Charleroi"
   String get shortLabel {
+    if (road != null) {
+      final streetPart =
+          houseNumber != null ? '$road $houseNumber' : road!;
+      if (city != null) return '$streetPart, $city';
+      return streetPart;
+    }
+    // Fallback: premiers éléments du display_name
     final parts = displayName.split(', ');
     if (parts.length <= 2) return displayName;
-    // Garder nom + ville (dernier élément significatif)
-    return '${parts.first}, ${parts[parts.length > 3 ? parts.length - 3 : parts.length - 1]}';
+    return '${parts.first}, ${parts[1]}';
   }
 }
 
@@ -451,6 +468,26 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                               });
                             },
                           ),
+                          if (_selectedLat != null) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.lock_outline,
+                                  size: 13,
+                                  color: colorScheme.onSurface.withValues(alpha: 0.45),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Lieu exact partagé après acceptation',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurface.withValues(alpha: 0.45),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: 28),
                           _buildSectionTitle(theme, "Joueurs"),
                           const SizedBox(height: 12),

@@ -8,8 +8,14 @@ import 'package:tcg_matchmaker/features/home/widgets/game_details_sheet.dart';
 class GameCard extends ConsumerWidget {
   final Game game;
   final int index;
+  final bool showFullAddress;
 
-  const GameCard({super.key, required this.game, this.index = 0});
+  const GameCard({
+    super.key,
+    required this.game,
+    this.index = 0,
+    this.showFullAddress = false,
+  });
 
   void _showGameDetails(BuildContext context) {
     showModalBottomSheet(
@@ -142,7 +148,7 @@ class GameCard extends ConsumerWidget {
               _buildDetailRow(
                 context,
                 icon: Icons.location_on_outlined,
-                text: game.address,
+                text: showFullAddress ? game.address : game.streetOnly,
               ),
               const SizedBox(height: 8),
               _buildDetailRow(

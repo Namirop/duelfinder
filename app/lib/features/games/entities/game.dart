@@ -46,6 +46,16 @@ class Game {
   bool get isUpcoming => scheduledAt.isAfter(DateTime.now());
   bool get isOpen => effectiveStatus == GameStatus.OPEN;
 
+  /// Retourne "Rue, Ville" sans le numéro (ex: "Boulevard Audent, Charleroi")
+  String get streetOnly {
+    final parts = address.split(',');
+    // Supprimer le numéro de rue en fin de chaîne (ex: "Boulevard Audent 12")
+    final street =
+        parts.first.trim().replaceAll(RegExp(r'\s+\d+\s*$'), '').trim();
+    if (parts.length > 1) return '$street, ${parts[1].trim()}';
+    return street;
+  }
+
   /// Heure de fin calculée (scheduledAt + duration)
   DateTime get endTime => scheduledAt.add(Duration(minutes: duration));
 

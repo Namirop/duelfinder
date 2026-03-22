@@ -36,7 +36,7 @@ const getMe = async (req, res, next) => {
 // PUT /api/users/me
 const updateMe = async (req, res, next) => {
   try {
-    const { username, bio } = req.body;
+    const { username, bio, avatar } = req.body;
     const data = {};
 
     if (username !== undefined) {
@@ -55,6 +55,10 @@ const updateMe = async (req, res, next) => {
 
     if (bio !== undefined) {
       data.bio = bio === "" ? null : bio;
+    }
+
+    if (avatar !== undefined) {
+      data.avatar = avatar || null;
     }
 
     if (Object.keys(data).length === 0) {

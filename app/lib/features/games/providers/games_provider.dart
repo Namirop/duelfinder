@@ -126,6 +126,40 @@ class GamesNotifier extends _$GamesNotifier {
     }
   }
 
+  Future<void> cancelGame(String gameId) async {
+    state = state.copyWith(isDeleting: true, clearErrorDeleting: true);
+    try {
+      await ref.read(gamesRepositoryProvider).deleteGame(gameId);
+      // Marquer la partie comme annulée dans les deux listes (sans la supprimer)
+      state = state.copyWith(
+        isDeleting: false,
+        myGames: state.myGames
+            .map((g) => g.id == gameId
+                ? g.copyWith(
+                    status: GameStatus.CANCELLED,
+                    effectiveStatus: GameStatus.CANCELLED,
+                  )
+                : g)
+            .toList(),
+        existingGames: state.existingGames
+            .map((g) => g.id == gameId
+                ? g.copyWith(
+                    status: GameStatus.CANCELLED,
+                    effectiveStatus: GameStatus.CANCELLED,
+                  )
+                : g)
+            .toList(),
+      );
+    } on AppException catch (e) {
+      AppLogger.w('GamesNotifier', 'cancelGame failed: ${e.toString()}');
+      state = state.copyWith(errorDeleting: e.message, isDeleting: false);
+    } catch (e, stackTrace) {
+      AppLogger.e('GamesNotifier', 'cancelGame failed', e, stackTrace);
+      state = state.copyWith(
+          errorDeleting: 'Erreur d\'annulation', isDeleting: false);
+    }
+  }
+
   void setDistanceFilter(double distance) {
     state = state.copyWith(distanceFilter: distance);
     fetchExistingGames();

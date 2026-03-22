@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/core/router/app_router.dart';
 import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 
@@ -153,7 +154,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               colorScheme,
               icon: Icons.article_outlined,
               title: "Conditions d'utilisation",
-              onTap: () {},
+              onTap: () => context.push(AppRoutes.terms),
             ),
             _buildSettingsTile(
               context,
@@ -161,15 +162,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               colorScheme,
               icon: Icons.privacy_tip_outlined,
               title: 'Politique de confidentialité',
-              onTap: () {},
-            ),
-            _buildSettingsTile(
-              context,
-              theme,
-              colorScheme,
-              icon: Icons.info_outline,
-              title: 'Mentions légales',
-              onTap: () {},
+              onTap: () => context.push(AppRoutes.privacy),
             ),
             _buildSettingsTile(
               context,
