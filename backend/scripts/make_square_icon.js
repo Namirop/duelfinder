@@ -20,8 +20,8 @@ async function main() {
 
   // Canvas carré 1024×1024 (taille standard pour les icônes)
   const CANVAS = 1024;
-  // Le logo occupe 80% du canvas
-  const targetWidth  = Math.floor(CANVAS * 0.80);
+  // Le logo occupe 100% de la largeur du canvas
+  const targetWidth  = CANVAS;
   const targetHeight = Math.floor(height * (targetWidth / width));
 
   logo.resize({ w: targetWidth, h: targetHeight });
@@ -34,7 +34,7 @@ async function main() {
   await canvas.write(OUTPUT);
 
   console.log(`✓  logo_icon.png créé : ${CANVAS}x${CANVAS}px`);
-  console.log(`   logo redimensionné : ${targetWidth}x${targetHeight}px (80% du canvas)`);
+  console.log(`   logo redimensionné : ${targetWidth}x${targetHeight}px (100% largeur)`);
   console.log(`   position : x=${xOffset}, y=${yOffset}`);
 }
 
