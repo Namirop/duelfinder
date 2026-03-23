@@ -60,6 +60,9 @@ flutter_launcher_icons:
   android: true
   ios: false
   image_path: "assets/images/logo.png"
+  background_color: "#8B7EC8"
+  adaptive_icon_background: "#8B7EC8"
+  adaptive_icon_foreground: "assets/images/logo.png"
 
   # Code Generation
   build_runner: ^2.4.9

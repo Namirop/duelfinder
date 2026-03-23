@@ -338,29 +338,8 @@ class _GameMapState extends ConsumerState<GameMap> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: Container(
-          color: const Color(0xFF0D1117),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.location_searching_rounded,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 36,
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        child: const Center(
+          child: CircularProgressIndicator(),
         ),
       ),
     );

@@ -34,74 +34,87 @@ class PrivacyScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Dernière mise à jour : janvier 2025',
+              'Dernière mise à jour : 23 mars 2026',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 24),
-            // ── Remplacez le contenu ci-dessous par votre vraie politique ──
             _buildSection(
               theme,
-              title: '1. Responsable du traitement',
+              title: '1. Introduction',
               content:
-                  'DuelFinder est le responsable du traitement de vos données personnelles. Pour toute question relative à la protection de vos données, contactez-nous à : contact@duelfinder.com',
+                  'DuelFinder respecte la vie privée de ses utilisateurs et s\'engage à protéger leurs données personnelles.\n\n'
+                  'Cette politique explique quelles données sont collectées et comment elles sont utilisées.',
             ),
             _buildSection(
               theme,
               title: '2. Données collectées',
               content:
-                  'Nous collectons les données suivantes :\n'
-                  '• Données d\'identification : adresse e-mail, pseudo\n'
-                  '• Données de localisation : position géographique (avec votre consentement)\n'
-                  '• Données de profil : photo de profil, biographie\n'
-                  '• Données d\'usage : parties créées, participations, messages',
+                  'Lors de l\'utilisation de l\'application, DuelFinder peut collecter :\n'
+                  '• Adresse email.\n'
+                  '• Pseudonyme.\n'
+                  '• Photo de profil.\n'
+                  '• Localisation approximative.\n'
+                  '• Données liées aux parties (création, participation).',
             ),
             _buildSection(
               theme,
-              title: '3. Finalités du traitement',
+              title: '3. Utilisation des données',
               content:
-                  'Vos données sont utilisées pour :\n'
-                  '• Créer et gérer votre compte\n'
-                  '• Vous mettre en relation avec d\'autres joueurs\n'
-                  '• Vous envoyer des notifications relatives à vos parties\n'
-                  '• Améliorer nos services',
+                  'Les données collectées servent à :\n'
+                  '• Créer et gérer les comptes utilisateurs.\n'
+                  '• Afficher les joueurs et parties à proximité.\n'
+                  '• Améliorer le fonctionnement de l\'application.\n'
+                  '• Assurer la sécurité du service.',
             ),
             _buildSection(
               theme,
-              title: '4. Base légale',
+              title: '4. Localisation',
               content:
-                  'Le traitement de vos données est fondé sur votre consentement (lors de la création de compte) et sur l\'exécution du contrat de service que vous avez accepté.',
+                  'La localisation de l\'utilisateur peut être utilisée pour afficher les parties et joueurs proches.\n\n'
+                  'L\'utilisateur peut refuser ou désactiver la localisation dans les paramètres de son appareil.',
             ),
             _buildSection(
               theme,
-              title: '5. Conservation des données',
+              title: '5. Partage des données',
               content:
-                  'Vos données sont conservées pendant la durée de vie de votre compte et supprimées dans un délai de 30 jours suivant la suppression de votre compte.',
+                  'DuelFinder ne vend pas les données personnelles des utilisateurs.\n\n'
+                  'Certaines données peuvent être traitées par des services techniques nécessaires au fonctionnement de l\'application.',
             ),
             _buildSection(
               theme,
-              title: '6. Vos droits',
+              title: '6. Conservation des données',
               content:
-                  'Conformément au RGPD, vous disposez des droits suivants :\n'
-                  '• Droit d\'accès à vos données\n'
-                  '• Droit de rectification\n'
-                  '• Droit à l\'effacement (via la suppression du compte)\n'
-                  '• Droit à la portabilité\n'
-                  '• Droit d\'opposition\n\n'
-                  'Pour exercer ces droits, contactez-nous à : contact@duelfinder.com',
+                  'Les données sont conservées tant que le compte utilisateur est actif.\n\n'
+                  'Lorsque l\'utilisateur supprime son compte, ses données sont supprimées dans un délai raisonnable.',
             ),
             _buildSection(
               theme,
-              title: '7. Sécurité',
+              title: '7. Droits des utilisateurs',
               content:
-                  'Nous mettons en œuvre des mesures techniques et organisationnelles appropriées pour protéger vos données contre tout accès non autorisé, perte ou altération.',
+                  'L\'utilisateur peut :\n'
+                  '• Accéder à ses données.\n'
+                  '• Modifier ses informations.\n'
+                  '• Supprimer son compte.',
             ),
             _buildSection(
               theme,
-              title: '8. Contact',
+              title: '8. Sécurité des données',
               content:
-                  'Pour toute question ou réclamation concernant la protection de vos données personnelles, contactez-nous à : contact@duelfinder.com',
+                  'DuelFinder met en place des mesures raisonnables pour protéger les données personnelles.\n\n'
+                  'Cependant, aucun système informatique ne peut garantir une sécurité absolue.',
+            ),
+            _buildSection(
+              theme,
+              title: '9. Modifications de la politique',
+              content:
+                  'Cette politique de confidentialité peut être mise à jour pour refléter les évolutions du service.',
+            ),
+            _buildSection(
+              theme,
+              title: '10. Contact',
+              content: 'Pour toute question concernant la confidentialité : contact@duelfinder.com',
             ),
             const SizedBox(height: 32),
           ],

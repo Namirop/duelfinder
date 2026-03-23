@@ -125,6 +125,7 @@ class _AddressSearchFieldState extends State<_AddressSearchField> {
         final List<dynamic> data = json.decode(response.body) as List<dynamic>;
         final suggestions = data
             .map((e) => _AddressSuggestion.fromJson(e as Map<String, dynamic>))
+            .where((s) => s.road != null)
             .toList();
 
         if (mounted) {

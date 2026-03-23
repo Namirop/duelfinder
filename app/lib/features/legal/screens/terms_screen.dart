@@ -34,54 +34,101 @@ class TermsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Dernière mise à jour : janvier 2025',
+              'Dernière mise à jour : 23 mars 2026',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 24),
-            // ── Remplacez le contenu ci-dessous par vos vraies CGU ──
             _buildSection(
               theme,
-              title: '1. Objet',
+              title: '1. Présentation du service',
               content:
-                  'Les présentes Conditions Générales d\'Utilisation (CGU) ont pour objet de définir les modalités et conditions d\'utilisation des services proposés par DuelFinder, ainsi que les droits et obligations des parties dans ce cadre.',
+                  'DuelFinder est une application permettant aux utilisateurs de trouver des joueurs à proximité et d\'organiser des parties de jeux dans la vie réelle (IRL).\n\n'
+                  'L\'application agit comme une plateforme de mise en relation entre joueurs. DuelFinder ne participe pas à l\'organisation physique des rencontres et n\'intervient pas dans leur déroulement.',
             ),
             _buildSection(
               theme,
-              title: '2. Accès au service',
+              title: '2. Acceptation des conditions',
               content:
-                  'L\'utilisation de l\'application DuelFinder est réservée aux personnes majeures ou aux mineurs avec accord parental. L\'accès au service est conditionné à la création d\'un compte utilisateur avec des informations exactes et sincères.',
+                  'En créant un compte ou en utilisant l\'application DuelFinder, l\'utilisateur accepte les présentes conditions d\'utilisation.\n\n'
+                  'Si l\'utilisateur n\'accepte pas ces conditions, il ne doit pas utiliser l\'application.',
             ),
             _buildSection(
               theme,
-              title: '3. Compte utilisateur',
+              title: '3. Conditions d\'accès',
               content:
-                  'Vous êtes responsable de la confidentialité de vos identifiants de connexion. Toute utilisation du service effectuée depuis votre compte est réputée avoir été effectuée par vous. DuelFinder se réserve le droit de supprimer tout compte contenant des informations fausses ou violant les présentes CGU.',
+                  'Pour utiliser l\'application, l\'utilisateur doit :\n'
+                  '• Être âgé d\'au moins 13 ans. Les utilisateurs mineurs doivent utiliser l\'application avec l\'accord d\'un parent ou d\'un responsable légal.\n'
+                  '• Fournir des informations exactes lors de la création du compte.\n'
+                  '• Ne pas utiliser l\'application à des fins illégales.\n\n'
+                  'Chaque utilisateur est responsable de l\'utilisation de son compte.',
             ),
             _buildSection(
               theme,
-              title: '4. Utilisation acceptable',
+              title: '4. Utilisation de l\'application',
               content:
-                  'Vous vous engagez à utiliser DuelFinder de manière loyale et conformément aux lois applicables. Il est interdit de publier des contenus illicites, offensants, trompeurs ou portant atteinte aux droits de tiers. DuelFinder se réserve le droit de suspendre ou supprimer tout compte en cas de violation.',
+                  'L\'utilisateur s\'engage à utiliser l\'application de manière respectueuse et conforme aux lois.\n\n'
+                  'Il est interdit de :\n'
+                  '• Harceler, menacer ou intimider d\'autres utilisateurs.\n'
+                  '• Publier de fausses informations.\n'
+                  '• Utiliser l\'application pour des activités illégales.\n'
+                  '• Perturber le fonctionnement du service.\n\n'
+                  'DuelFinder se réserve le droit de suspendre ou supprimer un compte en cas de violation des règles.',
             ),
             _buildSection(
               theme,
-              title: '5. Responsabilité',
+              title: '5. Organisation des rencontres',
               content:
-                  'DuelFinder est une plateforme de mise en relation entre joueurs. La responsabilité de DuelFinder ne saurait être engagée en cas de litiges entre utilisateurs, de non-présentation à une partie, ou de tout préjudice résultant d\'une rencontre organisée via l\'application.',
+                  'DuelFinder permet aux utilisateurs d\'organiser des rencontres pour jouer dans la vie réelle.\n\n'
+                  'Les rencontres organisées via l\'application se déroulent sous la responsabilité exclusive des utilisateurs.\n\n'
+                  'DuelFinder ne peut être tenu responsable :\n'
+                  '• Du comportement des utilisateurs.\n'
+                  '• De l\'annulation d\'une partie.\n'
+                  '• De tout incident survenant lors d\'une rencontre.\n\n'
+                  'Les utilisateurs doivent faire preuve de prudence lors de rencontres avec d\'autres joueurs.',
             ),
             _buildSection(
               theme,
-              title: '6. Modification des CGU',
+              title: '6. Contenu publié par les utilisateurs',
               content:
-                  'DuelFinder se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés des modifications importantes. La poursuite de l\'utilisation du service vaut acceptation des nouvelles CGU.',
+                  'Les utilisateurs sont responsables du contenu qu\'ils publient sur l\'application, notamment :\n'
+                  '• Leur pseudonyme.\n'
+                  '• Leur photo de profil.\n'
+                  '• Les parties créées.\n\n'
+                  'DuelFinder peut supprimer tout contenu jugé inapproprié.',
             ),
             _buildSection(
               theme,
-              title: '7. Contact',
+              title: '7. Suspension ou suppression de compte',
               content:
-                  'Pour toute question relative aux présentes CGU, vous pouvez nous contacter à l\'adresse : contact@duelfinder.com',
+                  'DuelFinder peut suspendre ou supprimer un compte en cas de :\n'
+                  '• Violation des présentes conditions.\n'
+                  '• Comportement nuisible à la communauté.\n'
+                  '• Utilisation abusive de l\'application.\n\n'
+                  'L\'utilisateur peut supprimer son compte à tout moment dans les paramètres de l\'application.',
+            ),
+            _buildSection(
+              theme,
+              title: '8. Modification du service',
+              content:
+                  'DuelFinder peut modifier, améliorer ou mettre à jour l\'application à tout moment.\n\n'
+                  'Les fonctionnalités peuvent évoluer au fil des versions.',
+            ),
+            _buildSection(
+              theme,
+              title: '9. Limitation de responsabilité',
+              content:
+                  'DuelFinder fournit un service de mise en relation entre joueurs.\n\n'
+                  'Dans la mesure permise par la loi, DuelFinder ne pourra être tenu responsable des dommages résultant :\n'
+                  '• De l\'utilisation de l\'application.\n'
+                  '• Des interactions entre utilisateurs.\n'
+                  '• Des rencontres organisées via la plateforme.',
+            ),
+            _buildSection(
+              theme,
+              title: '10. Contact',
+              content: 'Pour toute question concernant ces conditions : contact@duelfinder.com',
             ),
             const SizedBox(height: 32),
           ],
