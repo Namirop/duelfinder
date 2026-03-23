@@ -20,8 +20,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Le système Android/iOS affiche la notification nativement.
 }
 
-
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

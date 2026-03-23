@@ -10,7 +10,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "npc:seed": "node scripts/seed_launch.js",
+    "npc:cron": "node scripts/cron_daily.js",
+    "npc:cleanup": "node scripts/cleanup_ghost.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
