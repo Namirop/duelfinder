@@ -60,11 +60,16 @@ function futureDate(daysAhead) {
 
 function gameConfig(type) {
   switch (type) {
-    case "YUGIOH":    return { maxPlayers: 2, duration: pick([60, 90, 120]) };
-    case "NARUTO":    return { maxPlayers: 2, duration: pick([60, 90]) };
-    case "POKEMON":   return { maxPlayers: pick([2, 4]), duration: pick([90, 120, 180]) };
-    case "ONE_PIECE": return { maxPlayers: pick([2, 4]), duration: pick([90, 120]) };
-    default:          return { maxPlayers: 2, duration: 90 };
+    case "YUGIOH":
+      return { maxPlayers: 2, duration: pick([60, 90, 120]) };
+    case "NARUTO":
+      return { maxPlayers: 2, duration: pick([60, 90]) };
+    case "POKEMON":
+      return { maxPlayers: pick([2, 4]), duration: pick([90, 120, 180]) };
+    case "ONE_PIECE":
+      return { maxPlayers: pick([2, 4]), duration: pick([90, 120]) };
+    default:
+      return { maxPlayers: 2, duration: 90 };
   }
 }
 
@@ -85,7 +90,9 @@ async function main() {
   });
 
   if (npcUsers.length === 0) {
-    console.log("⚠️  Aucun utilisateur NPC trouvé. Lancez d'abord : node scripts/seed_launch.js");
+    console.log(
+      "⚠️  Aucun utilisateur NPC trouvé. Lancez d'abord : node scripts/seed_launch.js",
+    );
     return;
   }
 
@@ -105,7 +112,9 @@ async function main() {
   if (expiredGames.length > 0) {
     const expiredIds = expiredGames.map((g) => g.id);
     await prisma.message.deleteMany({ where: { gameId: { in: expiredIds } } });
-    await prisma.participation.deleteMany({ where: { gameId: { in: expiredIds } } });
+    await prisma.participation.deleteMany({
+      where: { gameId: { in: expiredIds } },
+    });
     await prisma.game.deleteMany({ where: { id: { in: expiredIds } } });
     console.log(`  ✓  ${expiredGames.length} parties NPC supprimées`);
   } else {
@@ -115,7 +124,9 @@ async function main() {
   // ── 2. AUTO-REJECT : rejette les demandes de vrais users restées sans réponse ─
   console.log("\n❌  Traitement des demandes sans réponse...");
 
-  const rejectCutoff = new Date(now.getTime() - AUTO_REJECT_AFTER_HOURS * 3600 * 1000);
+  const rejectCutoff = new Date(
+    now.getTime() - AUTO_REJECT_AFTER_HOURS * 3600 * 1000,
+  );
 
   const pendingToReject = await prisma.participation.findMany({
     where: {
@@ -133,7 +144,9 @@ async function main() {
       where: { id: { in: pendingToReject.map((p) => p.id) } },
       data: { status: "REJECTED" },
     });
-    console.log(`  ✓  ${pendingToReject.length} demande(s) rejetée(s) (>${AUTO_REJECT_AFTER_HOURS}h sans réponse)`);
+    console.log(
+      `  ✓  ${pendingToReject.length} demande(s) rejetée(s) (>${AUTO_REJECT_AFTER_HOURS}h sans réponse)`,
+    );
   } else {
     console.log("  ✓  Aucune demande en attente à rejeter");
   }
@@ -149,17 +162,27 @@ async function main() {
         creatorId: { in: npcUserIds },
         status: "OPEN",
         scheduledAt: { gte: now, lte: horizonEnd },
-        latitude:  { gte: city.lat - CITY_RADIUS_DEG, lte: city.lat + CITY_RADIUS_DEG },
-        longitude: { gte: city.lng - CITY_RADIUS_DEG, lte: city.lng + CITY_RADIUS_DEG },
+        latitude: {
+          gte: city.lat - CITY_RADIUS_DEG,
+          lte: city.lat + CITY_RADIUS_DEG,
+        },
+        longitude: {
+          gte: city.lng - CITY_RADIUS_DEG,
+          lte: city.lng + CITY_RADIUS_DEG,
+        },
       },
     });
 
     if (openCount < MIN_OPEN_GAMES_PER_CITY) {
-      const toCreate = MIN_OPEN_GAMES_PER_CITY - openCount + NEW_GAMES_PER_REPLENISH;
-      console.log(`  ⚠️  ${city.name} : ${openCount}/${MIN_OPEN_GAMES_PER_CITY} parties → création de ${toCreate}`);
+      const toCreate =
+        MIN_OPEN_GAMES_PER_CITY - openCount + NEW_GAMES_PER_REPLENISH;
+      console.log(
+        `  ⚠️  ${city.name} : ${openCount}/${MIN_OPEN_GAMES_PER_CITY} parties → création de ${toCreate}`,
+      );
 
       for (let i = 0; i < toCreate; i++) {
-        const creator = npcUserIds[Math.floor(Math.random() * npcUserIds.length)];
+        const creator =
+          npcUserIds[Math.floor(Math.random() * npcUserIds.length)];
         const venue = pick(city.venues);
         const gameType = pick(GAME_TYPES);
         const { maxPlayers, duration } = gameConfig(gameType);
@@ -189,10 +212,15 @@ async function main() {
   }
 
   // ── RÉSUMÉ ───────────────────────────────────────────────────────────────────
-  console.log("\n══════════════════════════════════════════════════════════════");
+  console.log(
+    "\n══════════════════════════════════════════════════════════════",
+  );
   console.log(`✅  Cron terminé — ${new Date().toLocaleString("fr-FR")}`);
-  if (totalCreated > 0) console.log(`   +${totalCreated} nouvelle(s) partie(s) créée(s)`);
-  console.log("══════════════════════════════════════════════════════════════\n");
+  if (totalCreated > 0)
+    console.log(`   +${totalCreated} nouvelle(s) partie(s) créée(s)`);
+  console.log(
+    "══════════════════════════════════════════════════════════════\n",
+  );
 }
 
 main()

@@ -59,10 +59,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/images/logo.png"
+  image_path: "assets/images/logo_icon.png"
   background_color: "#8B7EC8"
   adaptive_icon_background: "#8B7EC8"
-  adaptive_icon_foreground: "assets/images/logo.png"
+  adaptive_icon_foreground: "assets/images/logo_icon.png"
 
   # Code Generation
   build_runner: ^2.4.9
