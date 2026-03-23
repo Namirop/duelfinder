@@ -33,6 +33,37 @@ class _GameMapState extends ConsumerState<GameMap> {
   final Map<String, Game> _annotationToGame = {};
   bool _markersLoaded = false;
 
+  double? _initialLat;
+  double? _initialLng;
+  bool _locationLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialPosition();
+  }
+
+  Future<void> _loadInitialPosition() async {
+    final locationEnabled = ref.read(locationEnabledProvider);
+    if (locationEnabled) {
+      try {
+        final position = await ref
+            .read(locationServiceProvider)
+            .getCurrentPosition()
+            .timeout(const Duration(seconds: 4), onTimeout: () => null);
+        if (mounted) setState(() {
+          _initialLat = position?.latitude;
+          _initialLng = position?.longitude;
+          _locationLoading = false;
+        });
+      } catch (_) {
+        if (mounted) setState(() => _locationLoading = false);
+      }
+    } else {
+      if (mounted) setState(() => _locationLoading = false);
+    }
+  }
+
   /// Convertit une distance en km vers un niveau de zoom Mapbox
   /// Formule logarithmique pour une correspondance plus précise
   double _distanceToZoom(double distanceKm) {
@@ -103,32 +134,11 @@ class _GameMapState extends ConsumerState<GameMap> {
       ),
     );
 
-    // Centrer sur l'utilisateur puis charger les marqueurs
-    await _centerOnUser();
+    // La map est déjà centrée sur l'utilisateur (position chargée avant le build)
     _loadMarkers();
   }
 
-  Future<void> _centerOnUser() async {
-    final locationEnabled = ref.read(locationEnabledProvider);
-    if (!locationEnabled) return;
-
-    final position =
-        await ref.read(locationServiceProvider).getCurrentPosition();
-    if (position == null) return;
-
-    final zoom = _distanceToZoom(widget.distanceKm);
-    await _mapboxMap?.flyTo(
-      CameraOptions(
-        center:
-            Point(coordinates: Position(position.longitude, position.latitude)),
-        zoom: zoom,
-        pitch: 45, // Inclinaison 3D
-      ),
-      MapAnimationOptions(duration: 1000),
-    );
-  }
-
-  /// Regroupe les parties par coordonnées proches (même lieu ≈ rayon 5m)
+/// Regroupe les parties par coordonnées proches (même lieu ≈ rayon 5m)
   Map<String, List<Game>> _groupByLocation(List<Game> games) {
     const precision = 4; // ~11m de précision (5 décimales = ~1m, 4 = ~11m)
     final groups = <String, List<Game>>{};
@@ -323,9 +333,47 @@ class _GameMapState extends ConsumerState<GameMap> {
     return byteData?.buffer.asUint8List();
   }
 
+  Widget _buildLoadingPlaceholder() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          color: const Color(0xFF0D1117),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.location_searching_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 36,
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_locationLoading) return _buildLoadingPlaceholder();
+
     final initialZoom = _distanceToZoom(widget.distanceKm);
+    final center = (_initialLat != null && _initialLng != null)
+        ? Point(coordinates: Position(_initialLng!, _initialLat!))
+        : Point(coordinates: Position(4.4445, 50.4108)); // fallback : Charleroi
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
@@ -335,10 +383,9 @@ class _GameMapState extends ConsumerState<GameMap> {
           onMapCreated: _onMapCreated,
           styleUri: MapboxStyles.DARK,
           cameraOptions: CameraOptions(
-            center: Point(
-                coordinates: Position(2.3522, 48.8566)), // Paris par défaut
+            center: center,
             zoom: initialZoom,
-            pitch: 45, // Inclinaison 3D
+            pitch: 45,
           ),
         ),
       ),
