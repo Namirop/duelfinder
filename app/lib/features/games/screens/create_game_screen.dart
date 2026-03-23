@@ -77,6 +77,7 @@ class _AddressSearchFieldState extends State<_AddressSearchField> {
   List<_AddressSuggestion> _suggestions = [];
   bool _isSearching = false;
   bool _showDropdown = false;
+  bool _noStreetResults = false;
   Timer? _debounce;
   final FocusNode _focusNode = FocusNode();
 
@@ -102,6 +103,7 @@ class _AddressSearchFieldState extends State<_AddressSearchField> {
       setState(() {
         _suggestions = [];
         _showDropdown = false;
+        _noStreetResults = false;
       });
       return;
     }
@@ -129,9 +131,13 @@ class _AddressSearchFieldState extends State<_AddressSearchField> {
             .toList();
 
         if (mounted) {
+          final allResults = data
+              .map((e) => _AddressSuggestion.fromJson(e as Map<String, dynamic>))
+              .toList();
           setState(() {
             _suggestions = suggestions;
             _showDropdown = suggestions.isNotEmpty;
+            _noStreetResults = suggestions.isEmpty && allResults.isNotEmpty;
             _isSearching = false;
           });
         }
@@ -218,6 +224,7 @@ class _AddressSearchFieldState extends State<_AddressSearchField> {
                     setState(() {
                       _suggestions = [];
                       _showDropdown = false;
+                      _noStreetResults = false;
                     });
                   },
                   child: Icon(
@@ -229,6 +236,25 @@ class _AddressSearchFieldState extends State<_AddressSearchField> {
             ],
           ),
         ),
+        if (_noStreetResults && !_showDropdown)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 4),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45)),
+                const SizedBox(width: 6),
+                Text(
+                  'Précisez une rue ou une adresse',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                        fontStyle: FontStyle.italic,
+                      ),
+                ),
+              ],
+            ),
+          ),
         if (_showDropdown && _suggestions.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(top: 4),

@@ -9,6 +9,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
 import 'package:tcg_matchmaker/core/services/app_logger.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
+import 'package:tcg_matchmaker/shared/widgets/loading_widget.dart';
 import 'package:http/http.dart' as http;
 
 class GameMap extends ConsumerStatefulWidget {
@@ -338,9 +339,7 @@ class _GameMapState extends ConsumerState<GameMap> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: const LoadingWidget(),
       ),
     );
   }
