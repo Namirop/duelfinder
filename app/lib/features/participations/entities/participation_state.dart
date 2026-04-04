@@ -8,6 +8,7 @@ class ParticipationsState {
 
   /// Participations par partie (vue créateur) : gameId → liste
   final Map<String, List<Participation>> gameParticipants;
+
   /// IDs des participations en cours de traitement (accept/reject)
   /// => utile pour afficher le loader spécifiquement à ce participants.
   final Set<String> processingIds;
@@ -45,14 +46,10 @@ class ParticipationsState {
 
   // ── Vue créateur ──────────────────────────────────────────────
   List<Participation> getPendingForGame(String gameId) =>
-      (gameParticipants[gameId] ?? [])
-          .where((p) => p.isPending)
-          .toList();
+      (gameParticipants[gameId] ?? []).where((p) => p.isPending).toList();
 
   List<Participation> getAcceptedForGame(String gameId) =>
-      (gameParticipants[gameId] ?? [])
-          .where((p) => p.isAccepted)
-          .toList();
+      (gameParticipants[gameId] ?? []).where((p) => p.isAccepted).toList();
 
   bool isProcessing(String id) => processingIds.contains(id);
 
@@ -70,12 +67,16 @@ class ParticipationsState {
   }) {
     return ParticipationsState(
       myParticipations: myParticipations ?? this.myParticipations,
-      isLoadingMyParticipations: isLoadingMyParticipations ?? this.isLoadingMyParticipations,
+      isLoadingMyParticipations:
+          isLoadingMyParticipations ?? this.isLoadingMyParticipations,
       isRequesting: isRequesting ?? this.isRequesting,
-      getMyParticipationsError: clearError ? null : (getMyParticipationsError ?? this.getMyParticipationsError),
+      getMyParticipationsError: clearError
+          ? null
+          : (getMyParticipationsError ?? this.getMyParticipationsError),
       gameParticipants: gameParticipants ?? this.gameParticipants,
       processingIds: processingIds ?? this.processingIds,
-      isLoadingGameParticipants: isLoadingGameParticipants ?? this.isLoadingGameParticipants,
+      isLoadingGameParticipants:
+          isLoadingGameParticipants ?? this.isLoadingGameParticipants,
       getGameParticipantsError: clearGetGameParticipantsError
           ? null
           : (getGameParticipantsError ?? this.getGameParticipantsError),

@@ -9,11 +9,10 @@ import '../entities/auth_state.dart';
 
 part 'auth_notifier.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class AuthNotifier extends _$AuthNotifier {
   @override
   AuthState build() {
-    checkAuthStatus();
     return const AuthState(isLoading: true);
   }
 

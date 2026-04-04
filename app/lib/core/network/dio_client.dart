@@ -50,7 +50,10 @@ class DioClient {
       final refreshToken = await _storage.read(key: 'refresh_token');
       if (refreshToken == null) return false;
 
-      final response = await Dio().post(
+      final response = await Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      )).post(
         '${ApiConstants.baseUrl}${ApiConstants.refreshToken}',
         data: {'refreshToken': refreshToken},
       );

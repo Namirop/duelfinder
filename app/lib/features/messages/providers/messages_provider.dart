@@ -25,9 +25,8 @@ class ConversationsNotifier extends AsyncNotifier<List<Conversation>> {
   /// Décrémente le unreadCount d'une conversation quand on l'ouvre
   void clearUnread(String gameId) {
     state = state.whenData(
-      (list) => list
-          .map((c) => c.gameId == gameId ? _withZeroUnread(c) : c)
-          .toList(),
+      (list) =>
+          list.map((c) => c.gameId == gameId ? _withZeroUnread(c) : c).toList(),
     );
   }
 
@@ -52,8 +51,9 @@ final conversationsProvider =
 /// Nombre total de messages non lus (pour le badge nav bar)
 final totalUnreadProvider = Provider<int>((ref) {
   return ref.watch(conversationsProvider).whenData((convs) {
-    return convs.fold(0, (sum, c) => sum + c.unreadCount);
-  }).valueOrNull ?? 0;
+        return convs.fold(0, (sum, c) => sum + c.unreadCount);
+      }).valueOrNull ??
+      0;
 });
 
 // ─── Messages d'une partie ────────────────────────────────────────────────────
@@ -111,7 +111,8 @@ class MessagesNotifier extends FamilyAsyncNotifier<List<Message>, String> {
       // Rafraîchit la liste des conversations pour mettre à jour l'aperçu
       ref.read(conversationsProvider.notifier).refresh();
     } on Exception catch (e) {
-      AppLogger.e('MessagesNotifier', 'sendMessage failed', e, StackTrace.current);
+      AppLogger.e(
+          'MessagesNotifier', 'sendMessage failed', e, StackTrace.current);
       rethrow;
     }
   }

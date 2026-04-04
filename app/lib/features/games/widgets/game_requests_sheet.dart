@@ -8,7 +8,6 @@ import 'package:tcg_matchmaker/shared/widgets/loading_widget.dart';
 
 class GameRequestsSheet extends ConsumerStatefulWidget {
   final Game game;
-
   const GameRequestsSheet({super.key, required this.game});
 
   @override
@@ -68,7 +67,8 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
                       child: LoadingWidget(),
                     )
                   else if (state.getGameParticipantsError != null)
-                    _buildError(theme, colorScheme, state.getGameParticipantsError!)
+                    _buildError(
+                        theme, colorScheme, state.getGameParticipantsError!)
                   else ...[
                     _buildPendingSection(theme, colorScheme, pending, state),
                     if (accepted.isNotEmpty) ...[
@@ -99,8 +99,7 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.style_outlined,
-                  color: colorScheme.primary, size: 18),
+              Icon(Icons.style_outlined, color: colorScheme.primary, size: 18),
               const SizedBox(width: 8),
               Text(
                 widget.game.gameType.label,
@@ -241,7 +240,6 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
     Participation participation,
     bool isProcessing,
   ) {
-
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
@@ -313,7 +311,6 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
     ColorScheme colorScheme,
     Participation participation,
   ) {
-
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -337,8 +334,7 @@ class _GameRequestsSheetState extends ConsumerState<GameRequestsSheet> {
               ),
             ),
           ),
-          const Icon(Icons.check_circle_rounded,
-              color: Colors.green, size: 20),
+          const Icon(Icons.check_circle_rounded, color: Colors.green, size: 20),
         ],
       ),
     );

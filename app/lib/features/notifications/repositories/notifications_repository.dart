@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:tcg_matchmaker/core/constants/api_constants.dart';
 import 'package:tcg_matchmaker/core/errors/exceptions.dart';
 import 'package:tcg_matchmaker/features/notifications/entities/notification.dart';
 import 'package:tcg_matchmaker/features/notifications/models/notification_model.dart';
@@ -13,7 +14,8 @@ class NotificationsRepository {
       await _dio.put('/users/me/fcm-token', data: {'token': token});
     } on DioException catch (e) {
       throw ServerException(
-        message: e.response?.data?['error'] ?? 'Erreur enregistrement token FCM',
+        message:
+            e.response?.data?['error'] ?? 'Erreur enregistrement token FCM',
       );
     }
   }
@@ -26,14 +28,16 @@ class NotificationsRepository {
           .toList();
     } on DioException catch (e) {
       throw ServerException(
-        message: e.response?.data?['error'] ?? 'Erreur chargement notifications',
+        message:
+            e.response?.data?['error'] ?? 'Erreur chargement notifications',
       );
     }
   }
 
   Future<bool> hasUnread() async {
     try {
-      final response = await _dio.get('/notifications/unread-count');
+      final response =
+          await _dio.get('${ApiConstants.notifications}/unread-count');
       return (response.data['count'] as int) > 0;
     } on DioException catch (e) {
       throw ServerException(
@@ -47,7 +51,8 @@ class NotificationsRepository {
       await _dio.put('/notifications/read-all');
     } on DioException catch (e) {
       throw ServerException(
-        message: e.response?.data?['error'] ?? 'Erreur mise à jour notifications',
+        message:
+            e.response?.data?['error'] ?? 'Erreur mise à jour notifications',
       );
     }
   }
@@ -57,7 +62,8 @@ class NotificationsRepository {
       await _dio.delete('/notifications/$id');
     } on DioException catch (e) {
       throw ServerException(
-        message: e.response?.data?['error'] ?? 'Erreur suppression notification',
+        message:
+            e.response?.data?['error'] ?? 'Erreur suppression notification',
       );
     }
   }

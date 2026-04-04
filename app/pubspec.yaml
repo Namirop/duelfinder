@@ -40,6 +40,9 @@ dependencies:
   # Image
   image_picker: ^1.1.2
 
+  # Env
+  flutter_dotenv: ^5.2.1
+
   # Utils
   freezed_annotation: ^2.4.1
   json_annotation: ^4.8.1
@@ -55,22 +58,19 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^3.0.0
   flutter_launcher_icons: ^0.14.1
-
-flutter_launcher_icons:
-  android: true
-  ios: false
-  image_path: "assets/images/logo_v2.png"
-  background_color: "#8B7EC8"
-  adaptive_icon_background: "#8B7EC8"
-  adaptive_icon_foreground: "assets/images/logo_v2.png"
-
-  # Code Generation
   build_runner: ^2.4.9
   riverpod_generator: ^2.4.0
   freezed: ^2.4.7
   json_serializable: ^6.7.1
 
+# Icons Android gérés manuellement via easyappicon (app/android/app/src/main/res/)
+# Ne pas relancer flutter pub run flutter_launcher_icons pour Android
+flutter_launcher_icons:
+  android: false
+  ios: false
+
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - .env

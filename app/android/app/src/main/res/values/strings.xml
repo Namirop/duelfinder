@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DuelFinder</string>
-    <string name="mapbox_access_token">pk.eyJ1IjoibmFtaXJvcCIsImEiOiJjbW0yMmtmZDQwMmJzMnJzZHNjb3F6MjJlIn0.xK6GRkd-sJ9usDruhQ-ZrA</string>
 </resources>

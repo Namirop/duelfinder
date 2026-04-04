@@ -2,11 +2,13 @@ import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/core/enums/navigation_enum.dart';
 import 'package:tcg_matchmaker/core/enums/view_mode.dart';
 import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/games/entities/game_state.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
+import 'package:tcg_matchmaker/features/profile/providers/settings_provider.dart';
 import 'package:tcg_matchmaker/features/home/widgets/filters/distance_filter.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_card.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_details_sheet.dart';
@@ -16,6 +18,7 @@ import 'package:tcg_matchmaker/features/home/widgets/filters/schedule_filter.dar
 import 'package:tcg_matchmaker/features/notifications/widgets/notification_icon_button.dart';
 import 'package:tcg_matchmaker/shared/widgets/app_error_widget.dart';
 import 'package:tcg_matchmaker/shared/widgets/loading_widget.dart';
+import 'package:tcg_matchmaker/shared/widgets/no_localization_widget.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -32,7 +35,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onScheduleChanged(ScheduleFilterOption option, {DateTime? customDate}) {
-    ref.read(gamesNotifierProvider.notifier).setScheduleFilter(option, customDate: customDate);
+    ref
+        .read(gamesNotifierProvider.notifier)
+        .setScheduleFilter(option, customDate: customDate);
   }
 
   void _onGameTypeChanged(GameType? gameType) {
@@ -56,7 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final gamesState = ref.watch(gamesNotifierProvider);
-    final locationEnabled = ref.watch(locationEnabledProvider);
+    final locationEnabled = ref.watch(settingsNotifierProvider).locationEnabled;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -64,7 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       bottom: false,
       child: Column(
         children: [
-          _buildAppBar(theme, colorScheme, ref, authState.user!.avatar),
+          _buildAppBar(theme, colorScheme, ref, authState.user?.avatar ?? ''),
           Expanded(
             child: _buildBody(
               theme,
@@ -87,7 +92,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () => ref.read(navigationIndexProvider.notifier).state = 4,
+            onTap: () => ref.read(navigationIndexProvider.notifier).state =
+                NavTab.profile.index,
             child: CircleAvatar(
               backgroundColor: colorScheme.primaryContainer,
               backgroundImage: NetworkImage(
@@ -154,23 +160,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: _viewMode == ViewMode.list
-                ? _buildExistingGamesList(gamesState)
-                // POURVOIR GERER LOCATIONENABLED EN REPO NORMALEMENT
-                : locationEnabled
-                    ? GameMap(
-                        key: ValueKey(locationEnabled),
-                        games: gamesState.existingGames,
-                        onGameTap: _showGameDetails,
-                        distanceKm: gamesState.distanceFilter,
-                      )
-                    : Center(
-                        child: Text(
-                        'Position non disponible',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      )),
+            child: !locationEnabled
+                ? const NoLocalizationWidget()
+                : IndexedStack(
+                    index: _viewMode == ViewMode.list ? 0 : 1,
+                    children: [
+                      _buildExistingGamesList(gamesState),
+                      _buildMapWithRefresh(gamesState),
+                    ],
+                  ),
           ),
         ],
       ),
@@ -221,6 +219,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 return GameCard(game: game, index: index);
               },
             ),
+    );
+  }
+
+  Widget _buildMapWithRefresh(GamesState gamesState) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Stack(
+      children: [
+        GameMap(
+          key: const ValueKey('map'),
+          games: gamesState.existingGames,
+          myGames: gamesState.myGames,
+          onGameTap: _showGameDetails,
+          distanceKm: gamesState.distanceFilter,
+        ),
+        Positioned(
+          top: 12,
+          right: 12,
+          child: GestureDetector(
+            onTap: gamesState.isLoadingExisting
+                ? null
+                : () => ref
+                    .read(gamesNotifierProvider.notifier)
+                    .fetchExistingGames(),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: colorScheme.surface.withValues(alpha: 0.9),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.2),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: gamesState.isLoadingExisting
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.primary,
+                      ),
+                    )
+                  : Icon(
+                      Icons.refresh_rounded,
+                      size: 20,
+                      color: colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 
 class GameMap extends ConsumerStatefulWidget {
   final List<Game> games;
+  final List<Game> myGames;
   final void Function(Game game)? onGameTap;
   final double distanceKm;
 
@@ -22,6 +23,7 @@ class GameMap extends ConsumerStatefulWidget {
     required this.games,
     required this.distanceKm,
     this.onGameTap,
+    this.myGames = const [],
   });
 
   @override
@@ -52,11 +54,13 @@ class _GameMapState extends ConsumerState<GameMap> {
             .read(locationServiceProvider)
             .getCurrentPosition()
             .timeout(const Duration(seconds: 4), onTimeout: () => null);
-        if (mounted) setState(() {
-          _initialLat = position?.latitude;
-          _initialLng = position?.longitude;
-          _locationLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _initialLat = position?.latitude;
+            _initialLng = position?.longitude;
+            _locationLoading = false;
+          });
+        }
       } catch (_) {
         if (mounted) setState(() => _locationLoading = false);
       }
@@ -78,11 +82,12 @@ class _GameMapState extends ConsumerState<GameMap> {
   @override
   void didUpdateWidget(GameMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _markersLoaded = false;
 
     if (_mapboxMap != null) {
       // Recharger les marqueurs si les games changent
-      if (oldWidget.games != widget.games) {
+      if (oldWidget.games != widget.games ||
+          oldWidget.myGames != widget.myGames) {
+        _markersLoaded = false;
         _loadMarkers();
       }
 
@@ -139,7 +144,7 @@ class _GameMapState extends ConsumerState<GameMap> {
     _loadMarkers();
   }
 
-/// Regroupe les parties par coordonnées proches (même lieu ≈ rayon 5m)
+  /// Regroupe les parties par coordonnées proches (même lieu ≈ rayon 5m)
   Map<String, List<Game>> _groupByLocation(List<Game> games) {
     const precision = 4; // ~11m de précision (5 décimales = ~1m, 4 = ~11m)
     final groups = <String, List<Game>>{};
@@ -152,21 +157,32 @@ class _GameMapState extends ConsumerState<GameMap> {
   }
 
   Future<void> _loadMarkers() async {
-    if (_annotationManager == null || _markersLoaded && widget.games.isEmpty) {
-      return;
-    }
+    if (_annotationManager == null) return;
 
     // Supprimer les anciens marqueurs
     await _annotationManager?.deleteAll();
     _annotationToGame.clear();
 
+    // Combiner parties existantes + mes parties (sans doublon)
+    final existingIds = widget.games.map((g) => g.id).toSet();
+    final myGameIds = widget.myGames.map((g) => g.id).toSet();
+    final allGames = [
+      ...widget.games,
+      ...widget.myGames.where((g) => !existingIds.contains(g.id)),
+    ];
+
+    if (allGames.isEmpty) {
+      _markersLoaded = true;
+      return;
+    }
+
     // Grouper par lieu pour détecter les superpositions
-    final groups = _groupByLocation(widget.games);
+    final groups = _groupByLocation(allGames);
 
     for (final entry in groups.entries) {
       final gamesAtLocation = entry.value;
       if (gamesAtLocation.length == 1) {
-        await _addMarkerForGame(gamesAtLocation.first);
+        await _addMarkerForGame(gamesAtLocation.first, myGameIds: myGameIds);
       } else {
         // Décaler les marqueurs en cercle autour du point central
         const offsetDeg = 0.00018; // ~20m d'offset
@@ -175,7 +191,10 @@ class _GameMapState extends ConsumerState<GameMap> {
           final game = gamesAtLocation[i];
           final offsetLat = game.latitude + offsetDeg * math.sin(angle);
           final offsetLng = game.longitude + offsetDeg * math.cos(angle);
-          await _addMarkerForGame(game, latOverride: offsetLat, lngOverride: offsetLng);
+          await _addMarkerForGame(game,
+              latOverride: offsetLat,
+              lngOverride: offsetLng,
+              myGameIds: myGameIds);
         }
       }
     }
@@ -184,10 +203,13 @@ class _GameMapState extends ConsumerState<GameMap> {
   }
 
   Future<void> _addMarkerForGame(Game game,
-      {double? latOverride, double? lngOverride}) async {
+      {double? latOverride,
+      double? lngOverride,
+      required Set<String> myGameIds}) async {
     try {
+      final isMyGame = myGameIds.contains(game.id);
       // Générer l'image du marqueur
-      final markerImage = await _generateMarkerImage(game);
+      final markerImage = await _generateMarkerImage(game, isMyGame: isMyGame);
       if (markerImage == null) return;
 
       final lat = latOverride ?? game.latitude;
@@ -211,12 +233,14 @@ class _GameMapState extends ConsumerState<GameMap> {
     }
   }
 
-  Future<Uint8List?> _generateMarkerImage(Game game) async {
+  Future<Uint8List?> _generateMarkerImage(Game game,
+      {bool isMyGame = false}) async {
     const double size = 60;
     const double borderWidth = 4;
 
-    // Couleur de la bordure selon le statut
-    final borderColor = game.effectiveStatus.markerColor;
+    // Couleur de la bordure : dorée pour mes parties, sinon selon le statut
+    final borderColor =
+        isMyGame ? const Color(0xFFFFD700) : game.effectiveStatus.markerColor;
 
     try {
       // Télécharger l'image de profil

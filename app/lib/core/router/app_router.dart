@@ -103,7 +103,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: AppRoutes.createGame,
           name: 'createGame',
           builder: (context, state) => const CreateGameScreen()),
-          GoRoute(
+      GoRoute(
         path: AppRoutes.messages,
         name: 'messages',
         builder: (context, state) => const ConversationsScreen(),

@@ -182,8 +182,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildBio(
-      BuildContext context, ThemeData theme, ColorScheme colorScheme, String? bio) {
+  Widget _buildBio(BuildContext context, ThemeData theme,
+      ColorScheme colorScheme, String? bio) {
     final hasBio = bio != null && bio.isNotEmpty;
 
     return Column(

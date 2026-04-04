@@ -9,6 +9,8 @@ import 'package:tcg_matchmaker/features/home/home_screen.dart';
 import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dart';
 import 'package:tcg_matchmaker/features/messages/screens/conversations_screen.dart';
 import 'package:tcg_matchmaker/features/notifications/providers/notifications_provider.dart';
+import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
+import 'package:tcg_matchmaker/features/profile/providers/settings_provider.dart';
 import 'package:tcg_matchmaker/features/profile/screens/profile_screen.dart';
 import 'package:tcg_matchmaker/shared/widgets/bottom_nav_bar.dart';
 
@@ -32,24 +34,32 @@ class _MainShellState extends ConsumerState<MainShell>
   @override
   void initState() {
     super.initState();
+    // permet au widget de recevoir didChangeAppLifecycleState, sinon il n'est jamais appelé
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initPermissionsAndLoad());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _requestPermissionsAndLoadInitialData());
   }
 
-  Future<void> _initPermissionsAndLoad() async {
-    // 1. Permission notifications (Android 13+)
+  Future<void> _requestPermissionsAndLoadInitialData() async {
+    // 1. Participations : pas besoin de localisation, on lance immédiatement
+    ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
+
+    // 2. Permission notifications (Android 13+)
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    // 2. Permission localisation — après que la dialog notifs soit résolue
+    // 3. Permission localisation — après que la dialog notifs soit résolue
     final locationService = ref.read(locationServiceProvider);
-    await locationService.requestPermission();
+    final hasPermission = await locationService.requestPermission();
 
-    // 3. Fetch des parties (position null si refusée → message d'erreur)
+    // 4. Met à jour la localisation puis lance le fetch des parties
     if (mounted) {
+      ref
+          .read(settingsNotifierProvider.notifier)
+          .setLocationEnabledSilently(hasPermission);
       ref.invalidate(currentPositionProvider);
       ref.read(gamesNotifierProvider.notifier).fetchExistingGames();
     }
@@ -63,9 +73,10 @@ class _MainShellState extends ConsumerState<MainShell>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // quand l’utilisateur revient dans l’app
+    // on revérifie si messages reçus ou notif changées pendant absence
     if (state == AppLifecycleState.resumed) {
-      // Refresh badges quand l'app revient au premier plan
-      ref.invalidate(hasUnreadProvider);
+      ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
       ref.read(conversationsProvider.notifier).refresh();
     }
   }

@@ -61,10 +61,6 @@ final notificationsRepositoryProvider =
   return NotificationsRepository(ref.watch(dioProvider));
 });
 
-// Provider pour l'état des notifications (en mémoire pour V1)
-final notificationsEnabledProvider = StateProvider<bool>((ref) => true);
-
-/// Navigation
 final navigationIndexProvider = StateProvider<int>((ref) => 0);
 
 /// Location
@@ -80,7 +76,8 @@ final currentPositionProvider = FutureProvider<Position?>((ref) async {
   }
 
   final locationService = ref.watch(locationServiceProvider);
-  return locationService.getCurrentPosition()
+  return locationService
+      .getCurrentPosition()
       .timeout(const Duration(seconds: 15), onTimeout: () => null);
 });
 

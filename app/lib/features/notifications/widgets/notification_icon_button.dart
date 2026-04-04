@@ -11,13 +11,11 @@ class NotificationIconButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasUnread = ref.watch(hasUnreadProvider).valueOrNull ?? false;
+    final hasUnread =
+        ref.watch(notificationsNotifierProvider).valueOrNull?.hasUnread ?? false;
 
     return IconButton(
-      onPressed: () async {
-        await context.push(AppRoutes.notifications);
-        ref.invalidate(hasUnreadProvider);
-      },
+      onPressed: () => context.push(AppRoutes.notifications),
       icon: Stack(
         clipBehavior: Clip.none,
         children: [

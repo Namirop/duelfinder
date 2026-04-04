@@ -16,7 +16,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(notificationsListProvider.notifier).markAllRead();
+      ref.read(notificationsNotifierProvider.notifier).markAllRead();
     });
   }
 
@@ -24,7 +24,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final notificationsAsync = ref.watch(notificationsListProvider);
+    final notificationsAsync = ref.watch(notificationsNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -47,16 +47,17 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               ),
               const SizedBox(height: 12),
               FilledButton.tonal(
-                onPressed: () =>
-                    ref.invalidate(notificationsListProvider),
+                onPressed: () => ref
+                    .read(notificationsNotifierProvider.notifier)
+                    .fetchNotifications(),
                 child: const Text('Réessayer'),
               ),
             ],
           ),
         ),
-        data: (notifications) => notifications.isEmpty
+        data: (state) => state.notifications.isEmpty
             ? _buildEmpty(theme, colorScheme)
-            : _buildList(notifications, colorScheme),
+            : _buildList(state.notifications, colorScheme),
       ),
     );
   }
@@ -73,8 +74,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         final notif = notifications[index];
         return _NotificationTile(
           notif: notif,
-          onDelete: () =>
-              ref.read(notificationsListProvider.notifier).delete(notif.id),
+          onDelete: () => ref
+              .read(notificationsNotifierProvider.notifier)
+              .deleteNotification(notif.id),
         );
       },
     );

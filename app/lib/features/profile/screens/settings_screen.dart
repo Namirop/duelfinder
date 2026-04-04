@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/features/profile/providers/settings_provider.dart';
 import 'package:tcg_matchmaker/core/router/app_router.dart';
 import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
@@ -21,11 +22,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final notificationsEnabled = ref.watch(notificationsEnabledProvider);
+    final notificationsEnabled =
+        ref.watch(settingsNotifierProvider).notificationsEnabled;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Paramètres', style: theme.textTheme.titleMedium?.copyWith(fontSize: 23)),
+        title: Text('Paramètres',
+            style: theme.textTheme.titleMedium?.copyWith(fontSize: 23)),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -91,7 +94,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Activer les notifications',
               value: notificationsEnabled,
               onChanged: (value) {
-                ref.read(notificationsEnabledProvider.notifier).state = value;
+                ref
+                    .read(settingsNotifierProvider.notifier)
+                    .toggleNotifications(value);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(value
@@ -321,7 +326,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ColorScheme colorScheme,
     WidgetRef ref,
   ) {
-    final locationEnabled = ref.watch(locationEnabledProvider);
+    final locationEnabled = ref.watch(settingsNotifierProvider).locationEnabled;
 
     return _buildSwitchTile(
       context,
@@ -331,53 +336,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       title: 'Autoriser la géolocalisation',
       value: locationEnabled,
       onChanged: (value) async {
-        if (value) {
-          final hasPermission =
-              await ref.read(locationServiceProvider).checkPermission();
+        final result = await ref
+            .read(settingsNotifierProvider.notifier)
+            .toggleLocation(value);
 
-          if (!hasPermission) {
-            final permission = await Geolocator.requestPermission();
-            if (permission == LocationPermission.denied ||
-                permission == LocationPermission.deniedForever) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text(
-                        'Veuillez autoriser la localisation dans les paramètres'),
-                    action: SnackBarAction(
-                      label: 'Ouvrir',
-                      onPressed: () => Geolocator.openAppSettings(),
-                    ),
-                  ),
-                );
-              }
-              return;
-            }
-          }
-
-          ref.read(locationEnabledProvider.notifier).state = true;
-          ref.invalidate(currentPositionProvider);
-          ref.invalidate(gamesNotifierProvider);
+        if (result == LocationPermissionResult.deniedForever) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Géolocalisation activée'),
-                duration: Duration(seconds: 1),
+              SnackBar(
+                content: const Text(
+                    'Veuillez autoriser la localisation dans les paramètres'),
+                action: SnackBarAction(
+                  label: 'Ouvrir',
+                  onPressed: () => Geolocator.openAppSettings(),
+                ),
               ),
             );
           }
-        } else {
-          ref.read(locationEnabledProvider.notifier).state = false;
-          ref.invalidate(currentPositionProvider);
-          ref.invalidate(gamesNotifierProvider);
+          return;
+        }
+        if (result == LocationPermissionResult.denied) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Géolocalisation désactivée'),
-                duration: Duration(seconds: 1),
+                content: Text('Autorisation de localisation refusée'),
               ),
             );
           }
+          return;
+        }
+
+        ref.read(gamesNotifierProvider.notifier).fetchExistingGames();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(value
+                  ? 'Géolocalisation activée'
+                  : 'Géolocalisation désactivée'),
+              duration: const Duration(seconds: 1),
+            ),
+          );
         }
       },
     );
@@ -421,16 +420,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                                error ?? 'Pseudo mis à jour'),
+                            content: Text(error ?? 'Pseudo mis à jour'),
                             backgroundColor:
                                 error != null ? colorScheme.error : null,
                           ),
                         );
                       }
                     },
-              style:
-                  TextButton.styleFrom(foregroundColor: colorScheme.primary),
+              style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
               child: isLoading
                   ? const SizedBox(
                       width: 16,
@@ -492,8 +489,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         );
                       }
                     },
-              style:
-                  TextButton.styleFrom(foregroundColor: colorScheme.primary),
+              style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
               child: isLoading
                   ? const SizedBox(
                       width: 16,
@@ -540,8 +536,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               TextField(
                 controller: confirmController,
                 obscureText: true,
-                decoration:
-                    const InputDecoration(labelText: 'Confirmer le mot de passe'),
+                decoration: const InputDecoration(
+                    labelText: 'Confirmer le mot de passe'),
               ),
             ],
           ),
@@ -584,8 +580,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         );
                       }
                     },
-              style:
-                  TextButton.styleFrom(foregroundColor: colorScheme.primary),
+              style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
               child: isLoading
                   ? const SizedBox(
                       width: 16,

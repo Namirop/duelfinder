@@ -874,7 +874,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         style: theme.textTheme.bodyMedium,
         maxLines: 4,
         decoration: InputDecoration.collapsed(
-          hintText: "Infos supplémentaires, règles...",
+          hintText: "Infos supplémentaires, duel, échange de cartes, test de deck, règles…",
           hintStyle: TextStyle(
             color: colorScheme.onSurface.withValues(alpha: 0.5),
           ),

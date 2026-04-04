@@ -18,7 +18,9 @@ class BottomNavBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasUnreadNotif = ref.watch(hasUnreadProvider).valueOrNull ?? false;
+    final hasUnreadNotif =
+        ref.watch(notificationsNotifierProvider).valueOrNull?.hasUnread ??
+            false;
     final unreadMessages = ref.watch(totalUnreadProvider);
 
     return Padding(
@@ -47,7 +49,8 @@ class BottomNavBar extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildIcon(Icons.home_rounded, 0, colorScheme, ref),
-                      _buildIcon(Icons.calendar_month_outlined, 1, colorScheme, ref),
+                      _buildIcon(
+                          Icons.calendar_month_outlined, 1, colorScheme, ref),
                       const SizedBox(width: 80),
                       _buildIconWithBadge(
                         Icons.chat_bubble_rounded,
@@ -78,7 +81,8 @@ class BottomNavBar extends ConsumerWidget {
     );
   }
 
-  Widget _buildIcon(IconData icon, int index, ColorScheme colorScheme, WidgetRef ref) {
+  Widget _buildIcon(
+      IconData icon, int index, ColorScheme colorScheme, WidgetRef ref) {
     final isSelected = currentScreen == index;
 
     return GestureDetector(
@@ -181,7 +185,8 @@ class BottomNavBar extends ConsumerWidget {
     );
   }
 
-  Widget _buildCenterButton(ColorScheme colorScheme, int index, BuildContext context) {
+  Widget _buildCenterButton(
+      ColorScheme colorScheme, int index, BuildContext context) {
     final isSelected = currentScreen == index;
     final unselectedColor = Color.lerp(colorScheme.primary, Colors.black, 0.5)!;
 

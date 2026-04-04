@@ -4,7 +4,7 @@ import 'package:tcg_matchmaker/core/services/app_logger.dart';
 import 'package:tcg_matchmaker/core/services/firebase_messaging_service.dart';
 import 'package:tcg_matchmaker/features/auth/entities/auth_state.dart';
 import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
-import 'package:tcg_matchmaker/features/notifications/entities/notification.dart';
+import 'package:tcg_matchmaker/features/notifications/entities/notifications_state.dart';
 
 part 'notifications_provider.g.dart';
 
@@ -12,25 +12,28 @@ part 'notifications_provider.g.dart';
 /// keepAlive: true → vit pour toute la durée de la session, jamais détruit.
 @Riverpod(keepAlive: true)
 class FcmInitializer extends _$FcmInitializer {
+  // Champ intentionnel : keepAlive: true garantit que le notifier n'est jamais
+  // détruit, donc _service est un singleton de facto. Le check != null empêche
+  // une double-initialisation si auth change plusieurs fois.
   FirebaseMessagingService? _service;
 
   @override
-  bool build() {
+  Future<bool> build() async {
     ref.listen<AuthState>(authNotifierProvider, (prev, next) {
-      if (next.isAuthenticated && _service == null) {
-        _initFcm();
-      }
+      if (next.isAuthenticated) _initFcm();
     });
 
     final auth = ref.read(authNotifierProvider);
-    if (auth.isAuthenticated && _service == null) {
-      Future.microtask(_initFcm);
+    if (auth.isAuthenticated) {
+      await _initFcm();
+      return true;
     }
 
     return false;
   }
 
   Future<void> _initFcm() async {
+    if (_service != null) return;
     try {
       _service = FirebaseMessagingService(
         ref.read(notificationsRepositoryProvider),
@@ -44,32 +47,48 @@ class FcmInitializer extends _$FcmInitializer {
   }
 }
 
-final hasUnreadProvider = FutureProvider<bool>((ref) async {
-  return ref.read(notificationsRepositoryProvider).hasUnread();
-});
-
-class NotificationsListNotifier extends AsyncNotifier<List<AppNotification>> {
+@Riverpod(keepAlive: true)
+class NotificationsNotifier extends _$NotificationsNotifier {
   @override
-  Future<List<AppNotification>> build() async {
-    return ref.read(notificationsRepositoryProvider).getNotifications();
+  Future<NotificationsState> build() async {
+    final notifications =
+        await ref.read(notificationsRepositoryProvider).getNotifications();
+    return NotificationsState(notifications: notifications);
+  }
+
+  Future<void> fetchNotifications() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final notifications =
+          await ref.read(notificationsRepositoryProvider).getNotifications();
+      return NotificationsState(notifications: notifications);
+    });
   }
 
   Future<void> markAllRead() async {
-    await ref.read(notificationsRepositoryProvider).markAllRead();
-    state = state.whenData(
-      (list) => list.map((n) => n.copyWith(read: true)).toList(),
-    );
+    final current = state.valueOrNull;
+    if (current == null) return;
+    try {
+      await ref.read(notificationsRepositoryProvider).markAllRead();
+      state = AsyncData(current.copyWith(
+        notifications:
+            current.notifications.map((n) => n.copyWith(read: true)).toList(),
+      ));
+    } catch (e, st) {
+      AppLogger.e('NotificationsNotifier', 'markAllRead failed', e, st);
+    }
   }
 
-  Future<void> delete(String id) async {
-    await ref.read(notificationsRepositoryProvider).deleteNotification(id);
-    state = state.whenData(
-      (list) => list.where((n) => n.id != id).toList(),
-    );
+  Future<void> deleteNotification(String id) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    try {
+      await ref.read(notificationsRepositoryProvider).deleteNotification(id);
+      state = AsyncData(current.copyWith(
+        notifications: current.notifications.where((n) => n.id != id).toList(),
+      ));
+    } catch (e, st) {
+      AppLogger.e('NotificationsNotifier', 'deleteNotification failed', e, st);
+    }
   }
 }
-
-final notificationsListProvider =
-    AsyncNotifierProvider<NotificationsListNotifier, List<AppNotification>>(
-  NotificationsListNotifier.new,
-);

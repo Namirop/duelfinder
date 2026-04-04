@@ -9,12 +9,14 @@ class GameCard extends ConsumerWidget {
   final Game game;
   final int index;
   final bool showFullAddress;
+  final int pendingCount;
 
   const GameCard({
     super.key,
     required this.game,
     this.index = 0,
     this.showFullAddress = false,
+    this.pendingCount = 0,
   });
 
   void _showGameDetails(BuildContext context) {
@@ -156,6 +158,34 @@ class GameCard extends ConsumerWidget {
                 icon: Icons.schedule_outlined,
                 text: _formatScheduledTime(game.scheduledAt),
               ),
+              if (pendingCount > 0) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.orange.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.pending_actions_rounded,
+                          size: 14, color: Colors.orange.shade300),
+                      const SizedBox(width: 6),
+                      Text(
+                        '$pendingCount demande${pendingCount > 1 ? "s" : ""} en attente',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.orange.shade300,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),

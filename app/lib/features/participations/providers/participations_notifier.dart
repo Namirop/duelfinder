@@ -13,8 +13,7 @@ part 'participations_notifier.g.dart';
 class ParticipationsNotifier extends _$ParticipationsNotifier {
   @override
   ParticipationsState build() {
-    Future.microtask(fetchMyParticipations);
-    return const ParticipationsState(isLoadingMyParticipations: true);
+    return const ParticipationsState();
   }
 
   // ── Vue joueur ────────────────────────────────────────────────
@@ -31,11 +30,15 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
       );
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'fetchMyParticipations failed: $e');
-      state = state.copyWith(getMyParticipationsError: e.message, isLoadingMyParticipations: false);
+      state = state.copyWith(
+          getMyParticipationsError: e.message,
+          isLoadingMyParticipations: false);
     } catch (e, stackTrace) {
       AppLogger.e('ParticipationsNotifier', 'fetchMyParticipations failed', e,
           stackTrace);
-      state = state.copyWith(getMyParticipationsError: 'Erreur inconnue', isLoadingMyParticipations: false);
+      state = state.copyWith(
+          getMyParticipationsError: 'Erreur inconnue',
+          isLoadingMyParticipations: false);
     }
   }
 
@@ -67,11 +70,13 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
       );
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'requestToJoin failed: $e');
-      state = state.copyWith(getMyParticipationsError: e.message, isRequesting: false);
+      state = state.copyWith(
+          getMyParticipationsError: e.message, isRequesting: false);
     } catch (e, stackTrace) {
       AppLogger.e(
           'ParticipationsNotifier', 'requestToJoin failed', e, stackTrace);
-      state = state.copyWith(getMyParticipationsError: 'Erreur inconnue', isRequesting: false);
+      state = state.copyWith(
+          getMyParticipationsError: 'Erreur inconnue', isRequesting: false);
     }
   }
 
@@ -100,11 +105,13 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
       }
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'cancelParticipation failed: $e');
-      state = state.copyWith(getMyParticipationsError: e.message, isRequesting: false);
+      state = state.copyWith(
+          getMyParticipationsError: e.message, isRequesting: false);
     } catch (e, stackTrace) {
       AppLogger.e('ParticipationsNotifier', 'cancelParticipation failed', e,
           stackTrace);
-      state = state.copyWith(getMyParticipationsError: 'Erreur inconnue', isRequesting: false);
+      state = state.copyWith(
+          getMyParticipationsError: 'Erreur inconnue', isRequesting: false);
     }
   }
 
@@ -141,8 +148,8 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
         isLoadingGameParticipants: false,
       );
     } catch (e, stackTrace) {
-      AppLogger.e('ParticipationsNotifier', 'fetchGameParticipations failed',
-          e, stackTrace);
+      AppLogger.e('ParticipationsNotifier', 'fetchGameParticipations failed', e,
+          stackTrace);
       state = state.copyWith(
         getGameParticipantsError: 'Erreur inconnue',
         isLoadingGameParticipants: false,
@@ -183,8 +190,8 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
             state.processingIds.where((id) => id != participationId).toSet(),
       );
     } catch (e, stackTrace) {
-      AppLogger.e(
-          'ParticipationsNotifier', 'acceptParticipation failed', e, stackTrace);
+      AppLogger.e('ParticipationsNotifier', 'acceptParticipation failed', e,
+          stackTrace);
       state = state.copyWith(
         getGameParticipantsError: 'Erreur inconnue',
         processingIds:
@@ -223,8 +230,8 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
             state.processingIds.where((id) => id != participationId).toSet(),
       );
     } catch (e, stackTrace) {
-      AppLogger.e(
-          'ParticipationsNotifier', 'rejectParticipation failed', e, stackTrace);
+      AppLogger.e('ParticipationsNotifier', 'rejectParticipation failed', e,
+          stackTrace);
       state = state.copyWith(
         getGameParticipantsError: 'Erreur inconnue',
         processingIds:
