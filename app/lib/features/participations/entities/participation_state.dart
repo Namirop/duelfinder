@@ -27,12 +27,6 @@ class ParticipationsState {
   });
 
   // ── Vue joueur ────────────────────────────────────────────────
-  List<Participation> get pendingParticipations =>
-      myParticipations.where((p) => p.isPending).toList();
-
-  List<Participation> get acceptedParticipations =>
-      myParticipations.where((p) => p.isAccepted).toList();
-
   /// PENDING/ACCEPTED toujours visibles ; CANCELLED/REJECTED uniquement aujourd'hui
   List<Participation> get visibleParticipations {
     final today = DateTime.now();
