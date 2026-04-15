@@ -222,6 +222,9 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
         processingIds:
             state.processingIds.where((id) => id != participationId).toSet(),
       );
+
+      // pendingCount a changé → on rafraîchit la liste des parties créées
+      ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'rejectParticipation failed: $e');
       state = state.copyWith(

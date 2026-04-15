@@ -20,6 +20,7 @@ class Game {
   final DateTime createdAt;
   final DateTime updatedAt;
   final double? distance;
+  final int pendingCount;
 
   const Game({
     required this.id,
@@ -39,6 +40,7 @@ class Game {
     required this.createdAt,
     required this.updatedAt,
     this.distance,
+    this.pendingCount = 0,
   });
 
   bool get isFull => currentPlayers >= maxPlayers;
@@ -77,6 +79,7 @@ class Game {
     DateTime? createdAt,
     DateTime? updatedAt,
     double? distance,
+    int? pendingCount,
   }) {
     return Game(
       id: id ?? this.id,
@@ -96,6 +99,7 @@ class Game {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       distance: distance ?? this.distance,
+      pendingCount: pendingCount ?? this.pendingCount,
     );
   }
 

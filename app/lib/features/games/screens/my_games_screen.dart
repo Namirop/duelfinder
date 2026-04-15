@@ -125,14 +125,13 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
       ParticipationsState participationsState) {
     return TabBarView(
       children: [
-        _buildGamesList(gamesState, participationsState),
+        _buildGamesList(gamesState),
         _buildParticipationsList(participationsState),
       ],
     );
   }
 
-  Widget _buildGamesList(
-      GamesState state, ParticipationsState participationsState) {
+  Widget _buildGamesList(GamesState state) {
     final theme = Theme.of(context);
     final games = state.myGames;
 
@@ -187,14 +186,10 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
               ),
               itemCount: games.length,
               itemBuilder: (context, index) {
-                final pendingCount = participationsState
-                    .getPendingForGame(games[index].id)
-                    .length;
                 return GameCard(
                   game: games[index],
                   index: index,
                   showFullAddress: true,
-                  pendingCount: pendingCount,
                 );
               },
             ),

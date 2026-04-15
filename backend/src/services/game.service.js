@@ -86,6 +86,11 @@ const findByCreator = async (userId) => {
           },
         },
       },
+      _count: {
+        select: {
+          participations: { where: { status: "PENDING" } },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -95,6 +100,7 @@ const findByCreator = async (userId) => {
     effectiveStatus: getEffectiveStatus(game),
     currentPlayers: game.participations.length + 1,
     participants: game.participations.map((p) => p.user),
+    pendingCount: game._count.participations,
   }));
 };
 

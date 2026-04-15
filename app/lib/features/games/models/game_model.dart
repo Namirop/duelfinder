@@ -19,6 +19,7 @@ class GameModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final double? distance;
+  final int pendingCount;
 
   const GameModel({
     required this.id,
@@ -38,6 +39,7 @@ class GameModel {
     required this.createdAt,
     required this.updatedAt,
     this.distance,
+    this.pendingCount = 0,
   });
 
   factory GameModel.fromJson(Map<String, dynamic> json) {
@@ -78,6 +80,7 @@ class GameModel {
       distance: json['distance'] != null
           ? (json['distance'] as num).toDouble()
           : null,
+      pendingCount: json['pendingCount'] as int? ?? 0,
     );
   }
 
@@ -100,6 +103,7 @@ class GameModel {
       createdAt: createdAt,
       updatedAt: updatedAt,
       distance: distance,
+      pendingCount: pendingCount,
     );
   }
 
