@@ -180,9 +180,9 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
       return const LoadingWidget();
     }
 
-    if (state.getMyParticipationsError != null && participations.isEmpty) {
+    if (state.error != null && participations.isEmpty) {
       return AppErrorWidget(
-        message: state.getMyParticipationsError!,
+        message: state.error!,
         onRetry: () => ref
             .read(participationsNotifierProvider.notifier)
             .fetchMyParticipations(),

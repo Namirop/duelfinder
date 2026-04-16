@@ -56,25 +56,14 @@ extension GameStatusExtension on GameStatus {
         GameStatus.CANCELLED => AppTheme.statusCancelled,
       };
 
-  /// Couleur pour les marqueurs sur la map (bordure)
-  /// OPEN = vert, CANCELLED = rouge, autres = blanc
-  Color get markerColor => switch (this) {
-        GameStatus.OPEN => AppTheme.statusOpen,
-        GameStatus.CANCELLED => AppTheme.statusCancelled,
-        GameStatus.FULL ||
-        GameStatus.IN_PROGRESS ||
-        GameStatus.FINISHED =>
-          Colors.white,
-      };
-
   bool get canJoin => this == GameStatus.OPEN;
 
   /// Texte du bouton quand on ne peut pas rejoindre
   String get disabledButtonText => switch (this) {
-        GameStatus.OPEN => 'Rejoindre',
         GameStatus.FULL => 'Partie complète',
         GameStatus.CANCELLED => 'Partie annulée',
         GameStatus.IN_PROGRESS => 'Partie en cours',
         GameStatus.FINISHED => 'Partie terminée',
+        GameStatus.OPEN => '', // jamais appelé (canJoin = true)
       };
 }

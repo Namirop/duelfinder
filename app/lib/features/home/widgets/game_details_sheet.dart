@@ -67,7 +67,7 @@ class GameDetailsSheet extends ConsumerWidget {
   }
 
   Widget _buildHeader(ThemeData theme, ColorScheme colorScheme) {
-    final statusColor = game.effectiveStatus.markerColor;
+    final statusColor = game.effectiveStatus.color;
 
     return Row(
       children: [
@@ -550,18 +550,12 @@ class GameDetailsSheet extends ConsumerWidget {
         return SizedBox(
           width: double.infinity,
           child: OutlinedButton(
-            onPressed: isRequesting || isGameOver
+            onPressed: isRequesting
                 ? null
                 : () => _handleCancelParticipation(context, ref, participation),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.orange,
-              side: BorderSide(
-                color: isGameOver
-                    ? colorScheme.onSurface.withValues(alpha: 0.2)
-                    : Colors.orange,
-              ),
-              disabledForegroundColor:
-                  colorScheme.onSurface.withValues(alpha: 0.4),
+              side: const BorderSide(color: Colors.orange),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -579,19 +573,14 @@ class GameDetailsSheet extends ConsumerWidget {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.hourglass_top,
-                          size: 20,
-                          color: isGameOver
-                              ? colorScheme.onSurface.withValues(alpha: 0.4)
-                              : Colors.orange),
+                      const Icon(Icons.hourglass_top,
+                          size: 20, color: Colors.orange),
                       const SizedBox(width: 8),
                       Text(
                         'Demande en attente',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isGameOver
-                              ? colorScheme.onSurface.withValues(alpha: 0.4)
-                              : Colors.orange,
+                          color: Colors.orange,
                         ),
                       ),
                     ],
@@ -742,7 +731,7 @@ class GameDetailsSheet extends ConsumerWidget {
     if (!context.mounted) return;
 
     final error =
-        ref.read(participationsNotifierProvider).getMyParticipationsError;
+        ref.read(participationsNotifierProvider).error;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -797,7 +786,7 @@ class GameDetailsSheet extends ConsumerWidget {
     if (!context.mounted) return;
 
     final error =
-        ref.read(participationsNotifierProvider).getMyParticipationsError;
+        ref.read(participationsNotifierProvider).error;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

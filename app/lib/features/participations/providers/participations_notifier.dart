@@ -31,13 +31,13 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'fetchMyParticipations failed: $e');
       state = state.copyWith(
-          getMyParticipationsError: e.message,
+          error: e.message,
           isLoadingMyParticipations: false);
     } catch (e, stackTrace) {
       AppLogger.e('ParticipationsNotifier', 'fetchMyParticipations failed', e,
           stackTrace);
       state = state.copyWith(
-          getMyParticipationsError: 'Erreur inconnue',
+          error: 'Erreur inconnue',
           isLoadingMyParticipations: false);
     }
   }
@@ -71,12 +71,12 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'requestToJoin failed: $e');
       state = state.copyWith(
-          getMyParticipationsError: e.message, isRequesting: false);
+          error: e.message, isRequesting: false);
     } catch (e, stackTrace) {
       AppLogger.e(
           'ParticipationsNotifier', 'requestToJoin failed', e, stackTrace);
       state = state.copyWith(
-          getMyParticipationsError: 'Erreur inconnue', isRequesting: false);
+          error: 'Erreur inconnue', isRequesting: false);
     }
   }
 
@@ -106,12 +106,12 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'cancelParticipation failed: $e');
       state = state.copyWith(
-          getMyParticipationsError: e.message, isRequesting: false);
+          error: e.message, isRequesting: false);
     } catch (e, stackTrace) {
       AppLogger.e('ParticipationsNotifier', 'cancelParticipation failed', e,
           stackTrace);
       state = state.copyWith(
-          getMyParticipationsError: 'Erreur inconnue', isRequesting: false);
+          error: 'Erreur inconnue', isRequesting: false);
     }
   }
 

@@ -23,7 +23,7 @@ class GameMarker extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: game.effectiveStatus.markerColor,
+            color: game.effectiveStatus.color,
             width: 3,
           ),
           boxShadow: [

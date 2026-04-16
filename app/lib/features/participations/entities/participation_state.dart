@@ -4,7 +4,7 @@ class ParticipationsState {
   final List<Participation> myParticipations;
   final bool isLoadingMyParticipations;
   final bool isRequesting;
-  final String? getMyParticipationsError;
+  final String? error;
 
   /// Participations par partie (vue créateur) : gameId → liste
   final Map<String, List<Participation>> gameParticipants;
@@ -19,7 +19,7 @@ class ParticipationsState {
     this.myParticipations = const [],
     this.isLoadingMyParticipations = false,
     this.isRequesting = false,
-    this.getMyParticipationsError,
+    this.error,
     this.gameParticipants = const {},
     this.processingIds = const {},
     this.isLoadingGameParticipants = false,
@@ -51,7 +51,7 @@ class ParticipationsState {
     List<Participation>? myParticipations,
     bool? isLoadingMyParticipations,
     bool? isRequesting,
-    String? getMyParticipationsError,
+    String? error,
     bool clearError = false,
     Map<String, List<Participation>>? gameParticipants,
     Set<String>? processingIds,
@@ -64,9 +64,9 @@ class ParticipationsState {
       isLoadingMyParticipations:
           isLoadingMyParticipations ?? this.isLoadingMyParticipations,
       isRequesting: isRequesting ?? this.isRequesting,
-      getMyParticipationsError: clearError
+      error: clearError
           ? null
-          : (getMyParticipationsError ?? this.getMyParticipationsError),
+          : (error ?? this.error),
       gameParticipants: gameParticipants ?? this.gameParticipants,
       processingIds: processingIds ?? this.processingIds,
       isLoadingGameParticipants:

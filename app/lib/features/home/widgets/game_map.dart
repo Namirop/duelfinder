@@ -204,7 +204,7 @@ class _GameMapState extends ConsumerState<GameMap> {
 
     // Couleur de la bordure : dorée pour mes parties, sinon selon le statut
     final borderColor =
-        isMyGame ? const Color(0xFFFFD700) : game.effectiveStatus.markerColor;
+        isMyGame ? const Color(0xFFFFD700) : game.effectiveStatus.color;
 
     try {
       // Télécharger l'image de profil
