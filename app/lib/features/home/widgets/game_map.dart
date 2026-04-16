@@ -127,20 +127,16 @@ class _GameMapState extends ConsumerState<GameMap> {
     await _annotationManager?.deleteAll();
     _annotationToGame.clear();
 
-    // Combiner parties existantes + mes parties (sans doublon)
-    final existingIds = widget.games.map((g) => g.id).toSet();
+    // myGames sert uniquement à identifier la bordure dorée,
+    // widget.games (visibleGames) contient déjà tout, mergé et filtré.
     final myGameIds = widget.myGames.map((g) => g.id).toSet();
-    final allGames = [
-      ...widget.games,
-      ...widget.myGames.where((g) => !existingIds.contains(g.id)),
-    ];
 
-    if (allGames.isEmpty) {
-        return;
+    if (widget.games.isEmpty) {
+      return;
     }
 
     // Grouper par lieu pour détecter les superpositions
-    final groups = _groupByLocation(allGames);
+    final groups = _groupByLocation(widget.games);
 
     for (final entry in groups.entries) {
       final gamesAtLocation = entry.value;
