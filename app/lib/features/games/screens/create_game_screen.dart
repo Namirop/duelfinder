@@ -433,6 +433,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
     await ref.read(gamesNotifierProvider.notifier).createGame(game);
 
+    if (!mounted) return;
+
     final gamesState = ref.read(gamesNotifierProvider);
 
     if (gamesState.errorCreating != null) {

@@ -455,7 +455,6 @@ class GameDetailsSheet extends ConsumerWidget {
             ),
           ),
         if (isCancellable) ...[
-          if (showManageRequests) const SizedBox(height: 10),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
@@ -513,10 +512,25 @@ class GameDetailsSheet extends ConsumerWidget {
     await ref.read(gamesNotifierProvider.notifier).cancelGame(game.id);
 
     if (!context.mounted) return;
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Partie annulée')),
-    );
+
+    final error = ref.read(gamesNotifierProvider).errorDeleting;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Partie annulée'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildParticipationStatusButton(
@@ -528,7 +542,8 @@ class GameDetailsSheet extends ConsumerWidget {
     bool isRequesting,
   ) {
     final isGameOver = game.effectiveStatus == GameStatus.IN_PROGRESS ||
-        game.effectiveStatus == GameStatus.FINISHED;
+        game.effectiveStatus == GameStatus.FINISHED ||
+        game.effectiveStatus == GameStatus.CANCELLED;
 
     switch (participation.status) {
       case ParticipationStatus.PENDING:
@@ -564,10 +579,11 @@ class GameDetailsSheet extends ConsumerWidget {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.hourglass_top, size: 20,
-                        color: isGameOver
-                            ? colorScheme.onSurface.withValues(alpha: 0.4)
-                            : Colors.orange),
+                      Icon(Icons.hourglass_top,
+                          size: 20,
+                          color: isGameOver
+                              ? colorScheme.onSurface.withValues(alpha: 0.4)
+                              : Colors.orange),
                       const SizedBox(width: 8),
                       Text(
                         'Demande en attente',

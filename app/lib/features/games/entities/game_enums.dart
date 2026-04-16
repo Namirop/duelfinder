@@ -67,15 +67,6 @@ extension GameStatusExtension on GameStatus {
           Colors.white,
       };
 
-  bool get isOpen => this == GameStatus.OPEN;
-
-  bool get isWhite =>
-      this == GameStatus.FULL ||
-      this == GameStatus.IN_PROGRESS ||
-      this == GameStatus.FINISHED;
-
-  bool get isCancelled => this == GameStatus.CANCELLED;
-
   bool get canJoin => this == GameStatus.OPEN;
 
   /// Texte du bouton quand on ne peut pas rejoindre

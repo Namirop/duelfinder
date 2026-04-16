@@ -109,24 +109,6 @@ class GamesNotifier extends _$GamesNotifier {
     }
   }
 
-  Future<void> deleteGame(String gameId) async {
-    state = state.copyWith(isDeleting: true, clearErrorDeleting: true);
-    try {
-      await ref.read(gamesRepositoryProvider).deleteGame(gameId);
-      state = state.copyWith(
-        isDeleting: false,
-        myGames: state.myGames.where((g) => g.id != gameId).toList(),
-      );
-    } on AppException catch (e) {
-      AppLogger.w('GamesNotifier', 'deleteGame failed: ${e.toString()}');
-      state = state.copyWith(errorDeleting: e.message, isDeleting: false);
-    } catch (e, stackTrace) {
-      AppLogger.e('GamesNotifier', 'deleteGame failed', e, stackTrace);
-      state = state.copyWith(
-          errorDeleting: 'Erreur de suppression', isDeleting: false);
-    }
-  }
-
   Future<void> cancelGame(String gameId) async {
     state = state.copyWith(isDeleting: true, clearErrorDeleting: true);
     try {

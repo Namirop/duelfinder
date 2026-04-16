@@ -104,7 +104,23 @@ class _GameMapState extends ConsumerState<GameMap> {
       ),
     );
 
-    // La map est déjà centrée sur l'utilisateur (position chargée avant le build)
+    // Écouter les changements de position pour recentrer la map
+    ref.listen(currentPositionProvider, (prev, next) {
+      final position = next.valueOrNull;
+      if (position != null && mounted) {
+        _mapboxMap?.flyTo(
+          CameraOptions(
+            center: Point(
+              coordinates: Position(position.longitude, position.latitude),
+            ),
+            zoom: _distanceToZoom(widget.distanceKm),
+            pitch: 45,
+          ),
+          MapAnimationOptions(duration: 600),
+        );
+      }
+    });
+
     _loadMarkers();
   }
 
