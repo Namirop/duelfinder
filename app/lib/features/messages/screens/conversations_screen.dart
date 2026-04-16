@@ -213,7 +213,7 @@ class _ConversationTile extends StatelessWidget {
     final isArchived = conversation.isArchived;
     final gameColor = isArchived
         ? colorScheme.onSurface.withValues(alpha: 0.35)
-        : conversation.gameType.color;
+        : colorScheme.primary;
 
     return InkWell(
       onTap: onTap,

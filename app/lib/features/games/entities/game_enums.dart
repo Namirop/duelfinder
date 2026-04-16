@@ -31,12 +31,6 @@ extension GameTypeExtension on GameType {
         GameType.NARUTO => 'NRT',
       };
 
-  Color get color => switch (this) {
-        GameType.ONE_PIECE => const Color(0xFFE63946),
-        GameType.POKEMON => const Color(0xFFFFCC00),
-        GameType.YUGIOH => const Color(0xFFB8860B),
-        GameType.NARUTO => const Color(0xFFFF6B35),
-      };
 }
 
 extension GameStatusExtension on GameStatus {

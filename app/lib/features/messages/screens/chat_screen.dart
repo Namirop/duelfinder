@@ -78,7 +78,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ColorScheme colorScheme,
     Conversation? conversation,
   ) {
-    final gameColor = conversation?.gameType.color ?? colorScheme.primary;
+    final gameColor = colorScheme.primary;
     final title = conversation?.address ?? 'Conversation';
     final gameLabel = conversation?.gameType.label ?? '';
     final membersCount =
