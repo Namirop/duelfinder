@@ -32,4 +32,11 @@ router.patch(
   participationsController.cancelParticipation,
 );
 
+// DELETE /api/participations/:id/permanent - Supprimer définitivement
+router.delete(
+  "/:id/permanent",
+  authenticate,
+  participationsController.permanentDeleteParticipation,
+);
+
 export default router;

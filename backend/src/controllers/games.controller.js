@@ -185,9 +185,79 @@ const deleteGame = async (req, res, next) => {
   }
 };
 
+// DELETE /api/games/:gameId/permanent
+const permanentDeleteGame = async (req, res, next) => {
+  try {
+    const { gameId } = req.params;
+    const userId = req.user.userId;
+
+    const game = await prisma.game.findUnique({ where: { id: gameId } });
+
+    if (!game) {
+      return res.status(404).json({ error: "Partie introuvable" });
+    }
+    if (game.creatorId !== userId) {
+      return res.status(403).json({ error: "Vous n'êtes pas le créateur" });
+    }
+
+    const status = gameService.getEffectiveStatus(game);
+    if (status !== "CANCELLED" && status !== "FINISHED") {
+      return res
+        .status(400)
+        .json({ error: "Impossible de supprimer une partie active" });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`DELETE FROM notifications WHERE data->>'gameId' = ${gameId}`;
+      await tx.message.deleteMany({ where: { gameId } });
+      await tx.participation.deleteMany({ where: { gameId } });
+      await tx.game.delete({ where: { id: gameId } });
+    });
+
+    res.json({ message: "Partie supprimée définitivement" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/games/:gameId/archive
+const archiveGame = async (req, res, next) => {
+  try {
+    const { gameId } = req.params;
+    const userId = req.user.userId;
+
+    const game = await prisma.game.findUnique({ where: { id: gameId } });
+
+    if (!game) {
+      return res.status(404).json({ error: "Partie introuvable" });
+    }
+    if (game.creatorId !== userId) {
+      return res.status(403).json({ error: "Vous n'êtes pas le créateur" });
+    }
+
+    const status = gameService.getEffectiveStatus(game);
+    if (status !== "FINISHED") {
+      return res
+        .status(400)
+        .json({ error: "Seule une partie terminée peut être archivée" });
+    }
+
+    await prisma.game.update({
+      where: { id: gameId },
+      data: { archivedAt: new Date() },
+    });
+
+    res.json({ message: "Partie archivée" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getExistingGames,
   getMyGames,
   createGame,
   deleteGame,
+  permanentDeleteGame,
+  archiveGame,
 };

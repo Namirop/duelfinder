@@ -22,8 +22,14 @@ router.get("/my-games", authenticate, gamesController.getMyGames);
 // POST /api/games - Créer une partie
 router.post("/", authenticate, createGameLimiter, gamesController.createGame);
 
-// DELETE /api/games/:gameId - Supprimer une partie
+// DELETE /api/games/:gameId - Annuler une partie
 router.delete("/:gameId", authenticate, gamesController.deleteGame);
+
+// DELETE /api/games/:gameId/permanent - Supprimer définitivement
+router.delete("/:gameId/permanent", authenticate, gamesController.permanentDeleteGame);
+
+// PATCH /api/games/:gameId/archive - Archiver une partie terminée
+router.patch("/:gameId/archive", authenticate, gamesController.archiveGame);
 
 // GET /api/games/:gameId/participations - Participants d'une partie
 router.get(

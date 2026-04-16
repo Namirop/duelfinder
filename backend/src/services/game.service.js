@@ -62,7 +62,7 @@ const canCreateGame = async (userId) => {
  */
 const findByCreator = async (userId) => {
   const games = await prisma.game.findMany({
-    where: { creatorId: userId },
+    where: { creatorId: userId, archivedAt: null },
     include: {
       creator: {
         select: { id: true, username: true, avatar: true },

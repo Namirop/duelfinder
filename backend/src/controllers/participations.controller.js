@@ -158,6 +158,42 @@ const cancelParticipation = async (req, res, next) => {
   }
 };
 
+// DELETE /api/participations/:id/permanent
+const permanentDeleteParticipation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    const participation = await prisma.participation.findUnique({
+      where: { id },
+    });
+
+    if (!participation) {
+      return res.status(404).json({ error: "Participation introuvable" });
+    }
+    if (participation.userId !== userId) {
+      return res.status(403).json({ error: "Accès refusé" });
+    }
+    if (
+      participation.status !== "CANCELLED" &&
+      participation.status !== "REJECTED"
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Seule une participation annulée ou refusée peut être supprimée" });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`DELETE FROM notifications WHERE data->>'participationId' = ${id}`;
+      await tx.participation.delete({ where: { id } });
+    });
+
+    res.json({ message: "Participation supprimée" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getMyParticipations,
   getGameParticipations,
@@ -165,4 +201,5 @@ export default {
   acceptParticipation,
   rejectParticipation,
   cancelParticipation,
+  permanentDeleteParticipation,
 };

@@ -43,6 +43,7 @@ model Game {
   status         GameStatus      @default(OPEN)
   wasFilledOnce  Boolean         @default(false)
   finishedAt     DateTime?
+  archivedAt     DateTime?
   creatorId      String
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
