@@ -5,6 +5,7 @@
 
 import bcrypt from "bcryptjs";
 import prisma from "../config/database.js";
+import { cloudinary } from "../config/cloudinary.js";
 
 const USER_SELECT = {
   id: true,
@@ -198,6 +199,42 @@ const deleteMe = async (req, res, next) => {
   }
 };
 
+// PUT /api/users/me/avatar
+const uploadAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Aucun fichier fourni" });
+    }
+
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: "duelfinder/avatars",
+          transformation: [
+            { width: 512, height: 512, crop: "fill", gravity: "face" },
+          ],
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        },
+      );
+      stream.end(req.file.buffer);
+    });
+
+    const user = await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { avatar: result.secure_url },
+      select: USER_SELECT,
+    });
+
+    res.json({ user });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getMe,
   updateMe,
@@ -205,4 +242,5 @@ export default {
   updateFcmToken,
   changePassword,
   deleteMe,
+  uploadAvatar,
 };

@@ -6,6 +6,7 @@ import {
   createGameLimiter,
   participationLimiter,
 } from "./rateLimit.js";
+import { uploadAvatar } from "./upload.js";
 
 export {
   authenticate,
@@ -16,4 +17,5 @@ export {
   authLimiter,
   createGameLimiter,
   participationLimiter,
+  uploadAvatar,
 };
