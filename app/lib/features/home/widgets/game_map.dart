@@ -16,6 +16,8 @@ class GameMap extends ConsumerStatefulWidget {
   final List<Game> myGames;
   final void Function(Game game)? onGameTap;
   final double distanceKm;
+  final VoidCallback? onRefresh;
+  final bool isRefreshing;
 
   const GameMap({
     super.key,
@@ -23,6 +25,8 @@ class GameMap extends ConsumerStatefulWidget {
     required this.distanceKm,
     this.onGameTap,
     this.myGames = const [],
+    this.onRefresh,
+    this.isRefreshing = false,
   });
 
   @override
@@ -103,23 +107,6 @@ class _GameMapState extends ConsumerState<GameMap> {
         onGameTap: widget.onGameTap,
       ),
     );
-
-    // Écouter les changements de position pour recentrer la map
-    ref.listen(currentPositionProvider, (prev, next) {
-      final position = next.valueOrNull;
-      if (position != null && mounted) {
-        _mapboxMap?.flyTo(
-          CameraOptions(
-            center: Point(
-              coordinates: Position(position.longitude, position.latitude),
-            ),
-            zoom: _distanceToZoom(widget.distanceKm),
-            pitch: 45,
-          ),
-          MapAnimationOptions(duration: 600),
-        );
-      }
-    });
 
     _loadMarkers();
   }
@@ -345,9 +332,30 @@ class _GameMapState extends ConsumerState<GameMap> {
     );
   }
 
+  void _recenterOnPosition(dynamic position) {
+    if (position == null || _mapboxMap == null) return;
+    _mapboxMap?.flyTo(
+      CameraOptions(
+        center: Point(
+          coordinates: Position(position.longitude, position.latitude),
+        ),
+        zoom: _distanceToZoom(widget.distanceKm),
+        pitch: 45,
+      ),
+      MapAnimationOptions(duration: 600),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final positionAsync = ref.watch(currentPositionProvider);
+
+    ref.listen(currentPositionProvider, (prev, next) {
+      final position = next.valueOrNull;
+      if (position != null && mounted) {
+        _recenterOnPosition(position);
+      }
+    });
 
     return positionAsync.when(
       loading: () => _buildLoadingPlaceholder(),
@@ -358,6 +366,7 @@ class _GameMapState extends ConsumerState<GameMap> {
 
   Widget _buildMap(dynamic position) {
     final initialZoom = _distanceToZoom(widget.distanceKm);
+    final colorScheme = Theme.of(context).colorScheme;
     final center = (position != null)
         ? Point(coordinates: Position(position.longitude, position.latitude))
         : Point(coordinates: Position(4.4445, 50.4108)); // fallback : Charleroi
@@ -366,15 +375,88 @@ class _GameMapState extends ConsumerState<GameMap> {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: MapWidget(
-          onMapCreated: _onMapCreated,
-          styleUri: MapboxStyles.DARK,
-          cameraOptions: CameraOptions(
-            center: center,
-            zoom: initialZoom,
-            pitch: 45,
-          ),
+        child: Stack(
+          children: [
+            MapWidget(
+              onMapCreated: _onMapCreated,
+              styleUri: MapboxStyles.DARK,
+              cameraOptions: CameraOptions(
+                center: center,
+                zoom: initialZoom,
+                pitch: 45,
+              ),
+            ),
+            Positioned(
+              bottom: 16,
+              right: 12,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildMapButton(
+                    colorScheme: colorScheme,
+                    onTap: () {
+                      if (position != null) {
+                        _recenterOnPosition(position);
+                      } else {
+                        ref.invalidate(currentPositionProvider);
+                      }
+                    },
+                    icon: Icons.my_location_rounded,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildMapButton(
+                    colorScheme: colorScheme,
+                    onTap: widget.onRefresh,
+                    icon: Icons.refresh_rounded,
+                    isLoading: widget.isRefreshing,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMapButton({
+    required ColorScheme colorScheme,
+    required VoidCallback? onTap,
+    required IconData icon,
+    bool isLoading = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: colorScheme.surface.withValues(alpha: 0.9),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.2),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: isLoading
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: colorScheme.primary,
+                ),
+              )
+            : Icon(
+                icon,
+                size: 20,
+                color: colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
       ),
     );
   }

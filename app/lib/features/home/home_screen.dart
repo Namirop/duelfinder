@@ -225,43 +225,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildMapWithRefresh(GamesState gamesState) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Stack(
-      children: [
-        GameMap(
-          key: const ValueKey('map'),
-          games: gamesState.visibleGames,
-          myGames: gamesState.myGames,
-          onGameTap: _showGameDetails,
-          distanceKm: gamesState.distanceFilter,
-        ),
-        Positioned(
-          bottom: 16,
-          right: 12,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildMapButton(
-                colorScheme: colorScheme,
-                onTap: () => ref.invalidate(currentPositionProvider),
-                icon: Icons.my_location_rounded,
-              ),
-              const SizedBox(height: 10),
-              _buildMapButton(
-                colorScheme: colorScheme,
-                onTap: gamesState.isLoadingExisting
-                    ? null
-                    : () => ref
-                        .read(gamesNotifierProvider.notifier)
-                        .fetchExistingGames(),
-                icon: Icons.refresh_rounded,
-                isLoading: gamesState.isLoadingExisting,
-              ),
-            ],
-          ),
-        ),
-      ],
+    return GameMap(
+      key: const ValueKey('map'),
+      games: gamesState.visibleGames,
+      myGames: gamesState.myGames,
+      onGameTap: _showGameDetails,
+      distanceKm: gamesState.distanceFilter,
+      isRefreshing: gamesState.isLoadingExisting,
+      onRefresh: gamesState.isLoadingExisting
+          ? null
+          : () =>
+              ref.read(gamesNotifierProvider.notifier).fetchExistingGames(),
     );
   }
 
@@ -283,48 +257,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           size: 18,
           color: colorScheme.primary,
         ),
-      ),
-    );
-  }
-
-  Widget _buildMapButton({
-    required ColorScheme colorScheme,
-    required VoidCallback? onTap,
-    required IconData icon,
-    bool isLoading = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: colorScheme.surface.withValues(alpha: 0.9),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: colorScheme.outline.withValues(alpha: 0.2),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: isLoading
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: colorScheme.primary,
-                ),
-              )
-            : Icon(
-                icon,
-                size: 20,
-                color: colorScheme.onSurface.withValues(alpha: 0.8),
-              ),
       ),
     );
   }

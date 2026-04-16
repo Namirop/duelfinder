@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:tcg_matchmaker/core/router/app_router.dart';
 import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
-import 'package:tcg_matchmaker/features/notifications/providers/notifications_provider.dart';
 
 class BottomNavBar extends ConsumerWidget {
   final int currentScreen;
@@ -19,9 +18,6 @@ class BottomNavBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasUnreadNotif =
-        ref.watch(notificationsNotifierProvider).valueOrNull?.hasUnread ??
-            false;
     final unreadMessages = ref.watch(totalUnreadProvider);
     final canCreateGame =
         !ref.watch(gamesNotifierProvider.select((s) => s.hasOpenGame));
@@ -62,13 +58,7 @@ class BottomNavBar extends ConsumerWidget {
                         ref,
                         badgeCount: unreadMessages,
                       ),
-                      _buildIconWithBadge(
-                        Icons.person_rounded,
-                        4,
-                        colorScheme,
-                        ref,
-                        hasDot: hasUnreadNotif,
-                      ),
+                      _buildIcon(Icons.person_rounded, 4, colorScheme, ref),
                     ],
                   ),
                 ),
