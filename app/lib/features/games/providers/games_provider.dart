@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:tcg_matchmaker/core/constants/app_constants.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
 import 'package:tcg_matchmaker/core/errors/exceptions.dart';
 import 'package:tcg_matchmaker/core/services/app_logger.dart';
@@ -204,7 +205,7 @@ class GamesNotifier extends _$GamesNotifier {
 
   void resetFilters() {
     state = state.copyWith(
-      distanceFilter: 20,
+      distanceFilter: AppConstants.defaultDistanceKm,
       scheduleOption: ScheduleFilterOption.all,
       clearCustomScheduleDate: true,
       clearGameTypeFilter: true,

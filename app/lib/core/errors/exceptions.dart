@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 // Infrastructure layer exceptions
 // These are thrown by datasources and caught by repositories
 
@@ -52,4 +54,51 @@ class UnknownException extends AppException {
   UnknownException({required super.message}) : super(statusCode: null);
   @override
   String toString() => 'UnknownException: $message (status: $statusCode)';
+}
+
+/// Convertit une DioException en AppException typée.
+/// Utilisé par tous les repositories pour un error handling cohérent.
+AppException handleDioException(DioException e) {
+  if (e.type == DioExceptionType.connectionError ||
+      e.type == DioExceptionType.connectionTimeout) {
+    return NetworkException(message: 'Pas de connexion internet');
+  }
+
+  final errorMessage = e.response?.data?['error'] as String?;
+
+  switch (e.response?.statusCode) {
+    case 400:
+      return ValidationException(
+        message: errorMessage ?? 'Données invalides',
+      );
+    case 401:
+      return UnauthorizedException(
+        message: errorMessage ?? 'Non authentifié',
+      );
+    case 403:
+      return ForbiddenException(
+        message: errorMessage ?? 'Accès refusé',
+      );
+    case 404:
+      return NotFoundException(
+        message: errorMessage ?? 'Ressource introuvable',
+      );
+    case 409:
+      return ValidationException(
+        message: errorMessage ?? 'Conflit de données',
+      );
+    case 422:
+      return ValidationException(
+        message: errorMessage ?? 'Données invalides',
+      );
+    case 429:
+      return ValidationException(
+        message: errorMessage ?? 'Trop de requêtes',
+      );
+    default:
+      return ServerException(
+        message: errorMessage ?? 'Erreur serveur',
+        statusCode: e.response?.statusCode,
+      );
+  }
 }

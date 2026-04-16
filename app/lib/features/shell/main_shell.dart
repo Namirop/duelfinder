@@ -41,8 +41,9 @@ class _MainShellState extends ConsumerState<MainShell>
   }
 
   Future<void> _requestPermissionsAndLoadInitialData() async {
-    // 1. Participations : pas besoin de localisation, on lance immédiatement
+    // 1. Données sans dépendance localisation : on lance immédiatement
     ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
+    ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
 
     // 2. Permission notifications (Android 13+)
     await FirebaseMessaging.instance.requestPermission(
@@ -78,6 +79,8 @@ class _MainShellState extends ConsumerState<MainShell>
     if (state == AppLifecycleState.resumed) {
       ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
       ref.read(conversationsProvider.notifier).refresh();
+      ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
+      ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
     }
   }
 

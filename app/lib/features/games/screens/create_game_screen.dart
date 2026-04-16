@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:tcg_matchmaker/core/constants/app_constants.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/games/models/create_game_model.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
@@ -151,7 +152,7 @@ class _AddressSearchFieldState extends State<_AddressSearchField> {
 
   void _onChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 450), () => _search(value));
+    _debounce = Timer(const Duration(milliseconds: AppConstants.searchDebounceMs), () => _search(value));
   }
 
   void _selectSuggestion(_AddressSuggestion suggestion) {
@@ -537,8 +538,22 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 10,
-                child: _buildCreateButton(theme, colorScheme),
+                bottom: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colorScheme.surface.withValues(alpha: 0),
+                        colorScheme.surface,
+                      ],
+                      stops: const [0.0, 0.35],
+                    ),
+                  ),
+                  padding: const EdgeInsets.only(top: 16),
+                  child: _buildCreateButton(theme, colorScheme),
+                ),
               ),
             ],
           ),
@@ -584,22 +599,22 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         final isSelected = _selectedGameType == type;
         return Expanded(
           child: Padding(
-            padding: const EdgeInsets.all(5),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: GestureDetector(
               onTap: () => setState(() => _selectedGameType = type),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? colorScheme.primary
                       : colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isSelected
                         ? colorScheme.primary
                         : colorScheme.outline.withValues(alpha: 0.3),
-                    width: isSelected ? 3 : 1,
+                    width: isSelected ? 2 : 1,
                   ),
                   boxShadow: isSelected
                       ? [
@@ -612,36 +627,17 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         ]
                       : null,
                 ),
-                child: Column(
-                  children: [
-                    Text(
-                      type.label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                        color: isSelected
-                            ? colorScheme.onPrimary
-                            : colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "TCG",
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isSelected
-                            ? Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 1)
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  type.label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurface,
+                  ),
                 ),
               ),
             ),
@@ -745,7 +741,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Widget _buildDurationSelector(ThemeData theme, ColorScheme colorScheme) {
-    final durations = [30, 60, 90, 120, 180];
+    final durations = AppConstants.gameDurationOptions;
 
     return Wrap(
       spacing: 8,
@@ -888,49 +884,86 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         _addressController.text.isNotEmpty &&
         _selectedLat != null &&
         _selectedLon != null;
+    final isCreating = ref.watch(
+        gamesNotifierProvider.select((s) => s.isCreating));
+    final enabled = isValid && !isCreating;
 
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: SizedBox(
-        width: double.infinity,
-        height: 55,
-        child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: GestureDetector(
+        onTap: enabled ? _createGame : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          width: double.infinity,
+          height: 56,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF3D4070), Color(0xFF2A2D4E)],
-              stops: [0.0, 0.7],
-            ),
-            color: isValid ? null : colorScheme.surfaceContainerHighest,
+            gradient: enabled
+                ? LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      colorScheme.primary,
+                      Color.lerp(colorScheme.primary, Colors.white, 0.15)!,
+                    ],
+                  )
+                : null,
+            color: enabled ? null : colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color:
-                  Colors.white.withValues(alpha: isValid ? 0.35 : 0.1),
-              width: 1,
+              color: enabled
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : colorScheme.outline.withValues(alpha: 0.15),
             ),
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: colorScheme.primary.withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                    BoxShadow(
+                      color: colorScheme.primary.withValues(alpha: 0.2),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : null,
           ),
-          child: ElevatedButton(
-            onPressed: isValid ? _createGame : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              disabledBackgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: Text(
-              "Créer la partie",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isValid
-                    ? colorScheme.onPrimary
-                    : colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
-            ),
+          child: Center(
+            child: isCreating
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: colorScheme.onPrimary,
+                    ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.bolt_rounded,
+                        size: 20,
+                        color: enabled
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurface.withValues(alpha: 0.3),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Créer la partie",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: enabled
+                              ? colorScheme.onPrimary
+                              : colorScheme.onSurface
+                                  .withValues(alpha: 0.3),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),

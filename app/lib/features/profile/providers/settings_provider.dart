@@ -1,15 +1,12 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/features/profile/entities/location_permission_result.dart';
 import 'package:tcg_matchmaker/features/profile/entities/settings_state.dart';
 
-part 'settings_provider.g.dart';
+export 'package:tcg_matchmaker/features/profile/entities/location_permission_result.dart';
 
-enum LocationPermissionResult {
-  granted,
-  denied,
-  deniedForever,
-}
+part 'settings_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class SettingsNotifier extends _$SettingsNotifier {

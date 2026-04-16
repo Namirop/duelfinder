@@ -2,6 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:tcg_matchmaker/core/constants/app_constants.dart';
 import 'package:tcg_matchmaker/core/network/dio_client.dart';
 import 'package:tcg_matchmaker/core/network/network_info.dart';
 import 'package:tcg_matchmaker/core/services/location_service.dart';
@@ -78,7 +79,7 @@ final currentPositionProvider = FutureProvider<Position?>((ref) async {
   final locationService = ref.watch(locationServiceProvider);
   return locationService
       .getCurrentPosition()
-      .timeout(const Duration(seconds: 15), onTimeout: () => null);
+      .timeout(const Duration(seconds: AppConstants.locationTimeoutSeconds), onTimeout: () => null);
 });
 
 // Provider pour la préférence utilisateur de géolocalisation (en mémoire pour V1)

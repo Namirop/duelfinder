@@ -1,5 +1,7 @@
 import 'package:tcg_matchmaker/features/auth/entities/user_summary.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
+import 'package:tcg_matchmaker/features/participations/entities/participation_enums.dart';
+export 'package:tcg_matchmaker/features/participations/entities/participation_enums.dart';
 
 class Participation {
   final String id;
@@ -8,8 +10,10 @@ class Participation {
   final ParticipationStatus status;
   final DateTime? acceptedAt;
   final DateTime createdAt;
+
   /// Inclus quand on récupère "mes participations" mais pas quand on crée/modifie
   final Game? game;
+
   /// Inclus quand le créateur récupère les participations de sa partie
   final UserSummary? participant;
 
@@ -45,27 +49,5 @@ class Participation {
       game: game ?? this.game,
       participant: participant ?? this.participant,
     );
-  }
-}
-
-enum ParticipationStatus {
-  PENDING,
-  ACCEPTED,
-  REJECTED,
-  CANCELLED,
-}
-
-extension ParticipationStatusExtension on ParticipationStatus {
-  String get label {
-    switch (this) {
-      case ParticipationStatus.PENDING:
-        return 'En attente';
-      case ParticipationStatus.ACCEPTED:
-        return 'Acceptée';
-      case ParticipationStatus.REJECTED:
-        return 'Refusée';
-      case ParticipationStatus.CANCELLED:
-        return 'Annulée';
-    }
   }
 }

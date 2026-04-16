@@ -3,11 +3,11 @@ import 'package:tcg_matchmaker/core/errors/exceptions.dart';
 import 'package:tcg_matchmaker/core/network/network_info.dart';
 import 'package:tcg_matchmaker/core/services/storage_service.dart';
 
-import '../../../core/constants/api_constants.dart';
-import '../entities/user.dart';
-import '../models/dto/login_request_dto.dart';
-import '../models/dto/register_request_dto.dart';
-import '../models/user_model.dart';
+import 'package:tcg_matchmaker/core/constants/api_constants.dart';
+import 'package:tcg_matchmaker/features/auth/entities/user.dart';
+import 'package:tcg_matchmaker/features/auth/models/dto/login_request_dto.dart';
+import 'package:tcg_matchmaker/features/auth/models/dto/register_request_dto.dart';
+import 'package:tcg_matchmaker/features/auth/models/user_model.dart';
 
 class AuthRepository {
   final Dio _dio;
@@ -21,7 +21,7 @@ class AuthRepository {
     required String password,
   }) async {
     try {
-      final request = LoginRequestDTO(email: email, password: password);
+      final request = LoginRequestDto(email: email, password: password);
       final response = await _dio.post(
         ApiConstants.login,
         data: request.toJson(),
@@ -34,7 +34,7 @@ class AuthRepository {
       final userModel = UserModel.fromJson(response.data['user']);
       return userModel.toEntity();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -62,7 +62,7 @@ class AuthRepository {
       final userModel = UserModel.fromJson(response.data['user']);
       return userModel.toEntity();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -70,7 +70,7 @@ class AuthRepository {
     try {
       await _dio.post(ApiConstants.logout);
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     } finally {
       await _storageService.clearTokens();
     }
@@ -92,40 +92,4 @@ class AuthRepository {
     return null;
   }
 
-  AppException _handleDioException(DioException e) {
-    if (e.type == DioExceptionType.connectionError ||
-        e.type == DioExceptionType.connectionTimeout) {
-      return NetworkException(message: 'Pas de connexion internet');
-    }
-
-    final errorMessage = e.response?.data['error'] as String?;
-
-    switch (e.response?.statusCode) {
-      case 400:
-        return ValidationException(
-          message: errorMessage ?? 'Identifiants requis',
-        );
-      case 401:
-        return UnauthorizedException(
-          message: errorMessage ?? 'Identifiants invalides',
-        );
-      case 403:
-        return ForbiddenException(
-          message: errorMessage ?? 'Accès refusé',
-        );
-      case 404:
-        return NotFoundException(
-          message: errorMessage ?? 'Ressource introuvable',
-        );
-      case 422:
-        return ValidationException(
-          message: errorMessage ?? 'Données invalides',
-        );
-      default:
-        return ServerException(
-          message: errorMessage ?? 'Erreur serveur',
-          statusCode: e.response?.statusCode,
-        );
-    }
-  }
 }

@@ -5,13 +5,7 @@
 import messageService from "../services/message.service.js";
 import notificationService from "../services/notification.service.js";
 import prisma from "../config/database.js";
-
-const GAME_TYPE_LABELS = {
-  POKEMON: "Pokémon",
-  ONE_PIECE: "One Piece",
-  YUGIOH: "Yu-Gi-Oh!",
-  NARUTO: "Naruto",
-};
+import { GAME_TYPE_LABELS } from "../constants.js";
 
 // GET /api/messages/conversations
 const getConversations = async (req, res, next) => {

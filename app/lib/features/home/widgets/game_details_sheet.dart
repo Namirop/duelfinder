@@ -38,7 +38,6 @@ class GameDetailsSheet extends ConsumerWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -183,7 +182,8 @@ class GameDetailsSheet extends ConsumerWidget {
     );
   }
 
-  Widget _buildLocation(ThemeData theme, ColorScheme colorScheme, WidgetRef ref) {
+  Widget _buildLocation(
+      ThemeData theme, ColorScheme colorScheme, WidgetRef ref) {
     final currentUserId = ref.watch(authNotifierProvider).user?.id;
     final isCreator = currentUserId == game.creator.id;
     final existingParticipation = ref
@@ -417,42 +417,45 @@ class GameDetailsSheet extends ConsumerWidget {
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
-    final isCancellable = game.effectiveStatus != GameStatus.FINISHED &&
-        game.effectiveStatus != GameStatus.CANCELLED;
+    final isCancellable = game.effectiveStatus == GameStatus.OPEN ||
+        game.effectiveStatus == GameStatus.FULL;
+    final showManageRequests = isCancellable && game.pendingCount > 0;
 
     return Column(
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => GameRequestsSheet(game: game),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        if (showManageRequests)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => GameRequestsSheet(game: game),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-            ),
-            icon: const Icon(Icons.people_outline),
-            label: Text(
-              'Gérer les demandes',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onPrimary,
+              icon: const Icon(Icons.people_outline),
+              label: Text(
+                'Gérer les demandes',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onPrimary,
+                ),
               ),
             ),
           ),
-        ),
         if (isCancellable) ...[
+          if (showManageRequests) const SizedBox(height: 10),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
@@ -524,17 +527,26 @@ class GameDetailsSheet extends ConsumerWidget {
     Participation participation,
     bool isRequesting,
   ) {
+    final isGameOver = game.effectiveStatus == GameStatus.IN_PROGRESS ||
+        game.effectiveStatus == GameStatus.FINISHED;
+
     switch (participation.status) {
       case ParticipationStatus.PENDING:
         return SizedBox(
           width: double.infinity,
           child: OutlinedButton(
-            onPressed: isRequesting
+            onPressed: isRequesting || isGameOver
                 ? null
                 : () => _handleCancelParticipation(context, ref, participation),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.orange,
-              side: const BorderSide(color: Colors.orange),
+              side: BorderSide(
+                color: isGameOver
+                    ? colorScheme.onSurface.withValues(alpha: 0.2)
+                    : Colors.orange,
+              ),
+              disabledForegroundColor:
+                  colorScheme.onSurface.withValues(alpha: 0.4),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -552,13 +564,18 @@ class GameDetailsSheet extends ConsumerWidget {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.hourglass_top, size: 20),
+                      Icon(Icons.hourglass_top, size: 20,
+                        color: isGameOver
+                            ? colorScheme.onSurface.withValues(alpha: 0.4)
+                            : Colors.orange),
                       const SizedBox(width: 8),
                       Text(
                         'Demande en attente',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.orange,
+                          color: isGameOver
+                              ? colorScheme.onSurface.withValues(alpha: 0.4)
+                              : Colors.orange,
                         ),
                       ),
                     ],
@@ -567,15 +584,22 @@ class GameDetailsSheet extends ConsumerWidget {
         );
 
       case ParticipationStatus.ACCEPTED:
+        final isFinished = game.effectiveStatus == GameStatus.FINISHED;
         return SizedBox(
           width: double.infinity,
           child: OutlinedButton(
-            onPressed: isRequesting
+            onPressed: isRequesting || isGameOver
                 ? null
                 : () => _handleCancelParticipation(context, ref, participation),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.green,
-              side: const BorderSide(color: Colors.green),
+              side: BorderSide(
+                color: isGameOver
+                    ? colorScheme.onSurface.withValues(alpha: 0.2)
+                    : Colors.green,
+              ),
+              disabledForegroundColor:
+                  colorScheme.onSurface.withValues(alpha: 0.4),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -593,13 +617,21 @@ class GameDetailsSheet extends ConsumerWidget {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.check_circle, size: 20),
+                      Icon(
+                        isFinished ? Icons.event_available : Icons.check_circle,
+                        size: 20,
+                        color: isGameOver
+                            ? colorScheme.onSurface.withValues(alpha: 0.4)
+                            : Colors.green,
+                      ),
                       const SizedBox(width: 8),
                       Text(
-                        'Vous participez',
+                        isFinished ? 'Vous avez participé' : 'Vous participez',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.green,
+                          color: isGameOver
+                              ? colorScheme.onSurface.withValues(alpha: 0.4)
+                              : Colors.green,
                         ),
                       ),
                     ],
@@ -693,7 +725,8 @@ class GameDetailsSheet extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    final error = ref.read(participationsNotifierProvider).getMyParticipationsError;
+    final error =
+        ref.read(participationsNotifierProvider).getMyParticipationsError;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -747,7 +780,8 @@ class GameDetailsSheet extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    final error = ref.read(participationsNotifierProvider).getMyParticipationsError;
+    final error =
+        ref.read(participationsNotifierProvider).getMyParticipationsError;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

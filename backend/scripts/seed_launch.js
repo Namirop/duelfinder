@@ -21,47 +21,9 @@ import {
   GAME_DESCRIPTIONS,
   CHAT_MESSAGES,
 } from "./npc_config.js";
+import { pick, jitter, futureDate as scheduledAt, gameConfig, GAME_TYPES } from "./utils.js";
 
 const prisma = new PrismaClient();
-
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-// Décale légèrement les coordonnées (max ~2km) pour que les parties
-// ne se superposent pas exactement au centre-ville
-function jitter(lat, lng, maxKm = 2) {
-  const r = (maxKm / 111) * Math.random();
-  const angle = Math.random() * 2 * Math.PI;
-  return {
-    lat: lat + r * Math.cos(angle),
-    lng: lng + (r * Math.sin(angle)) / Math.cos((lat * Math.PI) / 180),
-  };
-}
-
-// Génère une date future à daysAhead jours, à une heure réaliste
-function scheduledAt(daysAhead) {
-  const hours = [10, 11, 14, 15, 16, 17, 18, 19, 20];
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  d.setHours(pick(hours), 0, 0, 0);
-  return d;
-}
-
-// maxPlayers et durée selon le type de jeu
-function gameConfig(type) {
-  switch (type) {
-    case "YUGIOH":    return { maxPlayers: 2, duration: pick([60, 90, 120]) };
-    case "NARUTO":    return { maxPlayers: 2, duration: pick([60, 90]) };
-    case "POKEMON":   return { maxPlayers: pick([2, 4]), duration: pick([90, 120, 180]) };
-    case "ONE_PIECE": return { maxPlayers: pick([2, 4]), duration: pick([90, 120]) };
-    default:          return { maxPlayers: 2, duration: 90 };
-  }
-}
-
-const GAME_TYPES = ["POKEMON", "YUGIOH", "ONE_PIECE", "NARUTO"];
 
 // ─── CLEANUP INTERNE (utilisé avec --force) ───────────────────────────────────
 

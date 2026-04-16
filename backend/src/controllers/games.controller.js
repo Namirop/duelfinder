@@ -5,13 +5,7 @@
 import prisma from "../config/database.js";
 import gameService from "../services/game.service.js";
 import notificationService from "../services/notification.service.js";
-
-const GAME_TYPE_LABELS = {
-  POKEMON: "Pokémon",
-  ONE_PIECE: "One Piece",
-  YUGIOH: "Yu-Gi-Oh!",
-  NARUTO: "Naruto",
-};
+import { GAME_TYPE_LABELS } from "../constants.js";
 
 // GET /api/games/existing
 const getExistingGames = async (req, res, next) => {
@@ -105,7 +99,6 @@ const createGame = async (req, res, next) => {
     // Vérifier la règle anti-spam
     const { canCreate, reason } = await gameService.canCreateGame(
       req.user.userId,
-      new Date(scheduledAt),
     );
 
     if (!canCreate) {

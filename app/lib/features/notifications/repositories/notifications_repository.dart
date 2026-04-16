@@ -11,7 +11,7 @@ class NotificationsRepository {
 
   Future<void> registerFcmToken(String token) async {
     try {
-      await _dio.put('/users/me/fcm-token', data: {'token': token});
+      await _dio.put(ApiConstants.usersFcmToken, data: {'token': token});
     } on DioException catch (e) {
       throw ServerException(
         message:
@@ -22,7 +22,7 @@ class NotificationsRepository {
 
   Future<List<AppNotification>> getNotifications() async {
     try {
-      final response = await _dio.get('/notifications');
+      final response = await _dio.get(ApiConstants.notifications);
       return (response.data as List)
           .map((json) => NotificationModel.fromJson(json).toEntity())
           .toList();
@@ -34,21 +34,9 @@ class NotificationsRepository {
     }
   }
 
-  Future<bool> hasUnread() async {
-    try {
-      final response =
-          await _dio.get('${ApiConstants.notifications}/unread-count');
-      return (response.data['count'] as int) > 0;
-    } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data?['error'] ?? 'Erreur lecture notifications',
-      );
-    }
-  }
-
   Future<void> markAllRead() async {
     try {
-      await _dio.put('/notifications/read-all');
+      await _dio.put(ApiConstants.markAllAsRead);
     } on DioException catch (e) {
       throw ServerException(
         message:
@@ -59,7 +47,7 @@ class NotificationsRepository {
 
   Future<void> deleteNotification(String id) async {
     try {
-      await _dio.delete('/notifications/$id');
+      await _dio.delete('${ApiConstants.notifications}/$id');
     } on DioException catch (e) {
       throw ServerException(
         message:

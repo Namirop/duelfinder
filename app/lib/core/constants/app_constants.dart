@@ -2,17 +2,18 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'TCG Matchmaker';
-  static const String appVersion = '1.0.0';
+  // Réseau
+  static const int connectionTimeoutSeconds = 10;
+  static const int receiveTimeoutSeconds = 10;
+  static const int locationTimeoutSeconds = 15;
 
-  // TODO: Ajouter d'autres constantes selon les besoins
-  // Pagination
-  static const int defaultPageSize = 20;
+  // Jeux
+  static const double defaultDistanceKm = 20;
+  static const List<int> gameDurationOptions = [30, 60, 90, 120, 180];
 
-  // Timeouts
-  static const int connectionTimeout = 30;
-  static const int receiveTimeout = 30;
+  // Messages
+  static const int messagePollingSeconds = 5;
 
-  // Cache
-  static const int cacheMaxAge = 7; // jours
+  // Recherche
+  static const int searchDebounceMs = 450;
 }

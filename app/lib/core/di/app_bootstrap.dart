@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
@@ -18,13 +17,5 @@ Future<void> bootstrapApp() async {
   await initializeDateFormatting('fr_FR', null);
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  await FlutterLocalNotificationsPlugin()
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(const AndroidNotificationChannel(
-        'duelfinder_high',
-        'Notifications DuelFinder',
-        importance: Importance.high,
-      ));
   MapboxOptions.setAccessToken(dotenv.env['MAPBOX_TOKEN'] ?? '');
 }

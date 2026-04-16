@@ -22,32 +22,8 @@ class MyGamesScreen extends ConsumerStatefulWidget {
   ConsumerState<MyGamesScreen> createState() => _MyGamesScreenState();
 }
 
-class _MyGamesScreenState extends ConsumerState<MyGamesScreen>
-    with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
-      ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
-    });
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
-    if (lifecycleState == AppLifecycleState.resumed) {
-      ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
-      ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
-    }
-  }
-
+// Pur écran d'affichage, ne gère pas de chargement initial, consomme juste le state
+class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);

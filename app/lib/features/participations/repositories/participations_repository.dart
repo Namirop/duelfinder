@@ -24,7 +24,7 @@ class ParticipationsRepository {
                   .toEntity())
           .toList();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -40,7 +40,7 @@ class ParticipationsRepository {
                   .toEntity())
           .toList();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -53,7 +53,7 @@ class ParticipationsRepository {
       return ParticipationModel.fromJson(response.data as Map<String, dynamic>)
           .toEntity();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -66,7 +66,7 @@ class ParticipationsRepository {
               dynamic>) // ne renvoie pas de game dans participation, pas d'erreur car game peut etre null
           .toEntity();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -81,7 +81,7 @@ class ParticipationsRepository {
               data['participation'] as Map<String, dynamic>)
           .toEntity();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -94,44 +94,8 @@ class ParticipationsRepository {
       return ParticipationModel.fromJson(response.data as Map<String, dynamic>)
           .toEntity();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
-  AppException _handleDioException(DioException e) {
-    if (e.type == DioExceptionType.connectionError ||
-        e.type == DioExceptionType.connectionTimeout) {
-      return NetworkException(message: 'Pas de connexion internet');
-    }
-
-    final errorMessage = e.response?.data['error'] as String?;
-
-    switch (e.response?.statusCode) {
-      case 400:
-        return ValidationException(
-          message: errorMessage ?? 'Données invalides',
-        );
-      case 401:
-        return UnauthorizedException(
-          message: errorMessage ?? 'Non authentifié',
-        );
-      case 403:
-        return ForbiddenException(
-          message: errorMessage ?? 'Accès refusé',
-        );
-      case 404:
-        return NotFoundException(
-          message: errorMessage ?? 'Ressource introuvable',
-        );
-      case 429:
-        return ValidationException(
-          message: errorMessage ?? 'Trop de requêtes',
-        );
-      default:
-        return ServerException(
-          message: errorMessage ?? 'Erreur serveur',
-          statusCode: e.response?.statusCode,
-        );
-    }
-  }
 }

@@ -1,9 +1,9 @@
 /// DTO pour la requête de connexion
-class LoginRequestDTO {
+class LoginRequestDto {
   final String email;
   final String password;
 
-  const LoginRequestDTO({
+  const LoginRequestDto({
     required this.email,
     required this.password,
   });

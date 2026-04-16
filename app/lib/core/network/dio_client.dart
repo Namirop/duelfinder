@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/api_constants.dart';
+import '../constants/app_constants.dart';
 
 class DioClient {
   late final Dio _dio;
@@ -10,8 +11,8 @@ class DioClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: AppConstants.connectionTimeoutSeconds),
+        receiveTimeout: const Duration(seconds: AppConstants.receiveTimeoutSeconds),
         contentType: Headers.jsonContentType,
         responseType: ResponseType.json,
         headers: {
@@ -51,8 +52,8 @@ class DioClient {
       if (refreshToken == null) return false;
 
       final response = await Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: AppConstants.connectionTimeoutSeconds),
+        receiveTimeout: const Duration(seconds: AppConstants.receiveTimeoutSeconds),
       )).post(
         '${ApiConstants.baseUrl}${ApiConstants.refreshToken}',
         data: {'refreshToken': refreshToken},

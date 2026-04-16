@@ -11,7 +11,6 @@ class ApiConstants {
   static const String logout = '/auth/logout';
   static const String refreshToken = '/auth/refresh';
   static const String user = '/auth/me';
-  static const String updateUser = '/auth/me/update';
 
   // Endpoints Games
   static const String existingGames = '/games/existing';
@@ -25,14 +24,16 @@ class ApiConstants {
   static const String myParticipations = '/participations/my';
 
   // Endpoints Messages
-  static const String messages = '/messages';
   static const String conversations = '/messages/conversations';
 
   // Endpoints Notifications
   static const String notifications = '/notifications';
-  static const String markAsRead = '/notifications/read';
+
+
+  static const String markAllAsRead = '/notifications/read-all';
 
   // Endpoints Users (profil)
   static const String usersMe = '/users/me';
   static const String usersMePassword = '/users/me/password';
+  static const String usersFcmToken = '/users/me/fcm-token';
 }

@@ -15,20 +15,6 @@ class ParticipationCard extends StatelessWidget {
     this.index = 0,
   });
 
-  Color get _statusColor => switch (participation.status) {
-        ParticipationStatus.PENDING => AppTheme.statusFull, // orange
-        ParticipationStatus.ACCEPTED => AppTheme.statusOpen, // vert
-        ParticipationStatus.REJECTED => AppTheme.statusCancelled, // rouge
-        ParticipationStatus.CANCELLED => AppTheme.statusFinished, // gris
-      };
-
-  IconData get _statusIcon => switch (participation.status) {
-        ParticipationStatus.PENDING => Icons.hourglass_top_rounded,
-        ParticipationStatus.ACCEPTED => Icons.check_circle_rounded,
-        ParticipationStatus.REJECTED => Icons.cancel_rounded,
-        ParticipationStatus.CANCELLED => Icons.remove_circle_rounded,
-      };
-
   void _showGameDetails(BuildContext context) {
     if (participation.game == null) return;
     showModalBottomSheet(
@@ -56,7 +42,7 @@ class ParticipationCard extends StatelessWidget {
           color: cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border(
-            left: BorderSide(color: _statusColor, width: 4),
+            left: BorderSide(color: participation.status.color, width: 4),
           ),
           boxShadow: [
             BoxShadow(
@@ -65,7 +51,7 @@ class ParticipationCard extends StatelessWidget {
               offset: const Offset(0, 6),
             ),
             BoxShadow(
-              color: _statusColor.withValues(alpha: 0.15),
+              color: participation.status.color.withValues(alpha: 0.15),
               blurRadius: 8,
               offset: const Offset(-2, 0),
             ),
@@ -131,22 +117,23 @@ class ParticipationCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: _statusColor.withValues(alpha: 0.15),
+        color: participation.status.color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _statusColor.withValues(alpha: 0.4),
+          color: participation.status.color.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_statusIcon, size: 13, color: _statusColor),
+          Icon(participation.status.icon,
+              size: 13, color: participation.status.color),
           const SizedBox(width: 5),
           Text(
             participation.status.label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: _statusColor,
+              color: participation.status.color,
               fontWeight: FontWeight.w700,
             ),
           ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tcg_matchmaker/core/constants/app_constants.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
 import 'package:tcg_matchmaker/core/services/app_logger.dart';
 import 'package:tcg_matchmaker/features/messages/entities/message.dart';
@@ -84,7 +85,7 @@ class MessagesNotifier extends FamilyAsyncNotifier<List<Message>, String> {
   }
 
   void _startPolling() {
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) async {
+    _timer = Timer.periodic(const Duration(seconds: AppConstants.messagePollingSeconds), (_) async {
       try {
         final fresh = await _load();
         final current = state.valueOrNull;

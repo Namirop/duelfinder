@@ -6,13 +6,7 @@
 import prisma from "../config/database.js";
 import participationService from "../services/participation.service.js";
 import notificationService from "../services/notification.service.js";
-
-const GAME_TYPE_LABELS = {
-  POKEMON: "Pokémon",
-  ONE_PIECE: "One Piece",
-  YUGIOH: "Yu-Gi-Oh!",
-  NARUTO: "Naruto",
-};
+import { GAME_TYPE_LABELS } from "../constants.js";
 
 // GET /api/participations/my - Récupérer mes participations
 const getMyParticipations = async (req, res, next) => {

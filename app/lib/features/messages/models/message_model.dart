@@ -1,14 +1,14 @@
-import 'package:tcg_matchmaker/features/auth/entities/user_summary.dart';
+import 'package:tcg_matchmaker/features/auth/models/user_summary_model.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/messages/entities/message.dart';
 
 class MessageModel {
   final String id;
   final String content;
-  final Map<String, dynamic> sender;
+  final UserSummaryModel sender;
   final DateTime createdAt;
 
-  MessageModel({
+  const MessageModel({
     required this.id,
     required this.content,
     required this.sender,
@@ -18,18 +18,15 @@ class MessageModel {
   factory MessageModel.fromJson(Map<String, dynamic> json) => MessageModel(
         id: json['id'] as String,
         content: json['content'] as String,
-        sender: json['sender'] as Map<String, dynamic>,
+        sender:
+            UserSummaryModel.fromJson(json['sender'] as Map<String, dynamic>),
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 
   Message toEntity() => Message(
         id: id,
         content: content,
-        sender: UserSummary(
-          id: sender['id'] as String,
-          username: sender['username'] as String,
-          avatar: sender['avatar'] as String,
-        ),
+        sender: sender.toEntity(),
         createdAt: createdAt,
       );
 }
@@ -40,12 +37,12 @@ class ConversationModel {
   final String address;
   final DateTime scheduledAt;
   final String status;
-  final Map<String, dynamic> creator;
-  final List<Map<String, dynamic>> participants;
+  final UserSummaryModel creator;
+  final List<UserSummaryModel> participants;
   final Map<String, dynamic>? lastMessage;
   final int unreadCount;
 
-  ConversationModel({
+  const ConversationModel({
     required this.gameId,
     required this.gameType,
     required this.address,
@@ -64,9 +61,12 @@ class ConversationModel {
         address: json['address'] as String,
         scheduledAt: DateTime.parse(json['scheduledAt'] as String),
         status: json['status'] as String,
-        creator: json['creator'] as Map<String, dynamic>,
-        participants:
-            (json['participants'] as List).cast<Map<String, dynamic>>(),
+        creator: UserSummaryModel.fromJson(
+            json['creator'] as Map<String, dynamic>),
+        participants: (json['participants'] as List)
+            .map((p) =>
+                UserSummaryModel.fromJson(p as Map<String, dynamic>))
+            .toList(),
         lastMessage: json['lastMessage'] as Map<String, dynamic>?,
         unreadCount: json['unreadCount'] as int,
       );
@@ -77,18 +77,8 @@ class ConversationModel {
         address: address,
         scheduledAt: scheduledAt,
         status: _parseGameStatus(status),
-        creator: UserSummary(
-          id: creator['id'] as String,
-          username: creator['username'] as String,
-          avatar: creator['avatar'] as String,
-        ),
-        participants: participants
-            .map((p) => UserSummary(
-                  id: p['id'] as String,
-                  username: p['username'] as String,
-                  avatar: p['avatar'] as String,
-                ))
-            .toList(),
+        creator: creator.toEntity(),
+        participants: participants.map((p) => p.toEntity()).toList(),
         lastMessage: lastMessage != null
             ? LastMessagePreview(
                 id: lastMessage!['id'] as String,

@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "prisma:generate": "prisma generate",
+    "postinstall": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.js",
@@ -18,12 +18,6 @@
   "prisma": {
     "seed": "node prisma/seed.js"
   },
-  "keywords": [
-    "tcg",
-    "matchmaking",
-    "card-games",
-    "api"
-  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -32,7 +26,6 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.18.3",
-    "express-validator": "^7.0.1",
     "firebase-admin": "^12.0.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -40,7 +33,6 @@
     "pg": "^8.18.0"
   },
   "devDependencies": {
-    "jimp": "^1.6.0",
     "nodemon": "^3.1.0",
     "prisma": "^5.22.0"
   }

@@ -24,6 +24,7 @@ import {
   GAME_DESCRIPTIONS,
   CRON_CONFIG,
 } from "./npc_config.js";
+import { pick, jitter, futureDate, gameConfig, GAME_TYPES } from "./utils.js";
 
 const prisma = new PrismaClient();
 
@@ -35,49 +36,32 @@ const {
   CITY_RADIUS_DEG,
 } = CRON_CONFIG;
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
+// ─── DB READINESS CHECK ────────────────────────────────────────────────────────
 
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function jitter(lat, lng, maxKm = 2) {
-  const r = (maxKm / 111) * Math.random();
-  const angle = Math.random() * 2 * Math.PI;
-  return {
-    lat: lat + r * Math.cos(angle),
-    lng: lng + (r * Math.sin(angle)) / Math.cos((lat * Math.PI) / 180),
-  };
-}
-
-function futureDate(daysAhead) {
-  const hours = [14, 15, 16, 17, 18, 19, 20];
-  const d = new Date();
-  d.setDate(d.getDate() + daysAhead);
-  d.setHours(pick(hours), 0, 0, 0);
-  return d;
-}
-
-function gameConfig(type) {
-  switch (type) {
-    case "YUGIOH":
-      return { maxPlayers: 2, duration: pick([60, 90, 120]) };
-    case "NARUTO":
-      return { maxPlayers: 2, duration: pick([60, 90]) };
-    case "POKEMON":
-      return { maxPlayers: pick([2, 4]), duration: pick([90, 120, 180]) };
-    case "ONE_PIECE":
-      return { maxPlayers: pick([2, 4]), duration: pick([90, 120]) };
-    default:
-      return { maxPlayers: 2, duration: 90 };
+async function waitForDatabase(maxRetries = 5, delayMs = 5000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log(`✅  Database ready (attempt ${attempt}/${maxRetries})`);
+      return;
+    } catch (err) {
+      console.log(
+        `⏳  Database not ready (attempt ${attempt}/${maxRetries}): ${err.message}`,
+      );
+      if (attempt === maxRetries) {
+        throw new Error(
+          `Database not available after ${maxRetries} attempts — aborting cron.`,
+        );
+      }
+      await new Promise((r) => setTimeout(r, delayMs * attempt));
+    }
   }
 }
-
-const GAME_TYPES = ["POKEMON", "YUGIOH", "ONE_PIECE", "NARUTO"];
 
 // ─── MAIN ──────────────────────────────────────────────────────────────────────
 
 async function main() {
+  await waitForDatabase();
   const now = new Date();
   const horizonEnd = new Date(now.getTime() + HORIZON_DAYS * 24 * 3600 * 1000);
 
@@ -149,6 +133,29 @@ async function main() {
     );
   } else {
     console.log("  ✓  Aucune demande en attente à rejeter");
+  }
+
+  // ── 2b. AUTO-REJECT GLOBAL : rejette les demandes PENDING sur parties démarrées ─
+  console.log("\n🚫  Nettoyage des demandes sur parties démarrées/terminées...");
+
+  const pendingOnStartedGames = await prisma.participation.findMany({
+    where: {
+      status: "PENDING",
+      game: { scheduledAt: { lt: now } },
+    },
+    select: { id: true },
+  });
+
+  if (pendingOnStartedGames.length > 0) {
+    await prisma.participation.updateMany({
+      where: { id: { in: pendingOnStartedGames.map((p) => p.id) } },
+      data: { status: "REJECTED" },
+    });
+    console.log(
+      `  ✓  ${pendingOnStartedGames.length} demande(s) rejetée(s) (parties déjà commencées)`,
+    );
+  } else {
+    console.log("  ✓  Aucune demande orpheline");
   }
 
   // ── 3. REPLENISH : recrée des parties si sous le seuil par ville ─────────────

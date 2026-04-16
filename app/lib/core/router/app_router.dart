@@ -8,14 +8,14 @@ import 'package:tcg_matchmaker/features/profile/screens/profile_screen.dart';
 import 'package:tcg_matchmaker/features/profile/screens/settings_screen.dart';
 import 'package:tcg_matchmaker/features/shell/main_shell.dart';
 
-import '../../features/auth/screens/login_screen.dart';
-import '../../features/auth/screens/register_screen.dart';
-import '../../features/auth/screens/splash_screen.dart';
-import '../../features/legal/screens/privacy_screen.dart';
-import '../../features/legal/screens/terms_screen.dart';
-import '../../features/messages/screens/chat_screen.dart';
-import '../../features/messages/screens/conversations_screen.dart';
-import '../../features/notifications/screens/notifications_screen.dart';
+import 'package:tcg_matchmaker/features/auth/screens/login_screen.dart';
+import 'package:tcg_matchmaker/features/auth/screens/register_screen.dart';
+import 'package:tcg_matchmaker/features/auth/screens/splash_screen.dart';
+import 'package:tcg_matchmaker/features/legal/screens/privacy_screen.dart';
+import 'package:tcg_matchmaker/features/legal/screens/terms_screen.dart';
+import 'package:tcg_matchmaker/features/messages/screens/chat_screen.dart';
+import 'package:tcg_matchmaker/features/messages/screens/conversations_screen.dart';
+import 'package:tcg_matchmaker/features/notifications/screens/notifications_screen.dart';
 
 /// Routes de l'application
 abstract class AppRoutes {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:tcg_matchmaker/core/theme/app_theme.dart';
+import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_details_sheet.dart';
 
@@ -30,6 +31,10 @@ class GameCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final currentUserId = ref.watch(
+        authNotifierProvider.select((s) => s.user?.id));
+    final isMyGame = currentUserId == game.creator.id;
+    const goldColor = Color(0xFFFFD700);
 
     // Couleur alternée selon l'index (pair ou impair)
     final cardColor =
@@ -53,6 +58,11 @@ class GameCard extends ConsumerWidget {
             ],
             stops: const [0.0, 0.8],
           ),
+          border: isMyGame
+              ? const Border(
+                  left: BorderSide(color: goldColor, width: 4),
+                )
+              : null,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.3),
@@ -64,6 +74,12 @@ class GameCard extends ConsumerWidget {
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
+            if (isMyGame)
+              BoxShadow(
+                color: goldColor.withValues(alpha: 0.15),
+                blurRadius: 8,
+                offset: const Offset(-2, 0),
+              ),
           ],
         ),
         child: Container(
@@ -156,7 +172,7 @@ class GameCard extends ConsumerWidget {
                 icon: Icons.schedule_outlined,
                 text: _formatScheduledTime(game.scheduledAt),
               ),
-              if (game.pendingCount > 0) ...[
+              if (game.pendingCount > 0 && game.effectiveStatus.canJoin) ...[
                 const SizedBox(height: 10),
                 Container(
                   padding:

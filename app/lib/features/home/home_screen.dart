@@ -188,10 +188,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
+    final games = gamesState.visibleGames;
+
     return RefreshIndicator(
       onRefresh: () =>
           ref.read(gamesNotifierProvider.notifier).fetchExistingGames(),
-      child: gamesState.existingGames.isEmpty
+      child: games.isEmpty
           ? ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
@@ -213,9 +215,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             )
           : ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: gamesState.existingGames.length,
+              itemCount: games.length,
               itemBuilder: (context, index) {
-                final game = gamesState.existingGames[index];
+                final game = games[index];
                 return GameCard(game: game, index: index);
               },
             ),
@@ -229,7 +231,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         GameMap(
           key: const ValueKey('map'),
-          games: gamesState.existingGames,
+          games: gamesState.visibleGames,
           myGames: gamesState.myGames,
           onGameTap: _showGameDetails,
           distanceKm: gamesState.distanceFilter,

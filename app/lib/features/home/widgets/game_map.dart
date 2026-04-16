@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -34,40 +33,6 @@ class _GameMapState extends ConsumerState<GameMap> {
   MapboxMap? _mapboxMap;
   PointAnnotationManager? _annotationManager;
   final Map<String, Game> _annotationToGame = {};
-  bool _markersLoaded = false;
-
-  double? _initialLat;
-  double? _initialLng;
-  bool _locationLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadInitialPosition();
-  }
-
-  Future<void> _loadInitialPosition() async {
-    final locationEnabled = ref.read(locationEnabledProvider);
-    if (locationEnabled) {
-      try {
-        final position = await ref
-            .read(locationServiceProvider)
-            .getCurrentPosition()
-            .timeout(const Duration(seconds: 4), onTimeout: () => null);
-        if (mounted) {
-          setState(() {
-            _initialLat = position?.latitude;
-            _initialLng = position?.longitude;
-            _locationLoading = false;
-          });
-        }
-      } catch (_) {
-        if (mounted) setState(() => _locationLoading = false);
-      }
-    } else {
-      if (mounted) setState(() => _locationLoading = false);
-    }
-  }
 
   /// Convertit une distance en km vers un niveau de zoom Mapbox
   /// Formule logarithmique pour une correspondance plus précise
@@ -87,7 +52,6 @@ class _GameMapState extends ConsumerState<GameMap> {
       // Recharger les marqueurs si les games changent
       if (oldWidget.games != widget.games ||
           oldWidget.myGames != widget.myGames) {
-        _markersLoaded = false;
         _loadMarkers();
       }
 
@@ -132,7 +96,7 @@ class _GameMapState extends ConsumerState<GameMap> {
         await _mapboxMap?.annotations.createPointAnnotationManager();
 
     // Écouter les clics sur les marqueurs
-    // ignore: deprecated_member_us
+    // ignore: deprecated_member_use
     _annotationManager?.addOnPointAnnotationClickListener(
       _MarkerClickListener(
         annotationToGame: _annotationToGame,
@@ -157,7 +121,7 @@ class _GameMapState extends ConsumerState<GameMap> {
   }
 
   Future<void> _loadMarkers() async {
-    if (_annotationManager == null) return;
+    if (_annotationManager == null || !mounted) return;
 
     // Supprimer les anciens marqueurs
     await _annotationManager?.deleteAll();
@@ -172,8 +136,7 @@ class _GameMapState extends ConsumerState<GameMap> {
     ];
 
     if (allGames.isEmpty) {
-      _markersLoaded = true;
-      return;
+        return;
     }
 
     // Grouper par lieu pour détecter les superpositions
@@ -181,12 +144,14 @@ class _GameMapState extends ConsumerState<GameMap> {
 
     for (final entry in groups.entries) {
       final gamesAtLocation = entry.value;
+      if (!mounted) return;
       if (gamesAtLocation.length == 1) {
         await _addMarkerForGame(gamesAtLocation.first, myGameIds: myGameIds);
       } else {
         // Décaler les marqueurs en cercle autour du point central
         const offsetDeg = 0.00018; // ~20m d'offset
         for (int i = 0; i < gamesAtLocation.length; i++) {
+          if (!mounted) return;
           final angle = (2 * math.pi / gamesAtLocation.length) * i;
           final game = gamesAtLocation[i];
           final offsetLat = game.latitude + offsetDeg * math.sin(angle);
@@ -199,18 +164,18 @@ class _GameMapState extends ConsumerState<GameMap> {
       }
     }
 
-    _markersLoaded = true;
   }
 
   Future<void> _addMarkerForGame(Game game,
       {double? latOverride,
       double? lngOverride,
       required Set<String> myGameIds}) async {
+    if (!mounted) return;
     try {
       final isMyGame = myGameIds.contains(game.id);
       // Générer l'image du marqueur
       final markerImage = await _generateMarkerImage(game, isMyGame: isMyGame);
-      if (markerImage == null) return;
+      if (!mounted || markerImage == null) return;
 
       final lat = latOverride ?? game.latitude;
       final lng = lngOverride ?? game.longitude;
@@ -370,11 +335,19 @@ class _GameMapState extends ConsumerState<GameMap> {
 
   @override
   Widget build(BuildContext context) {
-    if (_locationLoading) return _buildLoadingPlaceholder();
+    final positionAsync = ref.watch(currentPositionProvider);
 
+    return positionAsync.when(
+      loading: () => _buildLoadingPlaceholder(),
+      error: (_, __) => _buildMap(null),
+      data: (position) => _buildMap(position),
+    );
+  }
+
+  Widget _buildMap(dynamic position) {
     final initialZoom = _distanceToZoom(widget.distanceKm);
-    final center = (_initialLat != null && _initialLng != null)
-        ? Point(coordinates: Position(_initialLng!, _initialLat!))
+    final center = (position != null)
+        ? Point(coordinates: Position(position.longitude, position.latitude))
         : Point(coordinates: Position(4.4445, 50.4108)); // fallback : Charleroi
 
     return Padding(

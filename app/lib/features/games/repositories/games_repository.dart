@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:tcg_matchmaker/core/constants/api_constants.dart';
+import 'package:tcg_matchmaker/core/constants/app_constants.dart';
 import 'package:tcg_matchmaker/core/errors/exceptions.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/games/models/create_game_model.dart';
@@ -13,7 +14,7 @@ class GamesRepository {
   Future<List<Game>> fetchExistingGames({
     required double latitude,
     required double longitude,
-    double distance = 20,
+    double distance = AppConstants.defaultDistanceKm,
     DateTime? dateFrom,
     DateTime? dateTo,
     String? gameType,
@@ -38,7 +39,7 @@ class GamesRepository {
               GameModel.fromJson(json as Map<String, dynamic>).toEntity())
           .toList();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -50,7 +51,7 @@ class GamesRepository {
               GameModel.fromJson(json as Map<String, dynamic>).toEntity())
           .toList();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -64,7 +65,7 @@ class GamesRepository {
           GameModel.fromJson(response.data as Map<String, dynamic>);
       return gameModel.toEntity();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -78,7 +79,7 @@ class GamesRepository {
           GameModel.fromJson(response.data as Map<String, dynamic>);
       return gameModel.toEntity();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -86,44 +87,8 @@ class GamesRepository {
     try {
       await _dio.delete('${ApiConstants.games}/$id');
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
-  AppException _handleDioException(DioException e) {
-    if (e.type == DioExceptionType.connectionError ||
-        e.type == DioExceptionType.connectionTimeout) {
-      return NetworkException(message: 'Pas de connexion internet');
-    }
-
-    final errorMessage = e.response?.data['error'] as String?;
-
-    switch (e.response?.statusCode) {
-      case 400:
-        return ValidationException(
-          message: errorMessage ?? 'Données invalides',
-        );
-      case 401:
-        return UnauthorizedException(
-          message: errorMessage ?? 'Non authentifié',
-        );
-      case 403:
-        return ForbiddenException(
-          message: errorMessage ?? 'Accès refusé',
-        );
-      case 404:
-        return NotFoundException(
-          message: errorMessage ?? 'Partie introuvable',
-        );
-      case 422:
-        return ValidationException(
-          message: errorMessage ?? 'Données invalides',
-        );
-      default:
-        return ServerException(
-          message: errorMessage ?? 'Erreur serveur',
-          statusCode: e.response?.statusCode,
-        );
-    }
-  }
 }

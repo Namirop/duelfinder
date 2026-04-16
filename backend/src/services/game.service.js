@@ -30,36 +30,23 @@ const getEffectiveStatus = (game) => {
 
 /**
  * Vérifie si un utilisateur peut créer une nouvelle partie (règle anti-spam)
- * Règle : max 1 partie avec wasFilledOnce=false par jour
+ * Règle : max 1 partie OPEN à la fois
  * @param {string} userId - ID de l'utilisateur
- * @param {Date} date - Date de la partie à créer
  * @returns {Promise<{canCreate: boolean, reason?: string}>}
  */
-const canCreateGame = async (userId, date) => {
-  const targetDate = new Date(date);
-  const startOfDay = new Date(targetDate);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(targetDate);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  // Chercher une partie non remplie ce jour-là
-  const unfilledGame = await prisma.game.findFirst({
+const canCreateGame = async (userId) => {
+  const openGame = await prisma.game.findFirst({
     where: {
       creatorId: userId,
-      wasFilledOnce: false,
-      status: { not: "CANCELLED" },
-      scheduledAt: {
-        gte: startOfDay,
-        lte: endOfDay,
-      },
+      status: "OPEN",
     },
   });
 
-  if (unfilledGame) {
+  if (openGame) {
     return {
       canCreate: false,
       reason:
-        "Vous avez déjà une partie en attente de joueurs ce jour-là. Attendez qu'elle soit complète pour en créer une autre.",
+        "Vous avez déjà une partie ouverte. Attendez qu'elle soit complète ou annulez-la pour en créer une autre.",
     };
   }
 

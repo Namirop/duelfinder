@@ -1,3 +1,4 @@
+import 'package:tcg_matchmaker/core/constants/app_constants.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 
 enum ScheduleFilterOption {
@@ -79,7 +80,7 @@ class GamesState {
     this.existingGames = const [],
     this.myGames = const [],
     this.selectedGame,
-    this.distanceFilter = 20,
+    this.distanceFilter = AppConstants.defaultDistanceKm,
     this.scheduleOption = ScheduleFilterOption.all,
     this.customScheduleDate,
     this.gameTypeFilter, // null = tous les jeux
@@ -100,6 +101,21 @@ class GamesState {
   bool get hasExistingGames => existingGames.isNotEmpty;
   bool get hasCreatedGames => myGames.isNotEmpty;
   bool get hasSelectedGame => selectedGame != null;
+  bool get hasOpenGame => myGames.any((g) => g.isOpen);
+
+  /// Toutes les parties visibles sur la homepage (existingGames + myGames),
+  /// dédupliquées et sans CANCELLED/FINISHED.
+  List<Game> get visibleGames {
+    final existingIds = existingGames.map((g) => g.id).toSet();
+    return [
+      ...existingGames,
+      ...myGames.where((g) => !existingIds.contains(g.id)),
+    ]
+        .where((g) =>
+            g.effectiveStatus != GameStatus.CANCELLED &&
+            g.effectiveStatus != GameStatus.FINISHED)
+        .toList();
+  }
 
   GamesState copyWith({
     List<Game>? existingGames,

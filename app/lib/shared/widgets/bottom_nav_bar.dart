@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tcg_matchmaker/core/router/app_router.dart';
 import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dart';
+import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 import 'package:tcg_matchmaker/features/notifications/providers/notifications_provider.dart';
 
 class BottomNavBar extends ConsumerWidget {
@@ -22,6 +23,8 @@ class BottomNavBar extends ConsumerWidget {
         ref.watch(notificationsNotifierProvider).valueOrNull?.hasUnread ??
             false;
     final unreadMessages = ref.watch(totalUnreadProvider);
+    final canCreateGame =
+        !ref.watch(gamesNotifierProvider.select((s) => s.hasOpenGame));
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 0, 15, 30),
@@ -73,7 +76,8 @@ class BottomNavBar extends ConsumerWidget {
             ),
             Positioned(
               top: -8,
-              child: _buildCenterButton(colorScheme, 2, context),
+              child: _buildCenterButton(
+                  colorScheme, 2, context, canCreateGame),
             ),
           ],
         ),
@@ -186,12 +190,32 @@ class BottomNavBar extends ConsumerWidget {
   }
 
   Widget _buildCenterButton(
-      ColorScheme colorScheme, int index, BuildContext context) {
+      ColorScheme colorScheme, int index, BuildContext context, bool enabled) {
     final isSelected = currentScreen == index;
-    final unselectedColor = Color.lerp(colorScheme.primary, Colors.black, 0.5)!;
+    final disabledColor = Colors.grey.shade700;
+
+    final baseColor = enabled
+        ? (isSelected
+            ? colorScheme.primary
+            : Color.lerp(colorScheme.primary, Colors.black, 0.5)!)
+        : disabledColor;
 
     return GestureDetector(
-      onTap: () => context.push(AppRoutes.createGame),
+      onTap: () {
+        if (enabled) {
+          context.push(AppRoutes.createGame);
+        } else {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text(
+                    'Vous avez déjà une partie ouverte. Complétez-la ou annulez-la pour en créer une autre.'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+        }
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: 65,
@@ -201,18 +225,14 @@ class BottomNavBar extends ConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: isSelected
-                ? [
-                    colorScheme.primary,
-                    Color.lerp(colorScheme.primary, Colors.black, 0.15)!,
-                  ]
-                : [
-                    unselectedColor,
-                    Color.lerp(unselectedColor, Colors.black, 0.15)!,
-                  ],
+            colors: [
+              baseColor,
+              Color.lerp(baseColor, Colors.black, 0.15)!,
+            ],
           ),
           border: Border.all(
-            color: Colors.white.withValues(alpha: isSelected ? 0.3 : 0.15),
+            color: Colors.white
+                .withValues(alpha: enabled && isSelected ? 0.3 : 0.15),
             width: 2,
           ),
           boxShadow: [
@@ -221,7 +241,7 @@ class BottomNavBar extends ConsumerWidget {
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
-            if (isSelected)
+            if (isSelected && enabled)
               BoxShadow(
                 color: colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 12,
@@ -234,7 +254,8 @@ class BottomNavBar extends ConsumerWidget {
           child: Icon(
             Icons.add_rounded,
             size: 45,
-            color: Colors.white.withValues(alpha: isSelected ? 1 : 0.6),
+            color:
+                Colors.white.withValues(alpha: enabled && isSelected ? 1 : 0.4),
           ),
         ),
       ),

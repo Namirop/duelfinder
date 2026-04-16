@@ -22,7 +22,7 @@ class ProfileRepository {
       final response = await _dio.put(ApiConstants.usersMe, data: data);
       return UserModel.fromJson(response.data['user']).toEntity();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -64,7 +64,7 @@ class ProfileRepository {
       );
       return UserModel.fromJson(response.data['user']).toEntity();
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     } catch (e) {
       if (e is AppException) rethrow;
       throw ServerException(message: 'Erreur lors de l\'upload de la photo');
@@ -84,7 +84,7 @@ class ProfileRepository {
         },
       );
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
@@ -92,36 +92,8 @@ class ProfileRepository {
     try {
       await _dio.delete(ApiConstants.usersMe);
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw handleDioException(e);
     }
   }
 
-  AppException _handleDioException(DioException e) {
-    if (e.type == DioExceptionType.connectionError ||
-        e.type == DioExceptionType.connectionTimeout) {
-      return NetworkException(message: 'Pas de connexion internet');
-    }
-
-    final errorMessage = e.response?.data['error'] as String?;
-
-    switch (e.response?.statusCode) {
-      case 400:
-        return ValidationException(
-          message: errorMessage ?? 'Données invalides',
-        );
-      case 401:
-        return UnauthorizedException(
-          message: errorMessage ?? 'Non autorisé',
-        );
-      case 409:
-        return ValidationException(
-          message: errorMessage ?? 'Conflit de données',
-        );
-      default:
-        return ServerException(
-          message: errorMessage ?? 'Erreur serveur',
-          statusCode: e.response?.statusCode,
-        );
-    }
-  }
 }
