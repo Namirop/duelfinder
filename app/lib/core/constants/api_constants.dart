@@ -36,4 +36,5 @@ class ApiConstants {
   static const String usersMe = '/users/me';
   static const String usersMePassword = '/users/me/password';
   static const String usersFcmToken = '/users/me/fcm-token';
+  static const String usersMeAvatar = '/users/me/avatar';
 }

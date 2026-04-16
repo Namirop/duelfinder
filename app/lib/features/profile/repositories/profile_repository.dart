@@ -1,8 +1,6 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:tcg_matchmaker/core/constants/api_constants.dart';
 import 'package:tcg_matchmaker/core/errors/exceptions.dart';
 import 'package:tcg_matchmaker/features/auth/entities/user.dart';
@@ -26,42 +24,20 @@ class ProfileRepository {
     }
   }
 
-  // À remplir avec vos identifiants Cloudinary
-  static const _cloudName = 'dmnke77es';
-  static const _uploadPreset = 'duelfinder';
-
   Future<User> uploadAvatar(File imageFile) async {
     try {
-      // 1. Lire les bytes en mémoire (évite les problèmes de chemin Android)
       final bytes = await imageFile.readAsBytes();
       final filename = imageFile.path.split('/').last;
 
-      final uri = Uri.parse(
-        'https://api.cloudinary.com/v1_1/$_cloudName/image/upload',
-      );
-      final request = http.MultipartRequest('POST', uri)
-        ..fields['upload_preset'] = _uploadPreset
-        ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: filename));
+      final formData = FormData.fromMap({
+        'avatar': MultipartFile.fromBytes(bytes, filename: filename),
+      });
 
-      final streamedResponse = await request.send();
-      final body = await streamedResponse.stream.bytesToString();
-
-      if (streamedResponse.statusCode != 200) {
-        throw ServerException(message: 'Erreur upload photo (${streamedResponse.statusCode})');
-      }
-
-      final decoded = jsonDecode(body) as Map<String, dynamic>;
-      final downloadUrl = decoded['secure_url'] as String?;
-
-      if (downloadUrl == null || downloadUrl.isEmpty) {
-        throw ServerException(message: 'Erreur upload photo : URL manquante');
-      }
-
-      // 2. Sauvegarder l'URL dans le backend
       final response = await _dio.put(
-        ApiConstants.usersMe,
-        data: {'avatar': downloadUrl},
+        ApiConstants.usersMeAvatar,
+        data: formData,
       );
+
       return UserModel.fromJson(response.data['user']).toEntity();
     } on DioException catch (e) {
       throw handleDioException(e);
