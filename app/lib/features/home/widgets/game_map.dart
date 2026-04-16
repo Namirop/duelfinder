@@ -389,7 +389,7 @@ class _GameMapState extends ConsumerState<GameMap> {
             Positioned(
               bottom: 16,
               right: 12,
-              child: Column(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildMapButton(
@@ -403,7 +403,7 @@ class _GameMapState extends ConsumerState<GameMap> {
                     },
                     icon: Icons.my_location_rounded,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(width: 10),
                   _buildMapButton(
                     colorScheme: colorScheme,
                     onTap: widget.onRefresh,
