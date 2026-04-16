@@ -91,4 +91,19 @@ class GamesRepository {
     }
   }
 
+  Future<void> permanentDeleteGame(String id) async {
+    try {
+      await _dio.delete('${ApiConstants.games}/$id/permanent');
+    } on DioException catch (e) {
+      throw handleDioException(e);
+    }
+  }
+
+  Future<void> archiveGame(String id) async {
+    try {
+      await _dio.patch('${ApiConstants.games}/$id/archive');
+    } on DioException catch (e) {
+      throw handleDioException(e);
+    }
+  }
 }

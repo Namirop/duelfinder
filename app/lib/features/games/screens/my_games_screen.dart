@@ -162,10 +162,14 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
               ),
               itemCount: games.length,
               itemBuilder: (context, index) {
-                return GameCard(
-                  game: games[index],
-                  index: index,
-                  showFullAddress: true,
+                final game = games[index];
+                return GestureDetector(
+                  onLongPress: () => _showGameActions(game),
+                  child: GameCard(
+                    game: game,
+                    index: index,
+                    showFullAddress: true,
+                  ),
                 );
               },
             ),
@@ -220,12 +224,178 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
               ),
               itemCount: participations.length,
               itemBuilder: (context, index) {
-                return ParticipationCard(
-                  participation: participations[index],
-                  index: index,
+                final participation = participations[index];
+                return GestureDetector(
+                  onLongPress: () =>
+                      _showParticipationActions(participation),
+                  child: ParticipationCard(
+                    participation: participation,
+                    index: index,
+                  ),
                 );
               },
             ),
+    );
+  }
+
+  void _showGameActions(Game game) {
+    final isCancelled = game.effectiveStatus == GameStatus.CANCELLED;
+    final isFinished = game.effectiveStatus == GameStatus.FINISHED;
+    if (!isCancelled && !isFinished) return;
+
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isFinished)
+              ListTile(
+                leading: const Icon(Icons.archive_outlined),
+                title: const Text('Archiver'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _archiveGame(game.id);
+                },
+              ),
+            ListTile(
+              leading: Icon(Icons.delete_forever, color: colorScheme.error),
+              title: Text('Supprimer définitivement',
+                  style: TextStyle(color: colorScheme.error)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmPermanentDeleteGame(game.id);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _archiveGame(String gameId) async {
+    await ref.read(gamesNotifierProvider.notifier).archiveGame(gameId);
+    if (!mounted) return;
+    final error = ref.read(gamesNotifierProvider).errorDeleting;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? 'Partie archivée'),
+        backgroundColor: error != null ? Theme.of(context).colorScheme.error : null,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _confirmPermanentDeleteGame(String gameId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer définitivement'),
+        content: const Text(
+            'Cette action est irréversible. La partie et toutes ses données seront supprimées.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    await ref.read(gamesNotifierProvider.notifier).permanentDeleteGame(gameId);
+    if (!mounted) return;
+    final error = ref.read(gamesNotifierProvider).errorDeleting;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? 'Partie supprimée'),
+        backgroundColor: error != null ? Theme.of(context).colorScheme.error : null,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showParticipationActions(Participation participation) {
+    final isCancelled = participation.isCancelled;
+    final isRejected = participation.isRejected;
+    if (!isCancelled && !isRejected) return;
+
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.delete_forever, color: colorScheme.error),
+              title: Text('Supprimer définitivement',
+                  style: TextStyle(color: colorScheme.error)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmPermanentDeleteParticipation(participation.id);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmPermanentDeleteParticipation(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer définitivement'),
+        content: const Text('Cette participation sera supprimée définitivement.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    await ref
+        .read(participationsNotifierProvider.notifier)
+        .permanentDeleteParticipation(id);
+    if (!mounted) return;
+    final error = ref.read(participationsNotifierProvider).error;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? 'Participation supprimée'),
+        backgroundColor: error != null ? Theme.of(context).colorScheme.error : null,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 }

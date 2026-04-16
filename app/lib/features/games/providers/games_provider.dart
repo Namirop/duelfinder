@@ -143,6 +143,44 @@ class GamesNotifier extends _$GamesNotifier {
     }
   }
 
+  Future<void> permanentDeleteGame(String gameId) async {
+    state = state.copyWith(isDeleting: true, clearErrorDeleting: true);
+    try {
+      await ref.read(gamesRepositoryProvider).permanentDeleteGame(gameId);
+      state = state.copyWith(
+        isDeleting: false,
+        myGames: state.myGames.where((g) => g.id != gameId).toList(),
+        existingGames:
+            state.existingGames.where((g) => g.id != gameId).toList(),
+      );
+    } on AppException catch (e) {
+      AppLogger.w('GamesNotifier', 'permanentDeleteGame failed: $e');
+      state = state.copyWith(errorDeleting: e.message, isDeleting: false);
+    } catch (e, stackTrace) {
+      AppLogger.e('GamesNotifier', 'permanentDeleteGame failed', e, stackTrace);
+      state = state.copyWith(
+          errorDeleting: 'Erreur de suppression', isDeleting: false);
+    }
+  }
+
+  Future<void> archiveGame(String gameId) async {
+    state = state.copyWith(isDeleting: true, clearErrorDeleting: true);
+    try {
+      await ref.read(gamesRepositoryProvider).archiveGame(gameId);
+      state = state.copyWith(
+        isDeleting: false,
+        myGames: state.myGames.where((g) => g.id != gameId).toList(),
+      );
+    } on AppException catch (e) {
+      AppLogger.w('GamesNotifier', 'archiveGame failed: $e');
+      state = state.copyWith(errorDeleting: e.message, isDeleting: false);
+    } catch (e, stackTrace) {
+      AppLogger.e('GamesNotifier', 'archiveGame failed', e, stackTrace);
+      state =
+          state.copyWith(errorDeleting: "Erreur d'archivage", isDeleting: false);
+    }
+  }
+
   void setDistanceFilter(double distance) {
     state = state.copyWith(distanceFilter: distance);
     fetchExistingGames();

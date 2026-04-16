@@ -115,6 +115,28 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
     }
   }
 
+  Future<void> permanentDeleteParticipation(String participationId) async {
+    state = state.copyWith(isRequesting: true, clearError: true);
+    try {
+      await ref
+          .read(participationsRepositoryProvider)
+          .permanentDeleteParticipation(participationId);
+      state = state.copyWith(
+        isRequesting: false,
+        myParticipations:
+            state.myParticipations.where((p) => p.id != participationId).toList(),
+      );
+    } on AppException catch (e) {
+      AppLogger.w('ParticipationsNotifier', 'permanentDelete failed: $e');
+      state = state.copyWith(error: e.message, isRequesting: false);
+    } catch (e, stackTrace) {
+      AppLogger.e(
+          'ParticipationsNotifier', 'permanentDelete failed', e, stackTrace);
+      state = state.copyWith(
+          error: 'Erreur de suppression', isRequesting: false);
+    }
+  }
+
   Participation? getParticipationForGame(String gameId) {
     final matches = state.myParticipations.where((p) => p.gameId == gameId);
     return matches.isEmpty ? null : matches.first;

@@ -98,4 +98,13 @@ class ParticipationsRepository {
     }
   }
 
+  Future<void> permanentDeleteParticipation(String participationId) async {
+    try {
+      await _dio.delete(
+        '${ApiConstants.participations}/$participationId/permanent',
+      );
+    } on DioException catch (e) {
+      throw handleDioException(e);
+    }
+  }
 }
