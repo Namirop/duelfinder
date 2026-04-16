@@ -461,6 +461,31 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final hasOpenGame = ref.watch(
+        gamesNotifierProvider.select((s) => s.hasOpenGame));
+
+    if (hasOpenGame) {
+      return Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(theme, colorScheme),
+              const Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'Vous avez déjà une partie ouverte.\nComplétez-la ou annulez-la pour en créer une autre.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: GestureDetector(

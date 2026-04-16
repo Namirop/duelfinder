@@ -35,10 +35,12 @@ const getEffectiveStatus = (game) => {
  * @returns {Promise<{canCreate: boolean, reason?: string}>}
  */
 const canCreateGame = async (userId) => {
+  const now = new Date();
   const openGame = await prisma.game.findFirst({
     where: {
       creatorId: userId,
       status: "OPEN",
+      scheduledAt: { gt: now },
     },
   });
 
