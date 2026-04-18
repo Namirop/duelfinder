@@ -119,17 +119,17 @@ class ConversationsScreen extends ConsumerWidget {
 
 // ─── Liste avec section archives ─────────────────────────────────────────────
 
-class _ConversationList extends StatefulWidget {
+class _ConversationList extends ConsumerStatefulWidget {
   final List<Conversation> active;
   final List<Conversation> archived;
 
   const _ConversationList({required this.active, required this.archived});
 
   @override
-  State<_ConversationList> createState() => _ConversationListState();
+  ConsumerState<_ConversationList> createState() => _ConversationListState();
 }
 
-class _ConversationListState extends State<_ConversationList> {
+class _ConversationListState extends ConsumerState<_ConversationList> {
   bool _archiveExpanded = false;
 
   @override
@@ -189,11 +189,61 @@ class _ConversationListState extends State<_ConversationList> {
                 onTap: () => context.push(
                   AppRoutes.conversation.replaceFirst(':id', conv.gameId),
                 ),
+                onLongPress: () => _confirmHideConversation(conv, colorScheme),
               ),
             ),
         ],
       ],
     );
+  }
+
+  Future<void> _confirmHideConversation(
+      Conversation conv, ColorScheme colorScheme) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer la conversation'),
+        content: const Text(
+            'Cette conversation archivée sera retirée de votre liste.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.error,
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref
+          .read(conversationsProvider.notifier)
+          .hideConversation(conv.gameId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Conversation supprimée'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Erreur lors de la suppression'),
+          backgroundColor: colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
 
@@ -202,8 +252,13 @@ class _ConversationListState extends State<_ConversationList> {
 class _ConversationTile extends StatelessWidget {
   final Conversation conversation;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
-  const _ConversationTile({required this.conversation, required this.onTap});
+  const _ConversationTile({
+    required this.conversation,
+    required this.onTap,
+    this.onLongPress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -217,6 +272,7 @@ class _ConversationTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         padding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

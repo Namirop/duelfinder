@@ -176,8 +176,8 @@ class GamesNotifier extends _$GamesNotifier {
       state = state.copyWith(errorDeleting: e.message, isDeleting: false);
     } catch (e, stackTrace) {
       AppLogger.e('GamesNotifier', 'archiveGame failed', e, stackTrace);
-      state =
-          state.copyWith(errorDeleting: "Erreur d'archivage", isDeleting: false);
+      state = state.copyWith(
+          errorDeleting: "Erreur d'archivage", isDeleting: false);
     }
   }
 

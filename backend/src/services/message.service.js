@@ -3,6 +3,7 @@
  */
 
 import prisma from "../config/database.js";
+import gameService from "./game.service.js";
 
 const SENDER_SELECT = {
   id: true,
@@ -67,6 +68,13 @@ const isGameMember = async (userId, gameId) => {
  * parties où il est créateur ou participant accepté, triées par dernier message
  */
 const getConversations = async (userId) => {
+  // Récupère la liste des conversations masquées par l'utilisateur
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { hiddenConversations: true },
+  });
+  const hidden = new Set(user?.hiddenConversations ?? []);
+
   // Récupère les parties concernées
   const games = await prisma.game.findMany({
     where: {
@@ -116,12 +124,14 @@ const getConversations = async (userId) => {
         });
       }
 
+      const effectiveStatus = gameService.getEffectiveStatus(game);
+
       return {
         gameId: game.id,
         gameType: game.gameType,
         address: game.address,
         scheduledAt: game.scheduledAt,
-        status: game.status,
+        status: effectiveStatus,
         creator: game.creator,
         participants: game.participations.map((p) => p.user),
         lastMessage: lastMessage
@@ -138,12 +148,31 @@ const getConversations = async (userId) => {
     })
   );
 
+  // Filtrer : conversations masquées par l'utilisateur
+  // + conversations archivées (FINISHED/CANCELLED) sans aucun message
+  const filtered = conversations.filter((c) => {
+    if (hidden.has(c.gameId)) return false;
+    const isArchived = c.status === "FINISHED" || c.status === "CANCELLED";
+    if (isArchived && !c.lastMessage) return false;
+    return true;
+  });
+
   // Tri : plus récent message en premier, puis parties sans message
-  return conversations.sort((a, b) => {
+  return filtered.sort((a, b) => {
     const aDate = a.lastMessage ? new Date(a.lastMessage.createdAt) : new Date(0);
     const bDate = b.lastMessage ? new Date(b.lastMessage.createdAt) : new Date(0);
     return bDate - aDate;
   });
 };
 
-export default { findByGame, create, markRead, isGameMember, getConversations };
+/**
+ * Masque une conversation archivée pour l'utilisateur
+ */
+const hideConversation = async (userId, gameId) => {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { hiddenConversations: { push: gameId } },
+  });
+};
+
+export default { findByGame, create, markRead, isGameMember, getConversations, hideConversation };

@@ -22,8 +22,8 @@ export const CITIES = [
     name: "Paris",
     lat: 48.8566,
     lng: 2.3522,
-    // Présence forte — 12 slots sur 30 jours
-    slots: [1, 2, 3, 5, 7, 9, 12, 15, 18, 22, 27, 30],
+    // Présence forte — 18 slots sur 30 jours
+    slots: [1, 2, 3, 4, 5, 7, 8, 10, 12, 14, 15, 17, 19, 21, 23, 25, 27, 30],
     venues: [
       { address: "Place de la République, 75010 Paris" },
       { address: "Rue Oberkampf 42, 75011 Paris" },
@@ -40,8 +40,8 @@ export const CITIES = [
     name: "Bruxelles",
     lat: 50.8503,
     lng: 4.3517,
-    // Présence légère — 5 slots sur 30 jours
-    slots: [3, 8, 15, 22, 29],
+    // Présence modérée — 10 slots sur 30 jours
+    slots: [1, 3, 6, 8, 12, 15, 18, 22, 26, 29],
     venues: [
       { address: "Rue Neuve 45, 1000 Bruxelles" },
       { address: "Boulevard Adolphe Max 12, 1000 Bruxelles" },
@@ -53,8 +53,8 @@ export const CITIES = [
     name: "Charleroi",
     lat: 50.4108,
     lng: 4.4445,
-    // Présence démo client — à supprimer de cette liste quand ce n'est plus nécessaire
-    slots: [1, 3, 6, 10, 14, 19, 25],
+    // Présence modérée — 10 slots sur 30 jours
+    slots: [1, 3, 5, 8, 10, 14, 17, 20, 25, 29],
     venues: [
       { address: "Rue de la Montagne 8, 6000 Charleroi" },
       { address: "Boulevard Tirou 15, 6000 Charleroi" },

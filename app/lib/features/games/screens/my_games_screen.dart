@@ -5,10 +5,13 @@ import 'package:tcg_matchmaker/core/di/providers.dart';
 import 'package:tcg_matchmaker/core/enums/navigation_enum.dart';
 import 'package:tcg_matchmaker/core/router/app_router.dart';
 import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
+import 'package:tcg_matchmaker/features/games/entities/game.dart';
+import 'package:tcg_matchmaker/features/games/entities/game_enums.dart';
 import 'package:tcg_matchmaker/features/games/entities/game_state.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 import 'package:tcg_matchmaker/features/home/widgets/game_card.dart';
 import 'package:tcg_matchmaker/features/notifications/widgets/notification_icon_button.dart';
+import 'package:tcg_matchmaker/features/participations/entities/participation.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation_state.dart';
 import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
 import 'package:tcg_matchmaker/features/participations/widgets/participation_card.dart';
@@ -226,8 +229,7 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
               itemBuilder: (context, index) {
                 final participation = participations[index];
                 return GestureDetector(
-                  onLongPress: () =>
-                      _showParticipationActions(participation),
+                  onLongPress: () => _showParticipationActions(participation),
                   child: ParticipationCard(
                     participation: participation,
                     index: index,
@@ -286,7 +288,8 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(error ?? 'Partie archivée'),
-        backgroundColor: error != null ? Theme.of(context).colorScheme.error : null,
+        backgroundColor:
+            error != null ? Theme.of(context).colorScheme.error : null,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -323,7 +326,8 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(error ?? 'Partie supprimée'),
-        backgroundColor: error != null ? Theme.of(context).colorScheme.error : null,
+        backgroundColor:
+            error != null ? Theme.of(context).colorScheme.error : null,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -366,7 +370,8 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Supprimer définitivement'),
-        content: const Text('Cette participation sera supprimée définitivement.'),
+        content:
+            const Text('Cette participation sera supprimée définitivement.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -393,7 +398,8 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(error ?? 'Participation supprimée'),
-        backgroundColor: error != null ? Theme.of(context).colorScheme.error : null,
+        backgroundColor:
+            error != null ? Theme.of(context).colorScheme.error : null,
         behavior: SnackBarBehavior.floating,
       ),
     );

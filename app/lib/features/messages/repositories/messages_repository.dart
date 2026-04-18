@@ -63,4 +63,14 @@ class MessagesRepository {
       );
     }
   }
+
+  Future<void> hideConversation(String gameId) async {
+    try {
+      await _dio.delete('${ApiConstants.conversations}/$gameId');
+    } on DioException catch (e) {
+      throw ServerException(
+        message: e.response?.data?['error'] ?? 'Erreur suppression conversation',
+      );
+    }
+  }
 }

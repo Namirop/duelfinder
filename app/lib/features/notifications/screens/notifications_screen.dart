@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tcg_matchmaker/features/notifications/entities/notification.dart';
+import 'package:tcg_matchmaker/features/notifications/entities/notifications_state.dart';
 import 'package:tcg_matchmaker/features/notifications/providers/notifications_provider.dart';
+import 'package:tcg_matchmaker/shared/widgets/app_error_widget.dart';
+import 'package:tcg_matchmaker/shared/widgets/loading_widget.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -24,7 +27,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final notificationsAsync = ref.watch(notificationsNotifierProvider);
+    final state = ref.watch(notificationsNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -33,33 +36,30 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           style: theme.textTheme.titleMedium?.copyWith(fontSize: 23),
         ),
       ),
-      body: notificationsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Impossible de charger les notifications',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-              const SizedBox(height: 12),
-              FilledButton.tonal(
-                onPressed: () => ref
-                    .read(notificationsNotifierProvider.notifier)
-                    .fetchNotifications(),
-                child: const Text('Réessayer'),
-              ),
-            ],
-          ),
-        ),
-        data: (state) => state.notifications.isEmpty
-            ? _buildEmpty(theme, colorScheme)
-            : _buildList(state.notifications, colorScheme),
-      ),
+      body: _buildBody(theme, colorScheme, state),
     );
+  }
+
+  Widget _buildBody(
+      ThemeData theme, ColorScheme colorScheme, NotificationsState state) {
+    if (state.isLoading && state.notifications.isEmpty) {
+      return const LoadingWidget();
+    }
+
+    if (state.error != null && state.notifications.isEmpty) {
+      return AppErrorWidget(
+        message: state.error!,
+        onRetry: () => ref
+            .read(notificationsNotifierProvider.notifier)
+            .fetchNotifications(),
+      );
+    }
+
+    if (state.notifications.isEmpty) {
+      return _buildEmpty(theme, colorScheme);
+    }
+
+    return _buildList(state.notifications, colorScheme);
   }
 
   Widget _buildList(
@@ -128,8 +128,7 @@ class _NotificationTile extends StatelessWidget {
       ),
       onDismissed: (_) => onDelete(),
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           width: 42,
           height: 42,

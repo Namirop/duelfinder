@@ -8,6 +8,7 @@ import 'package:tcg_matchmaker/features/games/screens/my_games_screen.dart';
 import 'package:tcg_matchmaker/features/home/home_screen.dart';
 import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dart';
 import 'package:tcg_matchmaker/features/messages/screens/conversations_screen.dart';
+import 'package:tcg_matchmaker/features/notifications/providers/fcm_initializer.dart';
 import 'package:tcg_matchmaker/features/notifications/providers/notifications_provider.dart';
 import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
 import 'package:tcg_matchmaker/features/profile/providers/settings_provider.dart';
@@ -40,17 +41,24 @@ class _MainShellState extends ConsumerState<MainShell>
         .addPostFrameCallback((_) => _requestPermissionsAndLoadInitialData());
   }
 
+  /// Point d'orchestration central : charge les données initiales, demande
+  /// les permissions OS, et initialise FCM. Les notifiers ont un sync build
+  /// vide — c'est ici qu'on déclenche les premiers fetches, dans un ordre
+  /// maîtrisé (données sans dépendance d'abord, localisation ensuite).
   Future<void> _requestPermissionsAndLoadInitialData() async {
     // 1. Données sans dépendance localisation : on lance immédiatement
+    ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
     ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
     ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
 
-    // 2. Permission notifications (Android 13+)
+    // 2. Permission notifications (Android 13+) puis init FCM
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
+    // FCM initialisé après la permission pour avoir le token valide
+    ref.read(fcmInitializerProvider.notifier).initialize();
 
     // 3. Permission localisation — après que la dialog notifs soit résolue
     final locationService = ref.read(locationServiceProvider);
@@ -86,9 +94,6 @@ class _MainShellState extends ConsumerState<MainShell>
 
   @override
   Widget build(BuildContext context) {
-    // Active l'initialisation FCM dès que le shell est monté (user connecté)
-    ref.watch(fcmInitializerProvider);
-
     final currentIndex = ref.watch(navigationIndexProvider);
 
     return Scaffold(

@@ -97,16 +97,14 @@ const getUserById = async (req, res, next) => {
 };
 
 // PUT /api/users/me/fcm-token
+// Accepte token: null pour dé-enregistrer le device (appelé au logout)
 const updateFcmToken = async (req, res, next) => {
   try {
     const { token } = req.body;
-    if (!token) {
-      return res.status(400).json({ error: "Token FCM requis" });
-    }
 
     await prisma.user.update({
       where: { id: req.user.userId },
-      data: { fcmToken: token },
+      data: { fcmToken: token || null },
     });
 
     res.status(200).json({ message: "Token FCM mis à jour" });

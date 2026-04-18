@@ -30,15 +30,13 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
       );
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'fetchMyParticipations failed: $e');
-      state = state.copyWith(
-          error: e.message,
-          isLoadingMyParticipations: false);
+      state =
+          state.copyWith(error: e.message, isLoadingMyParticipations: false);
     } catch (e, stackTrace) {
       AppLogger.e('ParticipationsNotifier', 'fetchMyParticipations failed', e,
           stackTrace);
       state = state.copyWith(
-          error: 'Erreur inconnue',
-          isLoadingMyParticipations: false);
+          error: 'Erreur inconnue', isLoadingMyParticipations: false);
     }
   }
 
@@ -70,13 +68,11 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
       );
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'requestToJoin failed: $e');
-      state = state.copyWith(
-          error: e.message, isRequesting: false);
+      state = state.copyWith(error: e.message, isRequesting: false);
     } catch (e, stackTrace) {
       AppLogger.e(
           'ParticipationsNotifier', 'requestToJoin failed', e, stackTrace);
-      state = state.copyWith(
-          error: 'Erreur inconnue', isRequesting: false);
+      state = state.copyWith(error: 'Erreur inconnue', isRequesting: false);
     }
   }
 
@@ -105,13 +101,11 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
       }
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'cancelParticipation failed: $e');
-      state = state.copyWith(
-          error: e.message, isRequesting: false);
+      state = state.copyWith(error: e.message, isRequesting: false);
     } catch (e, stackTrace) {
       AppLogger.e('ParticipationsNotifier', 'cancelParticipation failed', e,
           stackTrace);
-      state = state.copyWith(
-          error: 'Erreur inconnue', isRequesting: false);
+      state = state.copyWith(error: 'Erreur inconnue', isRequesting: false);
     }
   }
 
@@ -123,8 +117,9 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
           .permanentDeleteParticipation(participationId);
       state = state.copyWith(
         isRequesting: false,
-        myParticipations:
-            state.myParticipations.where((p) => p.id != participationId).toList(),
+        myParticipations: state.myParticipations
+            .where((p) => p.id != participationId)
+            .toList(),
       );
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'permanentDelete failed: $e');
@@ -132,8 +127,8 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
     } catch (e, stackTrace) {
       AppLogger.e(
           'ParticipationsNotifier', 'permanentDelete failed', e, stackTrace);
-      state = state.copyWith(
-          error: 'Erreur de suppression', isRequesting: false);
+      state =
+          state.copyWith(error: 'Erreur de suppression', isRequesting: false);
     }
   }
 

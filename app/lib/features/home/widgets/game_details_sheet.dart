@@ -541,10 +541,6 @@ class GameDetailsSheet extends ConsumerWidget {
     Participation participation,
     bool isRequesting,
   ) {
-    final isGameOver = game.effectiveStatus == GameStatus.IN_PROGRESS ||
-        game.effectiveStatus == GameStatus.FINISHED ||
-        game.effectiveStatus == GameStatus.CANCELLED;
-
     switch (participation.status) {
       case ParticipationStatus.PENDING:
         return SizedBox(
@@ -589,6 +585,9 @@ class GameDetailsSheet extends ConsumerWidget {
         );
 
       case ParticipationStatus.ACCEPTED:
+        final isGameOver = game.effectiveStatus == GameStatus.IN_PROGRESS ||
+            game.effectiveStatus == GameStatus.FINISHED ||
+            game.effectiveStatus == GameStatus.CANCELLED;
         final isFinished = game.effectiveStatus == GameStatus.FINISHED;
         return SizedBox(
           width: double.infinity,
@@ -730,8 +729,7 @@ class GameDetailsSheet extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    final error =
-        ref.read(participationsNotifierProvider).error;
+    final error = ref.read(participationsNotifierProvider).error;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -785,8 +783,7 @@ class GameDetailsSheet extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    final error =
-        ref.read(participationsNotifierProvider).error;
+    final error = ref.read(participationsNotifierProvider).error;
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

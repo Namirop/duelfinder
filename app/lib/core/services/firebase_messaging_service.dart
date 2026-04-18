@@ -3,22 +3,24 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tcg_matchmaker/core/services/app_logger.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
+import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dart';
+import 'package:tcg_matchmaker/features/notifications/providers/notifications_provider.dart';
 import 'package:tcg_matchmaker/features/notifications/repositories/notifications_repository.dart';
 import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
-
-/// Canal Android avec importance HIGH → déclenche les bannières popup
-const AndroidNotificationChannel _channel = AndroidNotificationChannel(
-  'duelfinder_high',
-  'Notifications DuelFinder',
-  importance: Importance.high,
-);
-
-final FlutterLocalNotificationsPlugin _localNotifications =
-    FlutterLocalNotificationsPlugin();
 
 class FirebaseMessagingService {
   final NotificationsRepository _repository;
   final Ref _ref;
+
+  static const _channelId = 'duelfinder_high';
+  static const _channelName = 'Notifications DuelFinder';
+
+  final _localNotifications = FlutterLocalNotificationsPlugin();
+  final _channel = const AndroidNotificationChannel(
+    _channelId,
+    _channelName,
+    importance: Importance.high,
+  );
 
   FirebaseMessagingService(this._repository, this._ref);
 
@@ -80,7 +82,11 @@ class FirebaseMessagingService {
       );
     }
 
-    // Refresh silencieux des données selon le type
+    // Toujours rafraîchir la liste de notifications in-app (le backend a créé
+    // l'enregistrement en DB au moment de l'envoi du push)
+    _ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
+
+    // Refresh silencieux des données selon le type de notification
     switch (type) {
       case 'PARTICIPATION_REQUEST':
       case 'PARTICIPATION_CANCELLED':
@@ -96,6 +102,9 @@ class FirebaseMessagingService {
         _ref
             .read(participationsNotifierProvider.notifier)
             .fetchMyParticipations();
+        break;
+      case 'NEW_MESSAGE':
+        _ref.read(conversationsProvider.notifier).refresh();
         break;
     }
   }

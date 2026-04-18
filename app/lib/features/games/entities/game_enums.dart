@@ -30,7 +30,6 @@ extension GameTypeExtension on GameType {
         GameType.YUGIOH => 'YGO',
         GameType.NARUTO => 'NRT',
       };
-
 }
 
 extension GameStatusExtension on GameStatus {

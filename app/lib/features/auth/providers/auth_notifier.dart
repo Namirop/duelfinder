@@ -77,6 +77,10 @@ class AuthNotifier extends _$AuthNotifier {
 
   Future<void> logout() async {
     try {
+      // Clear le token FCM avant le logout : le token est lié au device, pas
+      // au compte. Sans ça, un autre user se connectant sur le même device
+      // recevrait les pushes de l'ancien compte.
+      await ref.read(notificationsRepositoryProvider).clearFcmToken();
       await ref.read(authRepositoryProvider).logout();
     } on AppException catch (e) {
       AppLogger.w('AuthNotifier', 'logout failed: ${e.toString()}');

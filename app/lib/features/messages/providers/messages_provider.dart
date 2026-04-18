@@ -31,6 +31,14 @@ class ConversationsNotifier extends AsyncNotifier<List<Conversation>> {
     );
   }
 
+  /// Masque une conversation archivée (supprime de la liste)
+  Future<void> hideConversation(String gameId) async {
+    await ref.read(messagesRepositoryProvider).hideConversation(gameId);
+    state = state.whenData(
+      (list) => list.where((c) => c.gameId != gameId).toList(),
+    );
+  }
+
   Conversation _withZeroUnread(Conversation c) => Conversation(
         gameId: c.gameId,
         gameType: c.gameType,

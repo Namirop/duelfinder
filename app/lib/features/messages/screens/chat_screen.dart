@@ -32,9 +32,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final messagesAsync = ref.watch(messagesProvider(widget.conversationId));
-    final conversation = ref.watch(conversationsProvider).whenData(
-      (convs) => convs.where((c) => c.gameId == widget.conversationId).firstOrNull,
-    ).valueOrNull;
+    final conversation = ref
+        .watch(conversationsProvider)
+        .whenData(
+          (convs) =>
+              convs.where((c) => c.gameId == widget.conversationId).firstOrNull,
+        )
+        .valueOrNull;
 
     // Scroll vers le bas à chaque nouveau message
     ref.listen(messagesProvider(widget.conversationId), (_, next) {
@@ -49,8 +53,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           Expanded(
             child: messagesAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Text(
                   'Impossible de charger les messages',
@@ -81,8 +84,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final gameColor = colorScheme.primary;
     final title = conversation?.address ?? 'Conversation';
     final gameLabel = conversation?.gameType.label ?? '';
-    final membersCount =
-        (conversation?.participants.length ?? 0) + 1;
+    final membersCount = (conversation?.participants.length ?? 0) + 1;
 
     return AppBar(
       leading: IconButton(
@@ -105,8 +107,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: gameColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -157,8 +158,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
-    final currentUserId =
-        ref.read(authNotifierProvider).user?.id ?? '';
+    final currentUserId = ref.read(authNotifierProvider).user?.id ?? '';
 
     return ListView.builder(
       controller: _scrollController,
@@ -167,8 +167,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       itemBuilder: (context, index) {
         final message = messages[index];
         final isMe = message.sender.id == currentUserId;
-        final isFirst = index == 0 ||
-            messages[index - 1].sender.id != message.sender.id;
+        final isFirst =
+            index == 0 || messages[index - 1].sender.id != message.sender.id;
         final isLast = index == messages.length - 1 ||
             messages[index + 1].sender.id != message.sender.id;
 
@@ -203,8 +203,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Expanded(
             child: TextField(
               controller: _inputController,
-              onChanged: (v) =>
-                  setState(() => _canSend = v.trim().isNotEmpty),
+              onChanged: (v) => setState(() => _canSend = v.trim().isNotEmpty),
               style: theme.textTheme.bodyMedium,
               maxLines: 4,
               minLines: 1,
@@ -404,9 +403,8 @@ class _MessageBubble extends StatelessWidget {
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: isMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 if (!isMe && isFirst)
                   Padding(

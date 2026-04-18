@@ -3,6 +3,7 @@
  */
 
 import messageService from "../services/message.service.js";
+import gameService from "../services/game.service.js";
 import notificationService from "../services/notification.service.js";
 import prisma from "../config/database.js";
 import { GAME_TYPE_LABELS } from "../constants.js";
@@ -125,10 +126,35 @@ const deleteMessage = async (req, res, next) => {
   }
 };
 
+// DELETE /api/messages/conversations/:gameId
+const hideConversation = async (req, res, next) => {
+  try {
+    const { gameId } = req.params;
+    const userId = req.user.userId;
+
+    // Vérifier que la partie existe et que la conversation est bien archivée
+    const game = await prisma.game.findUnique({ where: { id: gameId } });
+    if (!game) {
+      return res.status(404).json({ error: "Partie introuvable" });
+    }
+
+    const effectiveStatus = gameService.getEffectiveStatus(game);
+    if (effectiveStatus !== "FINISHED" && effectiveStatus !== "CANCELLED") {
+      return res.status(400).json({ error: "Seule une conversation archivée peut être supprimée" });
+    }
+
+    await messageService.hideConversation(userId, gameId);
+    res.json({ message: "Conversation supprimée" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getConversations,
   getGameMessages,
   sendMessage,
   markRead,
   deleteMessage,
+  hideConversation,
 };

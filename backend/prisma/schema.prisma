@@ -25,7 +25,8 @@ model User {
   gamesCreated     Game[]          @relation("GameCreator")
   sentMessages     Message[]       @relation("SentMessages")
   notifications    Notification[]
-  participations   Participation[]
+  participations        Participation[]
+  hiddenConversations   String[]        @default([])
 
   @@map("users")
 }
@@ -93,6 +94,7 @@ model Notification {
   createdAt DateTime         @default(now())
   user      User             @relation(fields: [userId], references: [id])
 
+  @@index([userId])
   @@map("notifications")
 }
 

@@ -103,7 +103,9 @@ async function main() {
 
   let totalGames = 0;
   let totalFull = 0;
-  const createdFullGames = []; // pour ajouter des messages ensuite
+  let totalWithParticipants = 0;
+  let totalWithPending = 0;
+  const gamesWithMessages = []; // pour ajouter des messages ensuite
 
   for (const city of CITIES) {
     for (const day of city.slots) {
@@ -114,8 +116,8 @@ async function main() {
       const { maxPlayers, duration } = gameConfig(gameType);
       const coords = jitter(city.lat, city.lng);
 
-      // 30% des parties sont FULL (social proof)
-      const isFull = Math.random() < 0.3;
+      // 40% FULL, 60% OPEN
+      const isFull = Math.random() < 0.4;
 
       const game = await prisma.game.create({
         data: {
@@ -133,11 +135,12 @@ async function main() {
         },
       });
 
+      const otherNpcs = npcUsers.filter((u) => u.id !== creator.id);
+
       if (isFull) {
-        // Remplit la partie avec des participants NPC
+        // Partie complète : remplir tous les slots avec des participants acceptés
         const slots = maxPlayers - 1;
-        const participants = npcUsers
-          .filter((u) => u.id !== creator.id)
+        const participants = otherNpcs
           .sort(() => Math.random() - 0.5)
           .slice(0, slots);
 
@@ -154,8 +157,54 @@ async function main() {
           )
         );
 
-        createdFullGames.push({ game, creator, participants });
+        gamesWithMessages.push({ game, creator, participants });
         totalFull++;
+      } else {
+        // Partie OPEN : ajouter de la vie (participants et/ou demandes)
+        const roll = Math.random();
+        const availableSlots = maxPlayers - 1;
+
+        if (roll < 0.5 && availableSlots >= 1) {
+          // ~50% des OPEN → 1 à 2 participants acceptés
+          const count = Math.min(
+            1 + Math.floor(Math.random() * 2),
+            availableSlots,
+          );
+          const participants = otherNpcs
+            .sort(() => Math.random() - 0.5)
+            .slice(0, count);
+
+          await Promise.all(
+            participants.map((p) =>
+              prisma.participation.create({
+                data: {
+                  userId: p.id,
+                  gameId: game.id,
+                  status: "ACCEPTED",
+                  acceptedAt: new Date(Date.now() - Math.random() * 72 * 3600 * 1000),
+                },
+              })
+            )
+          );
+
+          // Quelques parties avec participants ont aussi des messages
+          if (Math.random() < 0.4) {
+            gamesWithMessages.push({ game, creator, participants });
+          }
+          totalWithParticipants++;
+        } else if (roll < 0.7 && availableSlots >= 1) {
+          // ~20% des OPEN → 1 demande en attente (PENDING)
+          const pending = pick(otherNpcs);
+          await prisma.participation.create({
+            data: {
+              userId: pending.id,
+              gameId: game.id,
+              status: "PENDING",
+            },
+          });
+          totalWithPending++;
+        }
+        // ~30% des OPEN restent vides (juste le créateur)
       }
 
       totalGames++;
@@ -166,15 +215,17 @@ async function main() {
 
   console.log(`\n✓  ${totalGames} parties créées au total`);
   console.log(`   └─ ${totalFull} FULL (social proof)`);
-  console.log(`   └─ ${totalGames - totalFull} OPEN (visibles sur la map)`);
+  console.log(`   └─ ${totalWithParticipants} OPEN avec participants`);
+  console.log(`   └─ ${totalWithPending} OPEN avec demande en attente`);
+  console.log(`   └─ ${totalGames - totalFull - totalWithParticipants - totalWithPending} OPEN vides`);
 
   // ── 3. MESSAGES DANS QUELQUES CHATS ─────────────────────────────────────────
   console.log("\n💬  Ajout de messages dans quelques chats...");
 
-  // On prend max 10 parties FULL au hasard pour y mettre des messages
-  const gamesToChat = createdFullGames
+  // On prend max 12 parties au hasard pour y mettre des messages
+  const gamesToChat = gamesWithMessages
     .sort(() => Math.random() - 0.5)
-    .slice(0, 10);
+    .slice(0, 12);
 
   for (const { game, creator, participants } of gamesToChat) {
     const speakers = [{ id: creator.id }, ...participants.map((p) => ({ id: p.id }))];

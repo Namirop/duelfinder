@@ -11,8 +11,7 @@ class NotificationIconButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasUnread =
-        ref.watch(notificationsNotifierProvider).valueOrNull?.hasUnread ?? false;
+    final hasUnread = ref.watch(notificationsNotifierProvider).hasUnread;
 
     return IconButton(
       onPressed: () => context.push(AppRoutes.notifications),

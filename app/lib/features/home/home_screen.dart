@@ -234,8 +234,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       isRefreshing: gamesState.isLoadingExisting,
       onRefresh: gamesState.isLoadingExisting
           ? null
-          : () =>
-              ref.read(gamesNotifierProvider.notifier).fetchExistingGames(),
+          : () => ref.read(gamesNotifierProvider.notifier).fetchExistingGames(),
     );
   }
 

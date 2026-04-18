@@ -4,12 +4,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
-/// Handler top-level obligatoire pour Firebase Messaging (isolate séparé).
-/// Doit être déclaré ici (top-level) pour être accessible depuis main().
+/// Handler background FCM — obligatoirement top-level (pas dans une classe)
+/// car il tourne dans un isolate séparé quand l'app est en arrière-plan.
+/// Le corps est vide : l'OS affiche la notification nativement.
 @pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Le système Android/iOS affiche la notification nativement.
-}
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {}
 
 /// Initialise toute l'infra avant runApp().
 /// Aucune dépendance Riverpod — pure initialisation plateforme.

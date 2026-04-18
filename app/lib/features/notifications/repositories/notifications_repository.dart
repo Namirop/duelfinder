@@ -20,6 +20,14 @@ class NotificationsRepository {
     }
   }
 
+  Future<void> clearFcmToken() async {
+    try {
+      await _dio.put(ApiConstants.usersFcmToken, data: {'token': null});
+    } on DioException catch (_) {
+      // Best effort — le logout se fait quand même
+    }
+  }
+
   Future<List<AppNotification>> getNotifications() async {
     try {
       final response = await _dio.get(ApiConstants.notifications);
