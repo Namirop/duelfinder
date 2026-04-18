@@ -33,6 +33,8 @@ class ParticipationCard extends StatelessWidget {
 
     final cardColor =
         index.isEven ? AppTheme.gameCardColor1 : AppTheme.gameCardColor2;
+    final gameCancelled = game.effectiveStatus == GameStatus.CANCELLED;
+    final borderColor = gameCancelled ? AppTheme.statusCancelled : participation.status.color;
 
     return GestureDetector(
       onTap: () => _showGameDetails(context),
@@ -42,7 +44,7 @@ class ParticipationCard extends StatelessWidget {
           color: cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border(
-            left: BorderSide(color: participation.status.color, width: 4),
+            left: BorderSide(color: borderColor, width: 4),
           ),
           boxShadow: [
             BoxShadow(
@@ -51,7 +53,7 @@ class ParticipationCard extends StatelessWidget {
               offset: const Offset(0, 6),
             ),
             BoxShadow(
-              color: participation.status.color.withValues(alpha: 0.15),
+              color: borderColor.withValues(alpha: 0.15),
               blurRadius: 8,
               offset: const Offset(-2, 0),
             ),
@@ -114,26 +116,31 @@ class ParticipationCard extends StatelessWidget {
   }
 
   Widget _buildStatusChip(ThemeData theme) {
+    // Si la partie est annulée, afficher ce statut en priorité
+    final gameCancelled = participation.game?.effectiveStatus == GameStatus.CANCELLED;
+    final color = gameCancelled ? AppTheme.statusCancelled : participation.status.color;
+    final icon = gameCancelled ? Icons.block_rounded : participation.status.icon;
+    final label = gameCancelled ? 'Partie annulée' : participation.status.label;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: participation.status.color.withValues(alpha: 0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: participation.status.color.withValues(alpha: 0.4),
+          color: color.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(participation.status.icon,
-              size: 13, color: participation.status.color),
+          Icon(icon, size: 13, color: color),
           const SizedBox(width: 5),
           Text(
-            participation.status.label,
+            label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: participation.status.color,
+              color: color,
               fontWeight: FontWeight.w700,
             ),
           ),

@@ -6,6 +6,7 @@ import 'package:tcg_matchmaker/core/services/app_logger.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/games/entities/game_state.dart';
 import 'package:tcg_matchmaker/features/games/models/create_game_model.dart';
+import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dart';
 
 part 'games_provider.g.dart';
 
@@ -79,6 +80,8 @@ class GamesNotifier extends _$GamesNotifier {
       final newGame = await ref.read(gamesRepositoryProvider).createGame(data);
       state = state
           .copyWith(isCreating: false, myGames: [newGame, ...state.myGames]);
+      // Rafraîchir les conversations pour inclure la nouvelle partie
+      ref.read(conversationsProvider.notifier).refresh();
     } on AppException catch (e) {
       AppLogger.w('GamesNotifier', 'createGame failed: ${e.toString()}');
       state = state.copyWith(errorCreating: e.message, isCreating: false);

@@ -102,6 +102,15 @@ const updateFcmToken = async (req, res, next) => {
   try {
     const { token } = req.body;
 
+    // Si un token est fourni, le retirer d'abord de tout autre utilisateur
+    // (évite qu'un même device/emulateur reçoive les notifs de 2 comptes)
+    if (token) {
+      await prisma.user.updateMany({
+        where: { fcmToken: token, id: { not: req.user.userId } },
+        data: { fcmToken: null },
+      });
+    }
+
     await prisma.user.update({
       where: { id: req.user.userId },
       data: { fcmToken: token || null },
