@@ -18,7 +18,8 @@ class BottomNavBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    final unreadMessages = ref.watch(totalUnreadProvider);
+    final unreadMessages =
+        ref.watch(messagesNotifierProvider.select((s) => s.totalUnread));
     final canCreateGame =
         !ref.watch(gamesNotifierProvider.select((s) => s.hasOpenGame));
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tcg_matchmaker/features/auth/providers/auth_notifier.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/messages/entities/message.dart';
+import 'package:tcg_matchmaker/features/messages/entities/messages_state.dart';
 import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -21,7 +22,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _isSending = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(messagesNotifierProvider.notifier).openChat(widget.conversationId);
+    });
+  }
+
+  @override
   void dispose() {
+    ref.read(messagesNotifierProvider.notifier).closeChat();
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -31,18 +41,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final messagesAsync = ref.watch(messagesProvider(widget.conversationId));
-    final conversation = ref
-        .watch(conversationsProvider)
-        .whenData(
-          (convs) =>
-              convs.where((c) => c.gameId == widget.conversationId).firstOrNull,
-        )
-        .valueOrNull;
+    final state = ref.watch(messagesNotifierProvider);
+    final conversation = state.conversationFor(widget.conversationId);
 
     // Scroll vers le bas à chaque nouveau message
-    ref.listen(messagesProvider(widget.conversationId), (_, next) {
-      if (next is AsyncData) {
+    ref.listen<MessagesState>(messagesNotifierProvider, (prev, next) {
+      if (next.activeMessages.length > (prev?.activeMessages.length ?? 0)) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
       }
     });
@@ -52,20 +56,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: messagesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: Text(
-                  'Impossible de charger les messages',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ),
-              data: (messages) => messages.isEmpty
-                  ? _buildEmptyChat(theme, colorScheme)
-                  : _buildMessageList(messages, theme, colorScheme),
-            ),
+            child: state.isLoadingMessages && state.activeMessages.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : state.errorMessages != null && state.activeMessages.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Impossible de charger les messages',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color:
+                                colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      )
+                    : state.activeMessages.isEmpty
+                        ? _buildEmptyChat(theme, colorScheme)
+                        : _buildMessageList(
+                            state.activeMessages, theme, colorScheme),
           ),
           if (conversation?.isArchived == true)
             _buildArchivedBanner(theme, colorScheme)
@@ -310,9 +316,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
 
     try {
-      await ref
-          .read(messagesProvider(widget.conversationId).notifier)
-          .sendMessage(content);
+      await ref.read(messagesNotifierProvider.notifier).sendMessage(content);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

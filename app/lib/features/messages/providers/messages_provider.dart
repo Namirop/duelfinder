@@ -1,133 +1,173 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tcg_matchmaker/core/constants/app_constants.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
+import 'package:tcg_matchmaker/core/errors/exceptions.dart';
 import 'package:tcg_matchmaker/core/services/app_logger.dart';
-import 'package:tcg_matchmaker/features/messages/entities/message.dart';
+import 'package:tcg_matchmaker/features/messages/entities/messages_state.dart';
 
-// ─── Conversations ────────────────────────────────────────────────────────────
+part 'messages_provider.g.dart';
 
-class ConversationsNotifier extends AsyncNotifier<List<Conversation>> {
+@Riverpod(keepAlive: true)
+class MessagesNotifier extends _$MessagesNotifier {
+  Timer? _pollingTimer;
+
   @override
-  Future<List<Conversation>> build() async {
-    return _load();
+  MessagesState build() {
+    ref.onDispose(() => _pollingTimer?.cancel());
+    return const MessagesState();
   }
 
-  Future<List<Conversation>> _load() {
-    return ref.read(messagesRepositoryProvider).getConversations();
-  }
+  // ── Conversations ─────────────────────────────────────────────
 
-  Future<void> refresh() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(_load);
-  }
-
-  /// Décrémente le unreadCount d'une conversation quand on l'ouvre
-  void clearUnread(String gameId) {
-    state = state.whenData(
-      (list) =>
-          list.map((c) => c.gameId == gameId ? _withZeroUnread(c) : c).toList(),
+  Future<void> fetchConversations() async {
+    state = state.copyWith(
+      isLoadingConversations: true,
+      clearErrorConversations: true,
     );
-  }
-
-  /// Masque une conversation archivée (supprime de la liste)
-  Future<void> hideConversation(String gameId) async {
-    await ref.read(messagesRepositoryProvider).hideConversation(gameId);
-    state = state.whenData(
-      (list) => list.where((c) => c.gameId != gameId).toList(),
-    );
-  }
-
-  Conversation _withZeroUnread(Conversation c) => Conversation(
-        gameId: c.gameId,
-        gameType: c.gameType,
-        address: c.address,
-        scheduledAt: c.scheduledAt,
-        status: c.status,
-        creator: c.creator,
-        participants: c.participants,
-        lastMessage: c.lastMessage,
-        unreadCount: 0,
+    try {
+      final conversations =
+          await ref.read(messagesRepositoryProvider).getConversations();
+      state = state.copyWith(
+        conversations: conversations,
+        isLoadingConversations: false,
       );
-}
-
-final conversationsProvider =
-    AsyncNotifierProvider<ConversationsNotifier, List<Conversation>>(
-  ConversationsNotifier.new,
-);
-
-/// Nombre total de messages non lus (pour le badge nav bar)
-final totalUnreadProvider = Provider<int>((ref) {
-  return ref.watch(conversationsProvider).whenData((convs) {
-        return convs.fold(0, (sum, c) => sum + c.unreadCount);
-      }).valueOrNull ??
-      0;
-});
-
-// ─── Messages d'une partie ────────────────────────────────────────────────────
-
-class MessagesNotifier extends FamilyAsyncNotifier<List<Message>, String> {
-  Timer? _timer;
-
-  @override
-  Future<List<Message>> build(String arg) async {
-    ref.onDispose(() => _timer?.cancel());
-    final messages = await _load();
-    _startPolling();
-    // Marquer comme lu à l'ouverture
-    _markRead();
-    return messages;
+    } on AppException catch (e) {
+      AppLogger.w('MessagesNotifier', 'fetchConversations failed: $e');
+      state = state.copyWith(
+        errorConversations: e.message,
+        isLoadingConversations: false,
+      );
+    } catch (e, st) {
+      AppLogger.e('MessagesNotifier', 'fetchConversations failed', e, st);
+      state = state.copyWith(
+        errorConversations: 'Erreur inconnue',
+        isLoadingConversations: false,
+      );
+    }
   }
 
-  Future<List<Message>> _load() {
-    return ref.read(messagesRepositoryProvider).getMessages(arg);
+  Future<void> hideConversation(String gameId) async {
+    try {
+      await ref.read(messagesRepositoryProvider).hideConversation(gameId);
+      state = state.copyWith(
+        conversations:
+            state.conversations.where((c) => c.gameId != gameId).toList(),
+      );
+    } catch (e, st) {
+      AppLogger.e('MessagesNotifier', 'hideConversation failed', e, st);
+    }
   }
 
-  void _markRead() {
-    ref.read(messagesRepositoryProvider).markRead(arg).catchError((e) {
-      AppLogger.w('MessagesNotifier', 'markRead failed: $e');
-    });
-    // Met à jour le badge de la conv dans la liste
-    ref.read(conversationsProvider.notifier).clearUnread(arg);
+  void clearUnread(String gameId) {
+    state = state.copyWith(
+      conversations: state.conversations
+          .map((c) => c.gameId == gameId ? c.withZeroUnread() : c)
+          .toList(),
+    );
   }
 
-  void _startPolling() {
-    _timer = Timer.periodic(const Duration(seconds: AppConstants.messagePollingSeconds), (_) async {
-      try {
-        final fresh = await _load();
-        final current = state.valueOrNull;
-        if (current == null) return;
-        // Mise à jour seulement si nouveaux messages
-        if (fresh.length != current.length ||
-            (fresh.isNotEmpty &&
-                current.isNotEmpty &&
-                fresh.last.id != current.last.id)) {
-          state = AsyncData(fresh);
-          _markRead();
-        }
-      } catch (e) {
-        AppLogger.w('MessagesNotifier', 'polling error: $e');
-      }
-    });
+  // ── Chat actif ────────────────────────────────────────────────
+
+  Future<void> openChat(String gameId) async {
+    _pollingTimer?.cancel();
+    state = state.copyWith(
+      activeGameId: gameId,
+      activeMessages: const [],
+      isLoadingMessages: true,
+      clearErrorMessages: true,
+    );
+
+    try {
+      final messages =
+          await ref.read(messagesRepositoryProvider).getMessages(gameId);
+      state = state.copyWith(
+        activeMessages: messages,
+        isLoadingMessages: false,
+      );
+      _markAsRead(gameId);
+      _startPolling(gameId);
+    } on AppException catch (e) {
+      AppLogger.w('MessagesNotifier', 'openChat failed: $e');
+      state = state.copyWith(
+        errorMessages: e.message,
+        isLoadingMessages: false,
+      );
+    } catch (e, st) {
+      AppLogger.e('MessagesNotifier', 'openChat failed', e, st);
+      state = state.copyWith(
+        errorMessages: 'Erreur inconnue',
+        isLoadingMessages: false,
+      );
+    }
+  }
+
+  void closeChat() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    state = state.copyWith(clearActiveChat: true);
   }
 
   Future<void> sendMessage(String content) async {
-    final repo = ref.read(messagesRepositoryProvider);
+    final gameId = state.activeGameId;
+    if (gameId == null) return;
+
+    state = state.copyWith(isSending: true);
     try {
-      final newMessage = await repo.sendMessage(arg, content);
-      state = state.whenData((messages) => [...messages, newMessage]);
-      // Rafraîchit la liste des conversations pour mettre à jour l'aperçu
-      ref.read(conversationsProvider.notifier).refresh();
-    } on Exception catch (e) {
-      AppLogger.e(
-          'MessagesNotifier', 'sendMessage failed', e, StackTrace.current);
+      final newMessage =
+          await ref.read(messagesRepositoryProvider).sendMessage(gameId, content);
+      state = state.copyWith(
+        activeMessages: [...state.activeMessages, newMessage],
+        isSending: false,
+      );
+      // Rafraîchit les conversations pour mettre à jour l'aperçu
+      fetchConversations();
+    } on AppException catch (e) {
+      AppLogger.w('MessagesNotifier', 'sendMessage failed: $e');
+      state = state.copyWith(isSending: false);
+      rethrow;
+    } catch (e, st) {
+      AppLogger.e('MessagesNotifier', 'sendMessage failed', e, st);
+      state = state.copyWith(isSending: false);
       rethrow;
     }
   }
-}
 
-final messagesProvider =
-    AsyncNotifierProviderFamily<MessagesNotifier, List<Message>, String>(
-  MessagesNotifier.new,
-);
+  // ── Privé ─────────────────────────────────────────────────────
+
+  void _startPolling(String gameId) {
+    _pollingTimer = Timer.periodic(
+      const Duration(seconds: AppConstants.messagePollingSeconds),
+      (_) => _pollMessages(gameId),
+    );
+  }
+
+  Future<void> _pollMessages(String gameId) async {
+    // Si le chat actif a changé entre-temps, on ignore
+    if (state.activeGameId != gameId) return;
+
+    try {
+      final fresh =
+          await ref.read(messagesRepositoryProvider).getMessages(gameId);
+      final current = state.activeMessages;
+
+      if (fresh.length != current.length ||
+          (fresh.isNotEmpty &&
+              current.isNotEmpty &&
+              fresh.last.id != current.last.id)) {
+        state = state.copyWith(activeMessages: fresh);
+        _markAsRead(gameId);
+      }
+    } catch (e) {
+      AppLogger.w('MessagesNotifier', 'polling error: $e');
+    }
+  }
+
+  void _markAsRead(String gameId) {
+    ref.read(messagesRepositoryProvider).markRead(gameId).catchError((e) {
+      AppLogger.w('MessagesNotifier', 'markRead failed: $e');
+    });
+    clearUnread(gameId);
+  }
+}

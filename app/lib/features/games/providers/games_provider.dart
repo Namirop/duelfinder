@@ -81,7 +81,7 @@ class GamesNotifier extends _$GamesNotifier {
       state = state
           .copyWith(isCreating: false, myGames: [newGame, ...state.myGames]);
       // Rafraîchir les conversations pour inclure la nouvelle partie
-      ref.read(conversationsProvider.notifier).refresh();
+      ref.read(messagesNotifierProvider.notifier).fetchConversations();
     } on AppException catch (e) {
       AppLogger.w('GamesNotifier', 'createGame failed: ${e.toString()}');
       state = state.copyWith(errorCreating: e.message, isCreating: false);

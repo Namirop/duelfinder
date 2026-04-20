@@ -50,6 +50,7 @@ class _MainShellState extends ConsumerState<MainShell>
     ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
     ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
     ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
+    ref.read(messagesNotifierProvider.notifier).fetchConversations();
 
     // 2. Permission notifications (Android 13+) puis init FCM
     await FirebaseMessaging.instance.requestPermission(
@@ -86,7 +87,7 @@ class _MainShellState extends ConsumerState<MainShell>
     // on revérifie si messages reçus ou notif changées pendant absence
     if (state == AppLifecycleState.resumed) {
       ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
-      ref.read(conversationsProvider.notifier).refresh();
+      ref.read(messagesNotifierProvider.notifier).fetchConversations();
       ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
       ref.read(participationsNotifierProvider.notifier).fetchMyParticipations();
     }

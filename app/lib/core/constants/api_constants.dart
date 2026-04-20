@@ -24,6 +24,8 @@ class ApiConstants {
   static const String myParticipations = '/participations/my';
 
   // Endpoints Messages
+  // Messages d'une partie → '${games}/$gameId/messages'
+  // Mark read            → '${games}/$gameId/messages/read'
   static const String conversations = '/messages/conversations';
 
   // Endpoints Notifications

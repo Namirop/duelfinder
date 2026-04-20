@@ -13,7 +13,7 @@ class ConversationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final conversationsAsync = ref.watch(conversationsProvider);
+    final state = ref.watch(messagesNotifierProvider);
 
     return SafeArea(
       bottom: false,
@@ -28,18 +28,18 @@ class ConversationsScreen extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: conversationsAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: (e, _) => _buildError(theme, colorScheme, ref),
-              data: (conversations) => _buildList(
-                context,
-                ref,
-                theme,
-                colorScheme,
-                conversations,
-              ),
-            ),
+            child: state.isLoadingConversations && state.conversations.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : state.errorConversations != null &&
+                        state.conversations.isEmpty
+                    ? _buildError(theme, colorScheme, ref)
+                    : _buildList(
+                        context,
+                        ref,
+                        theme,
+                        colorScheme,
+                        state.conversations,
+                      ),
           ),
         ],
       ),
@@ -59,7 +59,8 @@ class ConversationsScreen extends ConsumerWidget {
     if (conversations.isEmpty) return _buildEmpty(theme, colorScheme);
 
     return RefreshIndicator(
-      onRefresh: () => ref.read(conversationsProvider.notifier).refresh(),
+      onRefresh: () =>
+          ref.read(messagesNotifierProvider.notifier).fetchConversations(),
       child: _ConversationList(active: active, archived: archived),
     );
   }
@@ -107,8 +108,9 @@ class ConversationsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           FilledButton.tonal(
-            onPressed: () =>
-                ref.read(conversationsProvider.notifier).refresh(),
+            onPressed: () => ref
+                .read(messagesNotifierProvider.notifier)
+                .fetchConversations(),
             child: const Text('Réessayer'),
           ),
         ],
@@ -225,7 +227,7 @@ class _ConversationListState extends ConsumerState<_ConversationList> {
 
     try {
       await ref
-          .read(conversationsProvider.notifier)
+          .read(messagesNotifierProvider.notifier)
           .hideConversation(conv.gameId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -363,7 +365,6 @@ class _ConversationTile extends StatelessWidget {
   }
 
   String _title(Conversation c) {
-    // Utilise l'adresse comme titre (pas de champ title dans l'API)
     return c.address;
   }
 
@@ -383,7 +384,7 @@ class _ConversationTile extends StatelessWidget {
 
   Widget _buildGameAvatar(
       Color gameColor, bool isArchived, Conversation conv) {
-    final totalMembers = conv.participants.length + 1; // +1 pour le créateur
+    final totalMembers = conv.participants.length + 1;
     return Stack(
       clipBehavior: Clip.none,
       children: [

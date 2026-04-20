@@ -104,7 +104,7 @@ class FirebaseMessagingService {
             .fetchMyParticipations();
         break;
       case 'NEW_MESSAGE':
-        _ref.read(conversationsProvider.notifier).refresh();
+        _ref.read(messagesNotifierProvider.notifier).fetchConversations();
         break;
     }
   }

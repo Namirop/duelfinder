@@ -18,24 +18,20 @@ class MessagesRepository {
                   .toEntity())
           .toList();
     } on DioException catch (e) {
-      throw ServerException(
-        message:
-            e.response?.data?['error'] ?? 'Erreur chargement conversations',
-      );
+      throw handleDioException(e);
     }
   }
 
   Future<List<Message>> getMessages(String gameId) async {
     try {
-      final response = await _dio.get('${ApiConstants.games}/$gameId/messages');
+      final response =
+          await _dio.get('${ApiConstants.games}/$gameId/messages');
       return (response.data as List)
           .map((json) =>
               MessageModel.fromJson(json as Map<String, dynamic>).toEntity())
           .toList();
     } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data?['error'] ?? 'Erreur chargement messages',
-      );
+      throw handleDioException(e);
     }
   }
 
@@ -48,9 +44,7 @@ class MessagesRepository {
       return MessageModel.fromJson(response.data as Map<String, dynamic>)
           .toEntity();
     } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data?['error'] ?? 'Erreur envoi du message',
-      );
+      throw handleDioException(e);
     }
   }
 
@@ -58,9 +52,7 @@ class MessagesRepository {
     try {
       await _dio.put('${ApiConstants.games}/$gameId/messages/read');
     } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data?['error'] ?? 'Erreur mise à jour lecture',
-      );
+      throw handleDioException(e);
     }
   }
 
@@ -68,9 +60,7 @@ class MessagesRepository {
     try {
       await _dio.delete('${ApiConstants.conversations}/$gameId');
     } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data?['error'] ?? 'Erreur suppression conversation',
-      );
+      throw handleDioException(e);
     }
   }
 }
