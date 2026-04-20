@@ -71,7 +71,7 @@ class ParticipationCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(theme, game),
+              _buildHeader(theme, game, gameCancelled: gameCancelled),
               const SizedBox(height: 14),
               _buildInfoBar(theme, game),
               const SizedBox(height: 12),
@@ -93,7 +93,7 @@ class ParticipationCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(ThemeData theme, Game game) {
+  Widget _buildHeader(ThemeData theme, Game game, {required bool gameCancelled}) {
     return Row(
       children: [
         CircleAvatar(
@@ -110,14 +110,12 @@ class ParticipationCard extends StatelessWidget {
             ),
           ),
         ),
-        _buildStatusChip(theme),
+        _buildStatusChip(theme, gameCancelled: gameCancelled),
       ],
     );
   }
 
-  Widget _buildStatusChip(ThemeData theme) {
-    // Si la partie est annulée, afficher ce statut en priorité
-    final gameCancelled = participation.game?.effectiveStatus == GameStatus.CANCELLED;
+  Widget _buildStatusChip(ThemeData theme, {required bool gameCancelled}) {
     final color = gameCancelled ? AppTheme.statusCancelled : participation.status.color;
     final icon = gameCancelled ? Icons.block_rounded : participation.status.icon;
     final label = gameCancelled ? 'Partie annulée' : participation.status.label;

@@ -37,35 +37,21 @@ const create = async (senderId, gameId, content) => {
 
 /**
  * Met à jour lastReadAt pour le membre qui ouvre le chat
- * (participant accepté OU créateur via un upsert de participation interne)
+ * - Participant accepté → participation.lastReadAt
+ * - Créateur → game.lastReadByCreatorAt
  */
 const markRead = async (userId, gameId) => {
-  // D'abord tenter la mise à jour classique (participant accepté)
   const updated = await prisma.participation.updateMany({
     where: { userId, gameId, status: "ACCEPTED" },
     data: { lastReadAt: new Date() },
   });
 
-  // Si rien mis à jour → c'est probablement le créateur (pas de Participation)
-  // Vérifier et créer une Participation ACCEPTED implicite pour tracker son lastReadAt
+  // Si aucune participation mise à jour → probablement le créateur
   if (updated.count === 0) {
-    const game = await prisma.game.findUnique({
-      where: { id: gameId },
-      select: { creatorId: true },
+    await prisma.game.updateMany({
+      where: { id: gameId, creatorId: userId },
+      data: { lastReadByCreatorAt: new Date() },
     });
-    if (game && game.creatorId === userId) {
-      await prisma.participation.upsert({
-        where: { userId_gameId: { userId, gameId } },
-        update: { lastReadAt: new Date() },
-        create: {
-          userId,
-          gameId,
-          status: "ACCEPTED",
-          acceptedAt: new Date(),
-          lastReadAt: new Date(),
-        },
-      });
-    }
   }
 };
 
@@ -138,7 +124,9 @@ const getConversations = async (userId) => {
       let unreadCount = 0;
 
       if (lastMessage) {
-        const lastReadAt = lastReadMap.get(game.id);
+        const lastReadAt = isCreator
+          ? game.lastReadByCreatorAt
+          : lastReadMap.get(game.id);
         unreadCount = await prisma.message.count({
           where: {
             gameId: game.id,
