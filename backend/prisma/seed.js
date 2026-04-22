@@ -85,9 +85,9 @@ async function main() {
         data: {
           email: "theo@example.com",
           passwordHash: hash("password123"),
-          username: "TheoNaruto",
-          bio: "Naruto TCG old school. J'ai tous les sets depuis le début.",
-          avatar: avatar("TheoNaruto"),
+          username: "TheoMagic",
+          bio: "Magic depuis Revised. Commander et Modern, toujours partant.",
+          avatar: avatar("TheoMagic"),
           totalGamesPlayed: 67,
           badgeLevel: "GOLD",
         },
@@ -222,12 +222,12 @@ async function main() {
       },
     }),
 
-    // ── G6 : OPEN Naruto — créée par THEO
+    // ── G6 : OPEN Magic — créée par THEO
     prisma.game.create({
       data: {
-        gameType: "NARUTO",
+        gameType: "MAGIC",
         description:
-          "Naruto TCG old school, j'ai des decks de prêt si t'as pas le tien.",
+          "Commander casual, amenez vos decks précons ou custom.",
         address: "Grand Place de Gosselies, 6041 Gosselies",
         latitude: 50.457,
         longitude: 4.453,
@@ -291,12 +291,12 @@ async function main() {
       },
     }),
 
-    // ── G10 : OPEN Naruto — créée par SAKURA
+    // ── G10 : OPEN Magic — créée par SAKURA
     prisma.game.create({
       data: {
-        gameType: "NARUTO",
+        gameType: "MAGIC",
         description:
-          "Casual Naruto TCG, tous niveaux bienvenus. On boit un café en jouant.",
+          "Draft Magic, on ouvre des boosters et on joue. Tous niveaux.",
         address: "Rue du Grand Lodelinsart, 6010 Couillet",
         latitude: 50.426,
         longitude: 4.422,
@@ -787,13 +787,13 @@ async function main() {
   console.log(
     "  G5  OnePiece OPEN   Montmartre     +24h  (par Dev)    ← Romain ACCEPTED → chat actif",
   );
-  console.log("  G6  Naruto   OPEN   Nation         +8h   (par Theo)");
+  console.log("  G6  Magic    OPEN   Nation         +8h   (par Theo)");
   console.log("  G7  YGO      OPEN   Opéra          +10h  (par Lucas)");
   console.log(
     "  G8  OnePiece FULL   Belleville     +72h  (par Emma)   ← Romain ACCEPTED",
   );
   console.log("  G9  Pokémon  OPEN   Luxembourg     +24h  (par Nina)");
-  console.log("  G10 Naruto   OPEN   St-Germain     +12h  (par Sakura)");
+  console.log("  G10 Magic    OPEN   St-Germain     +12h  (par Sakura)");
   console.log("  G11 YGO      OPEN   Les Halles     +24h  (par Zack)");
   console.log("  G12 Pokémon  CANCEL Châtelet       -2h   (par Sakura)\n");
   console.log("🔔  NOTIFICATIONS\n");

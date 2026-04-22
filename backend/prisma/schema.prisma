@@ -103,7 +103,7 @@ enum GameType {
   ONE_PIECE
   POKEMON
   YUGIOH
-  NARUTO
+  MAGIC
 }
 
 enum GameStatus {

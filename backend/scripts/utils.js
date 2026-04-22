@@ -2,7 +2,7 @@
  * Utilitaires partagés entre les scripts NPC (seed, cron, cleanup)
  */
 
-export const GAME_TYPES = ["POKEMON", "YUGIOH", "ONE_PIECE", "NARUTO"];
+export const GAME_TYPES = ["POKEMON", "YUGIOH", "ONE_PIECE", "MAGIC"];
 
 /** Choisit un élément aléatoire dans un tableau */
 export function pick(arr) {
@@ -35,7 +35,7 @@ export function futureDate(daysAhead) {
 export function gameConfig(type) {
   switch (type) {
     case "YUGIOH":    return { maxPlayers: 2, duration: pick([60, 90, 120]) };
-    case "NARUTO":    return { maxPlayers: 2, duration: pick([60, 90]) };
+    case "MAGIC":     return { maxPlayers: pick([2, 4]), duration: pick([60, 90, 120]) };
     case "POKEMON":   return { maxPlayers: pick([2, 4]), duration: pick([90, 120, 180]) };
     case "ONE_PIECE": return { maxPlayers: pick([2, 4]), duration: pick([90, 120]) };
     default:          return { maxPlayers: 2, duration: 90 };

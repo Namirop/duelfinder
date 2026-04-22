@@ -73,18 +73,18 @@ export const NPC_PROFILES = [
   { username: "LucieDuel",     bio: "One Piece TCG depuis le set OP-01. Fan des decks Nami.",              badgeLevel: "SILVER", totalGamesPlayed: 38  },
   { username: "KaijuDeck",     bio: "YGO compétitif, spécialiste combo. ROTA > tout.",                    badgeLevel: "GOLD",   totalGamesPlayed: 78  },
   { username: "PokeFanBE",     bio: "Collectionneur et joueur casual Pokémon. Tous formats.",              badgeLevel: null,     totalGamesPlayed: 12  },
-  { username: "NarutoSensei",  bio: "Naruto TCG depuis le début. J'ai tous les sets originaux.",           badgeLevel: "GOLD",   totalGamesPlayed: 130 },
+  { username: "MagicOldTimer", bio: "Magic depuis Revised. Commander et Modern, toujours partant.",        badgeLevel: "GOLD",   totalGamesPlayed: 130 },
   { username: "Maxou_TCG",     bio: "Pokémon Expanded, deck Gardevoir ex. Cherche parties sérieuses.",    badgeLevel: "SILVER", totalGamesPlayed: 57  },
   { username: "OnePieceBE",    bio: "Deck Luffy ST-01 modifié. Toujours là pour des sessions fun.",       badgeLevel: "BRONZE", totalGamesPlayed: 23  },
   { username: "DuelMaster99",  bio: "Vétéran YGO depuis l'ère Goat. Je connais toutes les errata.",       badgeLevel: "GOLD",   totalGamesPlayed: 201 },
   { username: "SylviaCards",   bio: "Joueuse Pokémon format Standard. Spécialiste decks rapides.",        badgeLevel: "SILVER", totalGamesPlayed: 41  },
-  { username: "GhostRiderTCG", bio: "Naruto TCG + One Piece. J'amène toujours des snacks.",               badgeLevel: "BRONZE", totalGamesPlayed: 29  },
+  { username: "GhostRiderTCG", bio: "Magic + One Piece. J'amène toujours des snacks.",                    badgeLevel: "BRONZE", totalGamesPlayed: 29  },
   { username: "TCGHunter",     bio: "Je chasse les cartes rares et je les joue. Format libre only.",      badgeLevel: "SILVER", totalGamesPlayed: 63  },
   { username: "ZoroSwords",    bio: "One Piece TCG Zoro control. Parties longues et tactiques.",           badgeLevel: "SILVER", totalGamesPlayed: 47  },
   { username: "PikaMaster_BE", bio: "Pokémon depuis la Base Set. Mon premier deck : Dracaufeu.",           badgeLevel: "GOLD",   totalGamesPlayed: 155 },
   { username: "YugiBoomer",    bio: "YGO depuis 2002. Format Goat préféré, old school forever.",          badgeLevel: "GOLD",   totalGamesPlayed: 189 },
   { username: "CasualCardFan", bio: "Joueur casual cherchant parties détendues. Tous les TCG.",            badgeLevel: null,     totalGamesPlayed: 8   },
-  { username: "NinjaOfCards",  bio: "Naruto TCG + YGO. Deck ninja pour les deux.",                        badgeLevel: "BRONZE", totalGamesPlayed: 19  },
+  { username: "NinjaOfCards",  bio: "Magic + YGO. Deck combo pour les deux.",                             badgeLevel: "BRONZE", totalGamesPlayed: 19  },
   { username: "LouiseTCG",     bio: "Pokémon compétitif, équipe junior 2023. Niveau expert.",              badgeLevel: "GOLD",   totalGamesPlayed: 88  },
   { username: "DraftKing_BE",  bio: "Draft Pokémon specialist. J'organise des draftings chaque semaine.", badgeLevel: "SILVER", totalGamesPlayed: 72  },
 ];
@@ -118,11 +118,11 @@ export const GAME_DESCRIPTIONS = {
     "Set OP-08 bienvenu. Cherche joueurs sérieux.",
     "Session fun One Piece, ambiance décontractée.",
   ],
-  NARUTO: [
-    "Naruto TCG old school, j'ai des decks de prêt si besoin.",
-    "Session Naruto TCG tous niveaux. On boit un café en jouant.",
-    "Naruto TCG, format libre. Venez avec vos decks persos.",
-    "Casual Naruto TCG, ambiance décontractée garantie.",
+  MAGIC: [
+    "Commander casual, amenez vos decks précons ou custom.",
+    "Session Modern, niveau intermédiaire. Pas de tier 0 svp.",
+    "Draft Magic ! On ouvre des boosters et on joue.",
+    "Format libre Magic, ambiance décontractée garantie.",
   ],
 };
 
