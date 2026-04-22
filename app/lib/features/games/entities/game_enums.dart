@@ -38,7 +38,7 @@ extension GameStatusExtension on GameStatus {
         GameStatus.FULL => 'Complet',
         GameStatus.IN_PROGRESS => 'En cours',
         GameStatus.FINISHED => 'Terminé',
-        GameStatus.CANCELLED => 'Annulé',
+        GameStatus.CANCELLED => 'Annulée',
       };
 
   Color get color => switch (this) {
@@ -49,12 +49,20 @@ extension GameStatusExtension on GameStatus {
         GameStatus.CANCELLED => AppTheme.statusCancelled,
       };
 
+  IconData get icon => switch (this) {
+        GameStatus.OPEN => Icons.check_circle_rounded,
+        GameStatus.FULL => Icons.people_rounded,
+        GameStatus.IN_PROGRESS => Icons.play_circle_rounded,
+        GameStatus.FINISHED => Icons.event_available_rounded,
+        GameStatus.CANCELLED => Icons.block_rounded,
+      };
+
   bool get canJoin => this == GameStatus.OPEN;
 
   /// Texte du bouton quand on ne peut pas rejoindre
   String get disabledButtonText => switch (this) {
         GameStatus.FULL => 'Partie complète',
-        GameStatus.CANCELLED => 'Partie annulée',
+        GameStatus.CANCELLED => 'Annulée',
         GameStatus.IN_PROGRESS => 'Partie en cours',
         GameStatus.FINISHED => 'Partie terminée',
         GameStatus.OPEN => '', // jamais appelé (canJoin = true)

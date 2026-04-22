@@ -118,7 +118,7 @@ class ParticipationCard extends StatelessWidget {
   Widget _buildStatusChip(ThemeData theme, {required bool gameCancelled}) {
     final color = gameCancelled ? AppTheme.statusCancelled : participation.status.color;
     final icon = gameCancelled ? Icons.block_rounded : participation.status.icon;
-    final label = gameCancelled ? 'Partie annulée' : participation.status.label;
+    final label = gameCancelled ? 'Annulée' : participation.status.label;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

@@ -95,6 +95,12 @@ class FirebaseMessagingService {
         _ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
         break;
       case 'PARTICIPATION_ACCEPTED':
+        _ref
+            .read(participationsNotifierProvider.notifier)
+            .fetchMyParticipations();
+        _ref.read(gamesNotifierProvider.notifier).fetchExistingGames();
+        _ref.read(messagesNotifierProvider.notifier).fetchConversations();
+        break;
       case 'PARTICIPATION_REJECTED':
       case 'GAME_FULL':
       case 'GAME_CANCELLED':

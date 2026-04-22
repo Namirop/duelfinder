@@ -588,7 +588,8 @@ class GameDetailsSheet extends ConsumerWidget {
         final isGameOver = game.effectiveStatus == GameStatus.IN_PROGRESS ||
             game.effectiveStatus == GameStatus.FINISHED ||
             game.effectiveStatus == GameStatus.CANCELLED;
-        final isFinished = game.effectiveStatus == GameStatus.FINISHED;
+        final isFinished = game.effectiveStatus == GameStatus.FINISHED ||
+            game.effectiveStatus == GameStatus.CANCELLED;
         return SizedBox(
           width: double.infinity,
           child: OutlinedButton(

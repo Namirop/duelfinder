@@ -336,7 +336,9 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
   void _showParticipationActions(Participation participation) {
     final isCancelled = participation.isCancelled;
     final isRejected = participation.isRejected;
-    if (!isCancelled && !isRejected) return;
+    final gameCancelled =
+        participation.game?.effectiveStatus == GameStatus.CANCELLED;
+    if (!isCancelled && !isRejected && !gameCancelled) return;
 
     final colorScheme = Theme.of(context).colorScheme;
 

@@ -315,38 +315,25 @@ class GameCard extends ConsumerWidget {
     final statusColor = game.effectiveStatus.color;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.2),
+        color: statusColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: statusColor.withValues(alpha: 0.5),
+          color: statusColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: statusColor,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: statusColor.withValues(alpha: 0.5),
-                  blurRadius: 4,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
+          Icon(game.effectiveStatus.icon, size: 13, color: statusColor),
+          const SizedBox(width: 5),
           Text(
             game.effectiveStatus.label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: statusColor,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
           ),
         ],
