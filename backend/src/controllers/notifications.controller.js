@@ -8,7 +8,7 @@ import prisma from "../config/database.js";
 const getNotifications = async (req, res, next) => {
   try {
     const notifications = await prisma.notification.findMany({
-      where: { userId: req.user.id },
+      where: { userId: req.user.userId },
       orderBy: { createdAt: "desc" },
     });
     res.json(notifications);
@@ -21,7 +21,7 @@ const getNotifications = async (req, res, next) => {
 const getUnreadCount = async (req, res, next) => {
   try {
     const count = await prisma.notification.count({
-      where: { userId: req.user.id, read: false },
+      where: { userId: req.user.userId, read: false },
     });
     res.json({ count });
   } catch (err) {
@@ -33,7 +33,7 @@ const getUnreadCount = async (req, res, next) => {
 const markAllAsRead = async (req, res, next) => {
   try {
     const result = await prisma.notification.updateMany({
-      where: { userId: req.user.id, read: false },
+      where: { userId: req.user.userId, read: false },
       data: { read: true },
     });
     res.json({ updated: result.count });
@@ -46,7 +46,7 @@ const markAllAsRead = async (req, res, next) => {
 const markAsRead = async (req, res, next) => {
   try {
     const notif = await prisma.notification.findFirst({
-      where: { id: req.params.id, userId: req.user.id },
+      where: { id: req.params.id, userId: req.user.userId },
     });
     if (!notif) return res.status(404).json({ error: "Notification non trouvée" });
 
@@ -64,7 +64,7 @@ const markAsRead = async (req, res, next) => {
 const deleteNotification = async (req, res, next) => {
   try {
     const notif = await prisma.notification.findFirst({
-      where: { id: req.params.id, userId: req.user.id },
+      where: { id: req.params.id, userId: req.user.userId },
     });
     if (!notif) return res.status(404).json({ error: "Notification non trouvée" });
 
