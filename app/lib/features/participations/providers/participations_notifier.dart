@@ -4,6 +4,7 @@ import 'package:tcg_matchmaker/core/errors/exceptions.dart';
 import 'package:tcg_matchmaker/core/services/app_logger.dart';
 import 'package:tcg_matchmaker/features/games/entities/game.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
+import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation.dart';
 import 'package:tcg_matchmaker/features/participations/entities/participation_state.dart';
 
@@ -93,12 +94,8 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
         isRequesting: false,
       );
 
-      // Mettre à jour currentPlayers dans les parties à proximité
-      if (cancelled.isAccepted) {
-        ref
-            .read(gamesNotifierProvider.notifier)
-            .decrementCurrentPlayers(cancelled.gameId);
-      }
+      // Rafraîchir les parties à proximité (currentPlayers, statut FULL → OPEN, etc.)
+      ref.read(gamesNotifierProvider.notifier).fetchExistingGames();
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'cancelParticipation failed: $e');
       state = state.copyWith(error: e.message, isRequesting: false);
@@ -199,6 +196,8 @@ class ParticipationsNotifier extends _$ParticipationsNotifier {
 
       // currentPlayers a changé → on rafraîchit la liste des parties créées
       ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
+      // Le participant accepté rejoint la conversation
+      ref.read(messagesNotifierProvider.notifier).fetchConversations();
     } on AppException catch (e) {
       AppLogger.w('ParticipationsNotifier', 'acceptParticipation failed: $e');
       state = state.copyWith(

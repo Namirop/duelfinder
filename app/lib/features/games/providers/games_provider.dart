@@ -136,6 +136,8 @@ class GamesNotifier extends _$GamesNotifier {
                 : g)
             .toList(),
       );
+      // Rafraîchir les conversations (la partie annulée peut disparaître)
+      ref.read(messagesNotifierProvider.notifier).fetchConversations();
     } on AppException catch (e) {
       AppLogger.w('GamesNotifier', 'cancelGame failed: ${e.toString()}');
       state = state.copyWith(errorDeleting: e.message, isDeleting: false);
@@ -238,15 +240,5 @@ class GamesNotifier extends _$GamesNotifier {
 
   void clearSelectedGame() {
     state = state.copyWith(clearSelectedGame: true);
-  }
-
-  void decrementCurrentPlayers(String gameId) {
-    state = state.copyWith(
-      existingGames: state.existingGames
-          .map((g) => g.id == gameId && g.currentPlayers > 0
-              ? g.copyWith(currentPlayers: g.currentPlayers - 1)
-              : g)
-          .toList(),
-    );
   }
 }

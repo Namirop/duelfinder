@@ -87,12 +87,11 @@ class FirebaseMessagingService {
     _ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
 
     // Refresh silencieux des données selon le type de notification
+    // switch avec fallthrough — 
+    //par exemple, PARTICIPATION_REQUEST n'a pas de break, donc il tombe dans le bloc de PARTICIPATION_CANCELLED juste en dessous
     switch (type) {
       case 'PARTICIPATION_REQUEST':
       case 'PARTICIPATION_CANCELLED':
-        _ref
-            .read(participationsNotifierProvider.notifier)
-            .fetchMyParticipations();
         _ref.read(gamesNotifierProvider.notifier).fetchCreatedGames();
         break;
       case 'PARTICIPATION_ACCEPTED':
@@ -102,6 +101,7 @@ class FirebaseMessagingService {
         _ref
             .read(participationsNotifierProvider.notifier)
             .fetchMyParticipations();
+        _ref.read(gamesNotifierProvider.notifier).fetchExistingGames();
         break;
       case 'NEW_MESSAGE':
         _ref.read(messagesNotifierProvider.notifier).fetchConversations();
