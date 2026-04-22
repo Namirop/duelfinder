@@ -6,6 +6,8 @@ class CreateGameModel {
   final String address;
   final double latitude;
   final double longitude;
+  final double? approximateLatitude;
+  final double? approximateLongitude;
   final DateTime scheduledAt;
   final int duration;
   final int maxPlayers;
@@ -16,6 +18,8 @@ class CreateGameModel {
     required this.address,
     required this.latitude,
     required this.longitude,
+    this.approximateLatitude,
+    this.approximateLongitude,
     required this.scheduledAt,
     required this.duration,
     required this.maxPlayers,
@@ -28,6 +32,10 @@ class CreateGameModel {
       'address': address,
       'latitude': latitude,
       'longitude': longitude,
+      if (approximateLatitude != null)
+        'approximateLatitude': approximateLatitude,
+      if (approximateLongitude != null)
+        'approximateLongitude': approximateLongitude,
       'scheduledAt': scheduledAt.toIso8601String(),
       'duration': duration,
       'maxPlayers': maxPlayers,

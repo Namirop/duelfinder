@@ -35,9 +35,11 @@ model Game {
   id             String          @id @default(uuid())
   gameType       GameType
   description    String?
-  address        String
-  latitude       Float
-  longitude      Float
+  address              String
+  latitude             Float
+  longitude            Float
+  approximateLatitude  Float?
+  approximateLongitude Float?
   scheduledAt    DateTime
   duration       Int
   maxPlayers     Int             @default(2)

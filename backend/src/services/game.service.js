@@ -132,24 +132,6 @@ const maskAddress = (address) => {
   return street;
 };
 
-/**
- * Génère un offset déterministe (~150-200m) basé sur le hash d'un game ID
- */
-const privacyOffset = (gameId) => {
-  // Hash simple mais déterministe basé sur le game ID
-  let hash = 0;
-  for (let i = 0; i < gameId.length; i++) {
-    hash = (hash * 31 + gameId.charCodeAt(i)) | 0;
-  }
-  const angle = ((hash & 0xffff) / 0xffff) * 2 * Math.PI;
-  const distanceM = 150 + ((hash >>> 16) & 0xff) / 255 * 50; // 150-200m
-  const distanceDeg = distanceM / 111320;
-  return {
-    latOffset: distanceDeg * Math.sin(angle),
-    lngOffset: distanceDeg * Math.cos(angle),
-  };
-};
-
 const findNearby = async (
   lat,
   lng,
@@ -238,7 +220,6 @@ const findNearby = async (
         game.participations.some((p) => p.userId === excludeUserId);
 
       const masked = !isAccepted;
-      const offset = masked ? privacyOffset(game.id) : { latOffset: 0, lngOffset: 0 };
 
       return {
         ...game,
@@ -248,8 +229,12 @@ const findNearby = async (
         participants: game.participations.map((p) => p.user),
         // Masquer adresse et coordonnées pour les non-participants
         address: masked ? maskAddress(game.address) : game.address,
-        latitude: game.latitude + offset.latOffset,
-        longitude: game.longitude + offset.lngOffset,
+        latitude: masked && game.approximateLatitude != null
+          ? game.approximateLatitude
+          : game.latitude,
+        longitude: masked && game.approximateLongitude != null
+          ? game.approximateLongitude
+          : game.longitude,
         addressMasked: masked,
       };
     })

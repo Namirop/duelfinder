@@ -418,12 +418,60 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   double? _selectedLat;
   double? _selectedLon;
+  double? _approxLat;
+  double? _approxLon;
 
   @override
   void dispose() {
     _descriptionController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  /// Géocode la rue (sans numéro) pour obtenir des coordonnées approximatives
+  Future<void> _fetchApproximateCoords(_AddressSuggestion suggestion) async {
+    // Construire la requête avec juste la rue + ville (sans numéro)
+    final street = suggestion.road ?? '';
+    final city = suggestion.city ?? '';
+    if (street.isEmpty) {
+      // POI sans rue → pas de coordonnées approx distinctes
+      setState(() {
+        _approxLat = null;
+        _approxLon = null;
+      });
+      return;
+    }
+
+    final query = city.isNotEmpty ? '$street, $city' : street;
+
+    try {
+      final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
+        'q': query,
+        'format': 'json',
+        'limit': '1',
+      });
+      final response = await http.get(
+        uri,
+        headers: {'User-Agent': 'DuelFinder/1.0'},
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as List<dynamic>;
+        if (data.isNotEmpty) {
+          final result = data.first as Map<String, dynamic>;
+          setState(() {
+            _approxLat = double.parse(result['lat'] as String);
+            _approxLon = double.parse(result['lon'] as String);
+          });
+          return;
+        }
+      }
+    } catch (_) {
+      // Silencieux — on utilise les coordonnées exactes en fallback
+    }
+    setState(() {
+      _approxLat = null;
+      _approxLon = null;
+    });
   }
 
   Future<void> _createGame() async {
@@ -435,6 +483,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         address: _addressController.text,
         latitude: _selectedLat!,
         longitude: _selectedLon!,
+        approximateLatitude: _approxLat,
+        approximateLongitude: _approxLon,
         scheduledAt: DateTime(_selectedDate.year, _selectedDate.month,
             _selectedDate.day, _selectedTime.hour, _selectedTime.minute),
         duration: _duration,
@@ -530,6 +580,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                 _selectedLat = suggestion.lat;
                                 _selectedLon = suggestion.lon;
                               });
+                              _fetchApproximateCoords(suggestion);
                             },
                           ),
                           if (_selectedLat != null) ...[
