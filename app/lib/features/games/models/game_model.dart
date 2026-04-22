@@ -20,6 +20,7 @@ class GameModel {
   final DateTime updatedAt;
   final double? distance;
   final int pendingCount;
+  final bool addressMasked;
 
   const GameModel({
     required this.id,
@@ -40,6 +41,7 @@ class GameModel {
     required this.updatedAt,
     this.distance,
     this.pendingCount = 0,
+    this.addressMasked = false,
   });
 
   factory GameModel.fromJson(Map<String, dynamic> json) {
@@ -81,6 +83,7 @@ class GameModel {
           ? (json['distance'] as num).toDouble()
           : null,
       pendingCount: json['pendingCount'] as int? ?? 0,
+      addressMasked: json['addressMasked'] as bool? ?? false,
     );
   }
 
@@ -104,6 +107,7 @@ class GameModel {
       updatedAt: updatedAt,
       distance: distance,
       pendingCount: pendingCount,
+      addressMasked: addressMasked,
     );
   }
 

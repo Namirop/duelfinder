@@ -171,7 +171,6 @@ class _MyGamesScreenState extends ConsumerState<MyGamesScreen> {
                   child: GameCard(
                     game: game,
                     index: index,
-                    showFullAddress: true,
                   ),
                 );
               },

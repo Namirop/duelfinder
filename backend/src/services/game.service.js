@@ -121,6 +121,35 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
  * @param {string|null} gameTypeFilter - Filtrer par type de jeu (null = tous les jeux)
  * @returns {Promise<Array>} Liste des parties à proximité avec statut effectif
  */
+/**
+ * Retire le numéro de rue d'une adresse pour le masquage
+ * "Boulevard Audent 12, Charleroi" → "Boulevard Audent, Charleroi"
+ */
+const maskAddress = (address) => {
+  const parts = address.split(",");
+  const street = parts[0].trim().replace(/\s+\d+\s*$/, "").trim();
+  if (parts.length > 1) return `${street}, ${parts[1].trim()}`;
+  return street;
+};
+
+/**
+ * Génère un offset déterministe (~150-200m) basé sur le hash d'un game ID
+ */
+const privacyOffset = (gameId) => {
+  // Hash simple mais déterministe basé sur le game ID
+  let hash = 0;
+  for (let i = 0; i < gameId.length; i++) {
+    hash = (hash * 31 + gameId.charCodeAt(i)) | 0;
+  }
+  const angle = ((hash & 0xffff) / 0xffff) * 2 * Math.PI;
+  const distanceM = 150 + ((hash >>> 16) & 0xff) / 255 * 50; // 150-200m
+  const distanceDeg = distanceM / 111320;
+  return {
+    latOffset: distanceDeg * Math.sin(angle),
+    lngOffset: distanceDeg * Math.cos(angle),
+  };
+};
+
 const findNearby = async (
   lat,
   lng,
@@ -202,14 +231,28 @@ const findNearby = async (
 
   // Filtrer par distance exacte et ajouter les infos calculées
   return games
-    .map((game) => ({
-      ...game,
-      effectiveStatus: getEffectiveStatus(game),
-      distance: calculateDistance(lat, lng, game.latitude, game.longitude),
-      currentPlayers: game.participations.length + 1,
-      // Transformer participations en liste de participants (juste les users)
-      participants: game.participations.map((p) => p.user),
-    }))
+    .map((game) => {
+      // Vérifier si l'utilisateur est participant accepté
+      const isAccepted =
+        excludeUserId &&
+        game.participations.some((p) => p.userId === excludeUserId);
+
+      const masked = !isAccepted;
+      const offset = masked ? privacyOffset(game.id) : { latOffset: 0, lngOffset: 0 };
+
+      return {
+        ...game,
+        effectiveStatus: getEffectiveStatus(game),
+        distance: calculateDistance(lat, lng, game.latitude, game.longitude),
+        currentPlayers: game.participations.length + 1,
+        participants: game.participations.map((p) => p.user),
+        // Masquer adresse et coordonnées pour les non-participants
+        address: masked ? maskAddress(game.address) : game.address,
+        latitude: game.latitude + offset.latOffset,
+        longitude: game.longitude + offset.lngOffset,
+        addressMasked: masked,
+      };
+    })
     .filter((game) => game.distance <= distanceKm)
     .sort((a, b) => a.distance - b.distance);
 };

@@ -20,6 +20,7 @@ class _AddressSuggestion {
   final String? road;
   final String? houseNumber;
   final String? city;
+  final String? osmClass;
 
   const _AddressSuggestion({
     required this.displayName,
@@ -28,6 +29,7 @@ class _AddressSuggestion {
     this.road,
     this.houseNumber,
     this.city,
+    this.osmClass,
   });
 
   factory _AddressSuggestion.fromJson(Map<String, dynamic> json) {
@@ -40,7 +42,14 @@ class _AddressSuggestion {
       houseNumber: addr?['house_number'] as String?,
       city: (addr?['city'] ?? addr?['town'] ?? addr?['village'] ??
           addr?['municipality']) as String?,
+      osmClass: json['class'] as String?,
     );
+  }
+
+  /// Adresse assez précise : a un numéro de rue OU est un POI (pas juste une route)
+  bool get isPreciseEnough {
+    if (houseNumber != null && houseNumber!.isNotEmpty) return true;
+    return osmClass != null && osmClass != 'highway';
   }
 
   /// Libellé structuré: "Boulevard Audent 12, Charleroi"
@@ -128,7 +137,7 @@ class _AddressSearchFieldState extends State<_AddressSearchField> {
         final List<dynamic> data = json.decode(response.body) as List<dynamic>;
         final suggestions = data
             .map((e) => _AddressSuggestion.fromJson(e as Map<String, dynamic>))
-            .where((s) => s.road != null)
+            .where((s) => s.isPreciseEnough)
             .toList();
 
         if (mounted) {
@@ -247,7 +256,7 @@ class _AddressSearchFieldState extends State<_AddressSearchField> {
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45)),
                 const SizedBox(width: 6),
                 Text(
-                  'Précisez une rue ou une adresse',
+                  'Précisez un numéro ou un lieu',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
                         fontStyle: FontStyle.italic,

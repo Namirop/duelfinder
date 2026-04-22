@@ -184,13 +184,9 @@ class GameDetailsSheet extends ConsumerWidget {
 
   Widget _buildLocation(
       ThemeData theme, ColorScheme colorScheme, WidgetRef ref) {
-    final currentUserId = ref.watch(authNotifierProvider).user?.id;
-    final isCreator = currentUserId == game.creator.id;
-    final existingParticipation = ref
-        .read(participationsNotifierProvider.notifier)
-        .getParticipationForGame(game.id);
-    final isAccepted = existingParticipation?.isAccepted ?? false;
-    final showFullAddress = isCreator || isAccepted;
+    // Le backend masque déjà l'adresse pour les non-participants (existingGames)
+    // Pour les parties créées (myGames), addressMasked est toujours false
+    final isMasked = game.addressMasked;
 
     return Row(
       children: [
@@ -201,7 +197,7 @@ class GameDetailsSheet extends ConsumerWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: showFullAddress
+          child: !isMasked
               ? Text(
                   game.address,
                   style: theme.textTheme.bodyMedium,
@@ -212,7 +208,7 @@ class GameDetailsSheet extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      game.streetOnly,
+                      game.address,
                       style: theme.textTheme.bodyMedium,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
