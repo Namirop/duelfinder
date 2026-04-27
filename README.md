@@ -15,8 +15,12 @@ Application mobile de mise en relation de joueurs de TCG (Trading Card Games). T
 - **Chat en temps réel** — Messagerie par partie entre participants
 - **Notifications push** — Firebase Cloud Messaging pour les événements clés
 - **Authentification** — Email/mot de passe + OAuth Facebook et Instagram
-- **Profil & badges** — Historique de parties, niveaux Bronze/Silver/Gold
+- **Profil & avatar** — Upload d'avatar via Cloudinary, historique de parties, niveaux Bronze/Silver/Gold
 - **Anti-spam** — Limitation de créations et demandes de participation
+- **Archivage & suppression** — Archiver les parties terminées, suppression définitive des parties et participations
+- **Masquage de conversations** — Cacher les conversations archivées
+- **Système NPC** — Comptes bots pour le social proof au lancement (3 villes, 20 profils)
+- **Pages légales** — CGU et politique de confidentialité
 
 ---
 
@@ -57,7 +61,9 @@ Application mobile de mise en relation de joueurs de TCG (Trading Card Games). T
 | PostgreSQL 16 | Base de données |
 | JWT + bcrypt | Authentification |
 | Firebase Admin | Envoi de notifications |
-| express-validator | Validation des entrées |
+| Cloudinary | Upload et traitement d'images (avatars) |
+| Multer | Middleware d'upload de fichiers |
+| Helmet | Headers de sécurité |
 | express-rate-limit | Protection anti-abus |
 
 ---
@@ -72,19 +78,20 @@ duelfinder/
 │   │   ├── core/
 │   │   │   ├── constants/          # URLs API, pagination, timeouts
 │   │   │   ├── di/                 # Providers Riverpod globaux
+│   │   │   ├── errors/             # Gestion des erreurs Dio
 │   │   │   ├── network/            # Client Dio, connectivité
 │   │   │   ├── router/             # Configuration GoRouter
 │   │   │   ├── services/           # Firebase, localisation, stockage
 │   │   │   └── theme/              # Thème Material 3
 │   │   ├── features/
 │   │   │   ├── auth/               # Login, Register, Splash
-│   │   │   ├── games/              # Création, liste de parties
+│   │   │   ├── games/              # Création, liste, archivage de parties
 │   │   │   ├── home/               # Écran carte + filtres
+│   │   │   ├── legal/              # CGU & politique de confidentialité
 │   │   │   ├── messages/           # Conversations & chat
 │   │   │   ├── notifications/      # Centre de notifications
 │   │   │   ├── participations/     # Gestion des demandes
-│   │   │   ├── profile/            # Profil & paramètres
-│   │   │   ├── legal/              # CGU & politique de confidentialité
+│   │   │   ├── profile/            # Profil, avatar & paramètres
 │   │   │   └── shell/              # Navigation principale (bottom nav)
 │   │   └── shared/                 # Widgets réutilisables
 │   ├── assets/images/              # Logos et icônes
@@ -94,11 +101,11 @@ duelfinder/
     ├── src/
     │   ├── server.js               # Point d'entrée
     │   ├── app.js                  # Setup Express
-    │   ├── config/                 # DB, Firebase, JWT
+    │   ├── config/                 # DB, Firebase, JWT, Cloudinary
     │   ├── controllers/            # Handlers de routes
     │   ├── services/               # Logique métier
     │   ├── routes/                 # Définition des routes
-    │   └── middlewares/            # Auth, erreurs, rate limiting
+    │   └── middlewares/            # Auth, erreurs, rate limiting, upload
     ├── prisma/
     │   ├── schema.prisma           # Modèles de données
     │   ├── seed.js                 # Données de test
@@ -121,15 +128,17 @@ id, email, passwordHash, username, bio, avatar
 fcmToken, facebookId, instagramId
 role: USER | PARTNER | ADMIN
 totalGamesPlayed, badgeLevel: BRONZE | SILVER | GOLD
+hiddenConversations: String[]
 ```
 
 ### Game
 ```
 id, gameType: POKEMON | YUGIOH | ONE_PIECE | NARUTO
-address, latitude, longitude
+description, address, latitude, longitude
 scheduledAt, duration (minutes), maxPlayers
 status: OPEN | FULL | CANCELLED
 creatorId, wasFilledOnce
+finishedAt, archivedAt, lastReadByCreatorAt
 ```
 
 ### Participation
@@ -148,6 +157,9 @@ id, content, senderId, gameId, createdAt
 ```
 id, type, title, body, data (JSON), read
 userId, createdAt
+
+types: PARTICIPATION_REQUEST | PARTICIPATION_ACCEPTED | PARTICIPATION_REJECTED
+       PARTICIPATION_CANCELLED | NEW_MESSAGE | GAME_CANCELLED | GAME_FULL
 ```
 
 ---
@@ -168,6 +180,7 @@ GET   /me             Profil utilisateur connecté
 ```
 GET    /me            Mon profil
 PUT    /me            Modifier mon profil
+PUT    /me/avatar     Uploader un avatar (Cloudinary, max 5 Mo)
 PUT    /me/fcm-token  Mettre à jour le token Firebase
 PUT    /me/password   Changer le mot de passe
 DELETE /me            Supprimer le compte
@@ -176,40 +189,44 @@ GET    /:id           Profil public d'un utilisateur
 
 ### Parties — `/api/games`
 ```
-GET  /existing                      Parties à proximité (auth optionnel)
-                                    ?lat=&lng=&distance=&dateFrom=&dateTo=&gameType=
-GET  /my-games                      Mes parties créées
-POST /                              Créer une partie
-DELETE /:gameId                     Annuler une partie
+GET    /existing                     Parties à proximité (auth optionnel)
+                                     ?lat=&lng=&distance=&dateFrom=&dateTo=&gameType=
+GET    /my-games                     Mes parties créées
+POST   /                             Créer une partie
+DELETE /:gameId                      Annuler une partie
+DELETE /:gameId/permanent            Supprimer définitivement une partie
+PATCH  /:gameId/archive              Archiver une partie terminée
 
-GET  /:gameId/participations        Demandes de participation
-POST /:gameId/participations        Demander à rejoindre
-GET  /:gameId/messages              Messages de la partie
-POST /:gameId/messages              Envoyer un message
-PUT  /:gameId/messages/read         Marquer comme lus
+GET    /:gameId/participations       Demandes de participation
+POST   /:gameId/participations       Demander à rejoindre
+GET    /:gameId/messages             Messages de la partie
+POST   /:gameId/messages             Envoyer un message
+PUT    /:gameId/messages/read        Marquer comme lus
 ```
 
 ### Participations — `/api/participations`
 ```
-GET    /my           Mes demandes de participation
-PUT    /:id/accept   Accepter une demande (créateur uniquement)
-PUT    /:id/reject   Refuser une demande (créateur uniquement)
-PATCH  /:id/cancel   Annuler ma participation
+GET    /my               Mes demandes de participation
+PUT    /:id/accept       Accepter une demande (créateur uniquement)
+PUT    /:id/reject       Refuser une demande (créateur uniquement)
+PATCH  /:id/cancel       Annuler ma participation
+DELETE /:id/permanent    Supprimer définitivement une participation
 ```
 
 ### Messages — `/api/messages`
 ```
-GET    /conversations   Toutes mes conversations
-DELETE /:id             Supprimer un message
+GET    /conversations              Toutes mes conversations
+DELETE /conversations/:gameId      Masquer une conversation archivée
+DELETE /:id                        Supprimer un message
 ```
 
 ### Notifications — `/api/notifications`
 ```
-GET  /               Mes notifications
-GET  /unread-count   Nombre de non-lues
-PUT  /read-all       Tout marquer comme lu
-PUT  /:id/read       Marquer une notification comme lue
-DELETE /:id          Supprimer une notification
+GET    /               Mes notifications
+GET    /unread-count   Nombre de non-lues
+PUT    /read-all       Tout marquer comme lu
+PUT    /:id/read       Marquer une notification comme lue
+DELETE /:id            Supprimer une notification
 ```
 
 ---
@@ -221,14 +238,14 @@ DELETE /:id          Supprimer une notification
 - Flutter SDK 3.2+
 - Node.js 18+
 - Docker & Docker Compose
-- Clés API : Mapbox, Firebase (FCM), Google Maps (optionnel)
+- Clés API : Mapbox, Firebase (FCM), Cloudinary
 
 ### Backend
 
 ```bash
 cd backend
 cp .env.example .env       # Remplir les variables d'environnement
-npm install
+npm install                # Installe les dépendances + génère le client Prisma (postinstall)
 docker-compose up -d       # Démarre PostgreSQL sur le port 5433
 npx prisma migrate dev     # Applique les migrations
 npm run prisma:seed        # (optionnel) Données de test
@@ -243,7 +260,7 @@ flutter pub get
 flutter run
 ```
 
-> Pour la carte, renseigner le token Mapbox dans `lib/main.dart`.
+> Pour la carte, renseigner le token Mapbox dans `app/.env`.
 
 ---
 
@@ -266,6 +283,11 @@ FIREBASE_PROJECT_ID=
 FIREBASE_PRIVATE_KEY=
 FIREBASE_CLIENT_EMAIL=
 
+# Cloudinary (upload avatars)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
 # OAuth (optionnel)
 FACEBOOK_APP_ID=
 FACEBOOK_APP_SECRET=
@@ -283,15 +305,15 @@ NODE_ENV=development
 
 ```bash
 # Prisma
-npm run prisma:generate     # Génère le client Prisma
-npm run prisma:migrate      # Applique les migrations
-npm run prisma:studio       # Interface visuelle de la BDD
+npx prisma generate         # Génère le client Prisma (auto via postinstall)
+npm run prisma:migrate       # Applique les migrations
+npm run prisma:studio        # Interface visuelle de la BDD
 
 # Données
-npm run prisma:seed         # Insère des données de test
-npm run npc:seed            # Crée les comptes NPC (bots)
-npm run npc:cron            # Lance les tâches quotidiennes (cron)
-npm run npc:cleanup         # Nettoie les données expirées
+npm run prisma:seed          # Insère des données de test
+npm run npc:seed             # Crée les comptes NPC (bots)
+npm run npc:cron             # Lance les tâches quotidiennes (cron)
+npm run npc:cleanup          # Nettoie les données expirées
 ```
 
 ---
@@ -305,6 +327,8 @@ npm run npc:cleanup         # Nettoie les données expirées
 | Création de partie | 1 partie non remplie / jour / utilisateur |
 | Demandes de participation | 20 / heure |
 | Tokens JWT | Access : 15 min — Refresh : 7 jours |
+| Upload avatar | Max 5 Mo, JPEG/PNG/WebP uniquement |
+| Headers sécurité | Helmet activé |
 
 ---
 
@@ -324,6 +348,10 @@ Le backend est hébergé sur **Railway** avec une base PostgreSQL managée.
 ```
 API : https://duelfinder-production.up.railway.app/api
 ```
+
+- `postinstall` exécute `prisma generate` automatiquement au déploiement
+- Pre-deploy : `npx prisma migrate deploy` applique les migrations
+- Cron Railway : `node scripts/cron_daily.js` (quotidien, recommandé 23h00)
 
 Pour déployer une nouvelle version :
 ```bash
