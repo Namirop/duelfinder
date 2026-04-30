@@ -24,8 +24,7 @@ class MessagesRepository {
 
   Future<List<Message>> getMessages(String gameId) async {
     try {
-      final response =
-          await _dio.get('${ApiConstants.games}/$gameId/messages');
+      final response = await _dio.get('${ApiConstants.games}/$gameId/messages');
       return (response.data as List)
           .map((json) =>
               MessageModel.fromJson(json as Map<String, dynamic>).toEntity())
