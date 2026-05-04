@@ -73,9 +73,15 @@ class FirebaseMessagingService {
     final type = message.data['type'];
     AppLogger.d('FirebaseMessagingService', 'Foreground message: $type');
 
+    // Supprimer la notification locale si on est dans le chat concerné
+    final isViewingChat = type == 'NEW_MESSAGE' &&
+        message.data['gameId'] != null &&
+        _ref.read(messagesNotifierProvider).activeGameId ==
+            message.data['gameId'];
+
     // Afficher une notification locale (bannière popup)
     final notification = message.notification;
-    if (notification != null) {
+    if (notification != null && !isViewingChat) {
       _localNotifications.show(
         notification.hashCode,
         notification.title,

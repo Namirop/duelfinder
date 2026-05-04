@@ -56,41 +56,50 @@ class ConversationsScreen extends ConsumerWidget {
     final active = conversations.where((c) => !c.isArchived).toList();
     final archived = conversations.where((c) => c.isArchived).toList();
 
-    if (conversations.isEmpty) return _buildEmpty(theme, colorScheme);
-
     return RefreshIndicator(
       onRefresh: () =>
           ref.read(messagesNotifierProvider.notifier).fetchConversations(),
-      child: _ConversationList(active: active, archived: archived),
+      child: conversations.isEmpty
+          ? CustomScrollView(
+              slivers: [
+                SliverFillRemaining(
+                  child: _buildEmpty(theme, colorScheme),
+                ),
+              ],
+            )
+          : _ConversationList(active: active, archived: archived),
     );
   }
 
   Widget _buildEmpty(ThemeData theme, ColorScheme colorScheme) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.chat_bubble_outline_rounded,
-            size: 56,
-            color: colorScheme.onSurface.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Aucune conversation',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.5),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 100),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline_rounded,
+              size: 56,
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Rejoins une partie pour commencer à discuter',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.35),
+            const SizedBox(height: 12),
+            Text(
+              'Aucune conversation',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              'Rejoins une partie pour commencer à discuter',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.35),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

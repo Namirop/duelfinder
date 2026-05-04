@@ -57,7 +57,7 @@ class BottomNavBar extends ConsumerWidget {
                         3,
                         colorScheme,
                         ref,
-                        badgeCount: unreadMessages,
+                        badgeCount: currentScreen == 3 ? 0 : unreadMessages,
                       ),
                       _buildIcon(Icons.person_rounded, 4, colorScheme, ref),
                     ],
