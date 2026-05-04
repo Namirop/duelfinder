@@ -28,4 +28,15 @@ class StorageService {
     final accessToken = await getAccessToken();
     return accessToken != null;
   }
+
+  // Notifications preference
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    await _storage.write(
+        key: 'notifications_enabled', value: enabled.toString());
+  }
+
+  Future<bool> getNotificationsEnabled() async {
+    final value = await _storage.read(key: 'notifications_enabled');
+    return value != 'false'; // default true
+  }
 }

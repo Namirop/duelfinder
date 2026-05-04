@@ -93,18 +93,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.notifications_active_outlined,
               title: 'Activer les notifications',
               value: notificationsEnabled,
-              onChanged: (value) {
-                ref
+              onChanged: (value) async {
+                await ref
                     .read(settingsNotifierProvider.notifier)
                     .toggleNotifications(value);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(value
-                        ? 'Notifications activées'
-                        : 'Notifications désactivées'),
-                    duration: const Duration(seconds: 1),
-                  ),
-                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(value
+                          ? 'Notifications activées'
+                          : 'Notifications désactivées'),
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                }
               },
             ),
             const SizedBox(height: 16),

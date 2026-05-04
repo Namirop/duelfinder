@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tcg_matchmaker/core/di/providers.dart';
 import 'package:tcg_matchmaker/core/services/app_logger.dart';
 import 'package:tcg_matchmaker/features/games/providers/games_provider.dart';
 import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dart';
@@ -39,14 +40,22 @@ class FirebaseMessagingService {
     );
     await _localNotifications.initialize(initSettings);
 
-    // Récupérer le token et l'enregistrer côté backend
+    // Récupérer le token et l'enregistrer côté backend (si notifs activées)
+    final notificationsEnabled =
+        await _ref.read(storageServiceProvider).getNotificationsEnabled();
     final token = await messaging.getToken();
-    if (token != null) {
+    if (token != null && notificationsEnabled) {
       await _registerToken(token);
     }
 
-    // Mettre à jour le token si Firebase le renouvelle
-    messaging.onTokenRefresh.listen(_registerToken);
+    // Mettre à jour le token si Firebase le renouvelle (si notifs activées)
+    messaging.onTokenRefresh.listen((token) async {
+      final enabled =
+          await _ref.read(storageServiceProvider).getNotificationsEnabled();
+      if (enabled) {
+        _registerToken(token);
+      }
+    });
 
     // Messages en foreground → afficher une bannière locale + refresh data
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -110,7 +119,14 @@ class FirebaseMessagingService {
         _ref.read(gamesNotifierProvider.notifier).fetchExistingGames();
         break;
       case 'NEW_MESSAGE':
-        _ref.read(messagesNotifierProvider.notifier).fetchConversations();
+        final gameId = message.data['gameId'];
+        if (gameId != null) {
+          _ref
+              .read(messagesNotifierProvider.notifier)
+              .onNewMessagePush(gameId);
+        } else {
+          _ref.read(messagesNotifierProvider.notifier).fetchConversations();
+        }
         break;
     }
   }

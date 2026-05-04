@@ -12,6 +12,7 @@ part 'messages_provider.g.dart';
 @Riverpod(keepAlive: true)
 class MessagesNotifier extends _$MessagesNotifier {
   Timer? _pollingTimer;
+  int _fetchVersion = 0;
 
   @override
   MessagesState build() {
@@ -22,6 +23,7 @@ class MessagesNotifier extends _$MessagesNotifier {
   // ── Conversations ─────────────────────────────────────────────
 
   Future<void> fetchConversations() async {
+    final version = ++_fetchVersion;
     state = state.copyWith(
       isLoadingConversations: true,
       clearErrorConversations: true,
@@ -29,23 +31,49 @@ class MessagesNotifier extends _$MessagesNotifier {
     try {
       final conversations =
           await ref.read(messagesRepositoryProvider).getConversations();
+      // Ignore stale responses — a newer fetch has been started
+      if (version != _fetchVersion) return;
       state = state.copyWith(
         conversations: conversations,
         isLoadingConversations: false,
       );
     } on AppException catch (e) {
+      if (version != _fetchVersion) return;
       AppLogger.w('MessagesNotifier', 'fetchConversations failed: $e');
       state = state.copyWith(
         errorConversations: e.message,
         isLoadingConversations: false,
       );
     } catch (e, st) {
+      if (version != _fetchVersion) return;
       AppLogger.e('MessagesNotifier', 'fetchConversations failed', e, st);
       state = state.copyWith(
         errorConversations: 'Erreur inconnue',
         isLoadingConversations: false,
       );
     }
+  }
+
+  /// Called by the firebase handler when a NEW_MESSAGE push arrives.
+  /// Optimistically increments unread count, then fetches from backend.
+  void onNewMessagePush(String gameId) {
+    // If the user is currently viewing this chat, polling handles it
+    if (state.activeGameId == gameId) return;
+
+    // Optimistic local update: increment unread for this conversation
+    final hasConversation = state.conversations.any((c) => c.gameId == gameId);
+    if (hasConversation) {
+      state = state.copyWith(
+        conversations: state.conversations
+            .map((c) => c.gameId == gameId
+                ? c.withUnreadCount(c.unreadCount + 1)
+                : c)
+            .toList(),
+      );
+    }
+
+    // Full refresh from backend to get accurate data
+    fetchConversations();
   }
 
   Future<void> hideConversation(String gameId) async {

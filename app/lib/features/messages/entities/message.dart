@@ -41,7 +41,7 @@ class Conversation {
   bool get isArchived =>
       status == GameStatus.FINISHED || status == GameStatus.CANCELLED;
 
-  Conversation withZeroUnread() => Conversation(
+  Conversation withUnreadCount(int count) => Conversation(
         gameId: gameId,
         gameType: gameType,
         address: address,
@@ -50,8 +50,10 @@ class Conversation {
         creator: creator,
         participants: participants,
         lastMessage: lastMessage,
-        unreadCount: 0,
+        unreadCount: count,
       );
+
+  Conversation withZeroUnread() => withUnreadCount(0);
 }
 
 class LastMessagePreview {
