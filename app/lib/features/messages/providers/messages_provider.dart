@@ -12,7 +12,6 @@ part 'messages_provider.g.dart';
 @Riverpod(keepAlive: true)
 class MessagesNotifier extends _$MessagesNotifier {
   Timer? _pollingTimer;
-  int _fetchVersion = 0;
 
   @override
   MessagesState build() {
@@ -23,7 +22,6 @@ class MessagesNotifier extends _$MessagesNotifier {
   // ── Conversations ─────────────────────────────────────────────
 
   Future<void> fetchConversations() async {
-    final version = ++_fetchVersion;
     state = state.copyWith(
       isLoadingConversations: true,
       clearErrorConversations: true,
@@ -31,21 +29,17 @@ class MessagesNotifier extends _$MessagesNotifier {
     try {
       final conversations =
           await ref.read(messagesRepositoryProvider).getConversations();
-      // Ignore stale responses — a newer fetch has been started
-      if (version != _fetchVersion) return;
       state = state.copyWith(
         conversations: conversations,
         isLoadingConversations: false,
       );
     } on AppException catch (e) {
-      if (version != _fetchVersion) return;
       AppLogger.w('MessagesNotifier', 'fetchConversations failed: $e');
       state = state.copyWith(
         errorConversations: e.message,
         isLoadingConversations: false,
       );
     } catch (e, st) {
-      if (version != _fetchVersion) return;
       AppLogger.e('MessagesNotifier', 'fetchConversations failed', e, st);
       state = state.copyWith(
         errorConversations: 'Erreur inconnue',

@@ -133,9 +133,7 @@ const getConversations = async (userId) => {
             senderId: { not: userId },
             ...(lastReadAt
               ? { createdAt: { gt: lastReadAt } }
-              : isCreator
-                ? { createdAt: { gt: game.createdAt } }
-                : {}),
+              : {}),
           },
         });
       }
