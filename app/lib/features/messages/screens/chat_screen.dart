@@ -30,15 +30,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   @override
-  void deactivate() {
-    // closeChat doit être appelé ici (pas dans dispose) car ref n'est
-    // plus utilisable après que le widget soit disposé
-    ref.read(messagesNotifierProvider.notifier).closeChat();
-    super.deactivate();
-  }
-
-  @override
   void dispose() {
+    // Différé car on ne peut pas modifier un provider pendant le cycle
+    // de vie du widget (deactivate/dispose). Le Future s'exécute après
+    // que le widget tree ait fini son rebuild.
+    final notifier = ref.read(messagesNotifierProvider.notifier);
+    Future.microtask(() => notifier.closeChat());
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
