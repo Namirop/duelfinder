@@ -97,6 +97,14 @@ class _MainShellState extends ConsumerState<MainShell>
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(navigationIndexProvider);
 
+    // Rafraîchir les conversations quand on arrive sur l'onglet messagerie
+    // (filet de sécurité si le push handler n'a pas d��clenché le refresh)
+    ref.listen<int>(navigationIndexProvider, (prev, next) {
+      if (next == 3) {
+        ref.read(messagesNotifierProvider.notifier).fetchConversations();
+      }
+    });
+
     return Scaffold(
       extendBody: true,
       body: _screens[currentIndex],
