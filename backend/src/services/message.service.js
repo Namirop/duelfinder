@@ -138,12 +138,7 @@ const getConversations = async (userId) => {
         unreadCount = await prisma.message.count({ where: whereClause });
 
         // Debug temporaire — à retirer une fois le bug résolu
-        if (unreadCount === 0) {
-          const totalFromOthers = await prisma.message.count({
-            where: { gameId: game.id, senderId: { not: userId } },
-          });
-          console.log(`[DEBUG unread] gameId=${game.id.slice(0,8)}, isCreator=${isCreator}, lastReadAt=${lastReadAt}, totalFromOthers=${totalFromOthers}, lastMsg=${lastMessage.createdAt}`);
-        }
+        console.log(`[DEBUG unread] gameId=${game.id.slice(0,8)}, isCreator=${isCreator}, unread=${unreadCount}, lastReadAt=${lastReadAt?.toISOString() ?? 'null'}, lastMsg=${lastMessage.createdAt.toISOString()}, sender=${lastMessage.senderId.slice(0,8)}, user=${userId.slice(0,8)}`);
       }
 
       const effectiveStatus = gameService.getEffectiveStatus(game);

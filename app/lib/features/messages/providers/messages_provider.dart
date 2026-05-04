@@ -29,6 +29,9 @@ class MessagesNotifier extends _$MessagesNotifier {
     try {
       final conversations =
           await ref.read(messagesRepositoryProvider).getConversations();
+      final totalUnread = conversations.fold(0, (sum, c) => sum + c.unreadCount);
+      AppLogger.d('MessagesNotifier',
+          'fetchConversations OK: ${conversations.length} convs, totalUnread=$totalUnread');
       state = state.copyWith(
         conversations: conversations,
         isLoadingConversations: false,
@@ -51,12 +54,18 @@ class MessagesNotifier extends _$MessagesNotifier {
   /// Called by the firebase handler when a NEW_MESSAGE push arrives.
   /// Optimistically increments unread count, then fetches from backend.
   void onNewMessagePush(String gameId) {
+    AppLogger.d('MessagesNotifier',
+        'onNewMessagePush gameId=${gameId.substring(0, 8)}, activeGameId=${state.activeGameId?.substring(0, 8)}, convCount=${state.conversations.length}');
+
     // If the user is currently viewing this chat, polling handles it
     if (state.activeGameId == gameId) return;
 
     // Optimistic local update: increment unread for this conversation
     final hasConversation = state.conversations.any((c) => c.gameId == gameId);
     if (hasConversation) {
+      final conv = state.conversations.firstWhere((c) => c.gameId == gameId);
+      AppLogger.d('MessagesNotifier',
+          'Optimistic +1 for ${gameId.substring(0, 8)}, was ${conv.unreadCount}');
       state = state.copyWith(
         conversations: state.conversations
             .map((c) => c.gameId == gameId
@@ -64,6 +73,9 @@ class MessagesNotifier extends _$MessagesNotifier {
                 : c)
             .toList(),
       );
+    } else {
+      AppLogger.d('MessagesNotifier',
+          'No conversation found for ${gameId.substring(0, 8)}');
     }
 
     // Full refresh from backend to get accurate data
