@@ -409,8 +409,8 @@ class CreateGameScreen extends ConsumerStatefulWidget {
 
 class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   GameType? _selectedGameType;
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
-  TimeOfDay _selectedTime = const TimeOfDay(hour: 14, minute: 0);
+  late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
   int _maxPlayers = 4;
   int _duration = 60;
   final _descriptionController = TextEditingController();
@@ -420,6 +420,20 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   double? _selectedLon;
   double? _approxLat;
   double? _approxLon;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    var nextHour = now.hour + 1;
+    if (nextHour >= 24) {
+      nextHour = 0;
+      _selectedDate = DateTime(now.year, now.month, now.day + 1);
+    } else {
+      _selectedDate = DateTime(now.year, now.month, now.day);
+    }
+    _selectedTime = TimeOfDay(hour: nextHour, minute: 0);
+  }
 
   @override
   void dispose() {
@@ -475,6 +489,19 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Future<void> _createGame() async {
+    final scheduledAt = DateTime(_selectedDate.year, _selectedDate.month,
+        _selectedDate.day, _selectedTime.hour, _selectedTime.minute);
+
+    if (scheduledAt.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('L\'heure de la partie doit être dans le futur'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
     final game = CreateGameModel(
         gameType: _selectedGameType!,
         description: _descriptionController.text.isEmpty
@@ -485,8 +512,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         longitude: _selectedLon!,
         approximateLatitude: _approxLat,
         approximateLongitude: _approxLon,
-        scheduledAt: DateTime(_selectedDate.year, _selectedDate.month,
-            _selectedDate.day, _selectedTime.hour, _selectedTime.minute),
+        scheduledAt: scheduledAt,
         duration: _duration,
         maxPlayers: _maxPlayers);
 
@@ -559,7 +585,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   _buildHeader(theme, colorScheme),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 95),
+                      padding: const EdgeInsets.fromLTRB(24, 10, 24, 95),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -717,8 +743,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 child: Text(
                   type.label,
                   textAlign: TextAlign.center,
+                  maxLines: 2,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11,
                     fontWeight:
                         isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
@@ -750,7 +777,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           child: _buildSelectorCard(
             colorScheme: colorScheme,
             icon: Icons.access_time_rounded,
-            label: _selectedTime.format(context),
+            label: '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
             onTap: _pickTime,
           ),
         ),
@@ -812,9 +839,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           Expanded(
             child: Text(
               "Nombre max de joueurs",
-              style: theme.textTheme.bodyMedium,
+              style: theme.textTheme.bodySmall,
             ),
           ),
+          const SizedBox(width: 8),
           _buildCounter(
             value: _maxPlayers,
             min: 2,
@@ -830,47 +858,52 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   Widget _buildDurationSelector(ThemeData theme, ColorScheme colorScheme) {
     final durations = AppConstants.gameDurationOptions;
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 10,
-      children: durations.map((duration) {
+    return Row(
+      children: durations.asMap().entries.map((entry) {
+        final i = entry.key;
+        final duration = entry.value;
         final isSelected = _duration == duration;
-        return GestureDetector(
-          onTap: () => setState(() => _duration = duration),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.outline.withValues(alpha: 0.3),
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color:
-                            colorScheme.primary.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Text(
-              _formatDuration(duration),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected
-                    ? colorScheme.onPrimary
-                    : colorScheme.onSurface,
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(left: i == 0 ? 0 : 6),
+            child: GestureDetector(
+              onTap: () => setState(() => _duration = duration),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.outline.withValues(alpha: 0.3),
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color:
+                                colorScheme.primary.withValues(alpha: 0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  _formatDuration(duration),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurface,
+                  ),
+                ),
               ),
             ),
           ),
@@ -976,7 +1009,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     final enabled = isValid && !isCreating;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: GestureDetector(
         onTap: enabled ? _createGame : null,
         child: AnimatedContainer(
@@ -1097,6 +1130,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     final picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
     );
     if (picked != null) setState(() => _selectedTime = picked);
   }

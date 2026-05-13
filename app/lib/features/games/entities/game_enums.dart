@@ -18,10 +18,10 @@ enum GameStatus {
 
 extension GameTypeExtension on GameType {
   String get label => switch (this) {
-        GameType.ONE_PIECE => 'One Piece',
-        GameType.POKEMON => 'Pokémon',
-        GameType.YUGIOH => 'Yu-Gi-Oh!',
-        GameType.MAGIC => 'Magic',
+        GameType.ONE_PIECE => 'One Piece\nTCG',
+        GameType.POKEMON => 'Pokémon\nTCG',
+        GameType.YUGIOH => 'Yu-Gi-Oh!\nTCG',
+        GameType.MAGIC => 'Magic\nTCG',
       };
 
   String get shortLabel => switch (this) {

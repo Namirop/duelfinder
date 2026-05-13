@@ -57,28 +57,29 @@ class MessagesNotifier extends _$MessagesNotifier {
     AppLogger.d('MessagesNotifier',
         'onNewMessagePush gameId=${gameId.substring(0, 8)}, activeGameId=${state.activeGameId?.substring(0, 8)}, convCount=${state.conversations.length}');
 
-    // If the user is currently viewing this chat, polling handles it
-    if (state.activeGameId == gameId) return;
-
-    // Optimistic local update: increment unread for this conversation
-    final hasConversation = state.conversations.any((c) => c.gameId == gameId);
-    if (hasConversation) {
-      final conv = state.conversations.firstWhere((c) => c.gameId == gameId);
-      AppLogger.d('MessagesNotifier',
-          'Optimistic +1 for ${gameId.substring(0, 8)}, was ${conv.unreadCount}');
-      state = state.copyWith(
-        conversations: state.conversations
-            .map((c) => c.gameId == gameId
-                ? c.withUnreadCount(c.unreadCount + 1)
-                : c)
-            .toList(),
-      );
-    } else {
-      AppLogger.d('MessagesNotifier',
-          'No conversation found for ${gameId.substring(0, 8)}');
+    // If user is viewing this chat, polling handles messages — skip optimistic update
+    if (state.activeGameId != gameId) {
+      // Optimistic local update: increment unread for this conversation
+      final hasConversation = state.conversations.any((c) => c.gameId == gameId);
+      if (hasConversation) {
+        final conv = state.conversations.firstWhere((c) => c.gameId == gameId);
+        AppLogger.d('MessagesNotifier',
+            'Optimistic +1 for ${gameId.substring(0, 8)}, was ${conv.unreadCount}');
+        state = state.copyWith(
+          conversations: state.conversations
+              .map((c) => c.gameId == gameId
+                  ? c.withUnreadCount(c.unreadCount + 1)
+                  : c)
+              .toList(),
+        );
+      } else {
+        AppLogger.d('MessagesNotifier',
+            'No conversation found for ${gameId.substring(0, 8)}');
+      }
     }
 
-    // Full refresh from backend to get accurate data
+    // Always fetch from backend — even if activeGameId matches (safety net
+    // in case activeGameId is stale from a failed closeChat)
     fetchConversations();
   }
 

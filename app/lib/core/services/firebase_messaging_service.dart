@@ -8,6 +8,7 @@ import 'package:tcg_matchmaker/features/messages/providers/messages_provider.dar
 import 'package:tcg_matchmaker/features/notifications/providers/notifications_provider.dart';
 import 'package:tcg_matchmaker/features/notifications/repositories/notifications_repository.dart';
 import 'package:tcg_matchmaker/features/participations/providers/participations_notifier.dart';
+import 'package:tcg_matchmaker/features/profile/providers/settings_provider.dart';
 
 class FirebaseMessagingService {
   final NotificationsRepository _repository;
@@ -40,22 +41,15 @@ class FirebaseMessagingService {
     );
     await _localNotifications.initialize(initSettings);
 
-    // Récupérer le token et l'enregistrer côté backend (si notifs activées)
-    final notificationsEnabled =
-        await _ref.read(storageServiceProvider).getNotificationsEnabled();
+    // Toujours enregistrer le token FCM (même si notifs désactivées)
+    // Le push sert aussi de canal de données pour les refresh en foreground
     final token = await messaging.getToken();
-    if (token != null && notificationsEnabled) {
+    if (token != null) {
       await _registerToken(token);
     }
 
-    // Mettre à jour le token si Firebase le renouvelle (si notifs activées)
-    messaging.onTokenRefresh.listen((token) async {
-      final enabled =
-          await _ref.read(storageServiceProvider).getNotificationsEnabled();
-      if (enabled) {
-        _registerToken(token);
-      }
-    });
+    // Mettre à jour le token si Firebase le renouvelle
+    messaging.onTokenRefresh.listen(_registerToken);
 
     // Messages en foreground → afficher une bannière locale + refresh data
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -73,15 +67,17 @@ class FirebaseMessagingService {
     final type = message.data['type'];
     AppLogger.d('FirebaseMessagingService', 'Foreground message: $type');
 
-    // Supprimer la notification locale si on est dans le chat concerné
+    // Bannière locale : afficher seulement si notifs activées ET pas dans le chat concerné
+    final notificationsEnabled =
+        _ref.read(settingsNotifierProvider).notificationsEnabled;
+
     final isViewingChat = type == 'NEW_MESSAGE' &&
         message.data['gameId'] != null &&
         _ref.read(messagesNotifierProvider).activeGameId ==
             message.data['gameId'];
 
-    // Afficher une notification locale (bannière popup)
     final notification = message.notification;
-    if (notification != null && !isViewingChat) {
+    if (notification != null && notificationsEnabled && !isViewingChat) {
       _localNotifications.show(
         notification.hashCode,
         notification.title,

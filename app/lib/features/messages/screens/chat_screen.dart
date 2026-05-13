@@ -31,14 +31,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
-    // Différé car on ne peut pas modifier un provider pendant le cycle
-    // de vie du widget (deactivate/dispose). Le Future s'exécute après
-    // que le widget tree ait fini son rebuild.
-    final notifier = ref.read(messagesNotifierProvider.notifier);
-    Future.microtask(() => notifier.closeChat());
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _handleBack() {
+    ref.read(messagesNotifierProvider.notifier).closeChat();
+    Navigator.of(context).pop();
   }
 
   @override
@@ -55,7 +55,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     });
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBack();
+      },
+      child: Scaffold(
       appBar: _buildAppBar(theme, colorScheme, conversation),
       body: Column(
         children: [
@@ -83,6 +88,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             _buildInputBar(theme, colorScheme),
         ],
       ),
+    ),
     );
   }
 
@@ -99,7 +105,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return AppBar(
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: _handleBack,
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.center,

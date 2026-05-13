@@ -21,7 +21,7 @@ class ConversationsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
             child: Text(
               'Messages',
               style: theme.textTheme.titleMedium?.copyWith(fontSize: 23),

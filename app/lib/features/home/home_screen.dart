@@ -117,7 +117,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool locationEnabled,
   ) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -265,7 +265,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       current: _viewMode,
       first: ViewMode.list,
       second: ViewMode.map,
-      onChanged: (value) => setState(() => _viewMode = value),
+      onChanged: (value) {
+        setState(() => _viewMode = value);
+        ref.read(gamesNotifierProvider.notifier).fetchExistingGames();
+      },
       styleBuilder: (value) => ToggleStyle(
         indicatorColor: colorScheme.primary,
         borderColor: Colors.transparent,

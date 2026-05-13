@@ -1,8 +1,6 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tcg_matchmaker/core/di/providers.dart';
-import 'package:tcg_matchmaker/core/services/app_logger.dart';
 import 'package:tcg_matchmaker/features/profile/entities/location_permission_result.dart';
 import 'package:tcg_matchmaker/features/profile/entities/settings_state.dart';
 
@@ -26,25 +24,10 @@ class SettingsNotifier extends _$SettingsNotifier {
 
   Future<void> toggleNotifications(bool enabled) async {
     state = state.copyWith(notificationsEnabled: enabled);
-
-    final storage = ref.read(storageServiceProvider);
-    await storage.setNotificationsEnabled(enabled);
-
-    final repo = ref.read(notificationsRepositoryProvider);
-    try {
-      if (enabled) {
-        // Re-register FCM token
-        final token = await FirebaseMessaging.instance.getToken();
-        if (token != null) {
-          await repo.registerFcmToken(token);
-        }
-      } else {
-        // Clear FCM token → backend won't send push
-        await repo.clearFcmToken();
-      }
-    } catch (e) {
-      AppLogger.w('SettingsNotifier', 'FCM token toggle failed: $e');
-    }
+    await ref.read(storageServiceProvider).setNotificationsEnabled(enabled);
+    // Le token FCM reste toujours enregistré — le push sert de canal de
+    // données pour les refresh. Ce setting contrôle uniquement l'affichage
+    // des bannières de notification locales.
   }
 
   void setLocationEnabledSilently(bool enabled) {
