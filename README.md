@@ -19,7 +19,7 @@ Application mobile de mise en relation de joueurs de TCG (Trading Card Games). T
 - **Anti-spam** — Limitation de créations et demandes de participation
 - **Archivage & suppression** — Archiver les parties terminées, suppression définitive des parties et participations
 - **Masquage de conversations** — Cacher les conversations archivées
-- **Système NPC** — Comptes bots pour le social proof au lancement (3 villes, 20 profils)
+- **Système NPC** — Comptes bots de démonstration pré-remplis (3 villes, 20 profils)
 - **Pages légales** — CGU et politique de confidentialité
 
 ---
@@ -260,44 +260,26 @@ flutter pub get
 flutter run
 ```
 
-> Pour la carte, renseigner le token Mapbox dans `app/.env`.
+> Pour la carte, renseigner le token Mapbox dans `app/.env` (voir [`app/.env.example`](app/.env.example)).
 
 ---
 
 ## Variables d'environnement
 
-Fichier `backend/.env` :
+| Variable | Requis | Description |
+|---|---|---|
+| `DATABASE_URL` | ✅ | URL PostgreSQL (valeurs docker-compose par défaut en local, port 5433) |
+| `JWT_SECRET`, `JWT_REFRESH_SECRET` | ✅ | Clés de signature des tokens |
+| `ACCESS_TOKEN_EXPIRY`, `REFRESH_TOKEN_EXPIRY` | ✅ | Durées de validité (ex. `15m`, `7d`) |
+| `FIREBASE_PROJECT_ID`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_CLIENT_EMAIL` | ✅ | Firebase Admin (notifications push FCM) |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | ✅ | Upload des avatars |
+| `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET` | ⚪ | OAuth Facebook (optionnel) |
+| `INSTAGRAM_CLIENT_ID`, `INSTAGRAM_CLIENT_SECRET` | ⚪ | OAuth Instagram (optionnel) |
+| `PORT`, `NODE_ENV` | ✅ | Configuration serveur |
+| `SEED_PASSWORD` | seed | Mot de passe des comptes de démo créés par `npm run prisma:seed` |
 
-```env
-# Base de données
-DATABASE_URL=postgresql://tcg_user:tcg_password@127.0.0.1:5433/tcg_matchmaking
-
-# JWT
-JWT_SECRET=your-secret-key
-ACCESS_TOKEN_EXPIRY=15m
-JWT_REFRESH_SECRET=your-refresh-secret
-REFRESH_TOKEN_EXPIRY=7d
-
-# Firebase (notifications push)
-FIREBASE_PROJECT_ID=
-FIREBASE_PRIVATE_KEY=
-FIREBASE_CLIENT_EMAIL=
-
-# Cloudinary (upload avatars)
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-
-# OAuth (optionnel)
-FACEBOOK_APP_ID=
-FACEBOOK_APP_SECRET=
-INSTAGRAM_CLIENT_ID=
-INSTAGRAM_CLIENT_SECRET=
-
-# Serveur
-PORT=3000
-NODE_ENV=development
-```
+> Référence complète avec valeurs par défaut locales : [`backend/.env.example`](backend/.env.example).
+> Côté mobile, renseigner `MAPBOX_TOKEN` dans `app/.env` — cf. [`app/.env.example`](app/.env.example).
 
 ---
 
