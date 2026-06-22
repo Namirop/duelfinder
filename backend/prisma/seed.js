@@ -2,16 +2,29 @@
  * Seed DuelFinder — données de test réalistes
  *
  * Comptes principaux :
- *   romain@duelfinder.com  / password123  → Romain-TCG
- *   dev@duelfinder.com     / password123  → Dev1234
+ *   romain@duelfinder.com  → Romain-TCG
+ *   dev@duelfinder.com     → Dev1234
+ *
+ * Mot de passe commun à tous les comptes seedés : variable d'env SEED_PASSWORD
+ * (définie dans backend/.env). Le seed échoue si elle est absente — aucun
+ * identifiant n'est codé en dur dans ce fichier public.
  *
  * Run : npm run prisma:seed
  */
 
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+
+const SEED_PASSWORD = process.env.SEED_PASSWORD;
+if (!SEED_PASSWORD) {
+  throw new Error(
+    "SEED_PASSWORD manquant : définis-le dans backend/.env avant de lancer le seed.",
+  );
+}
+
 const hash = (pw) => bcrypt.hashSync(pw, 10);
 const avatar = (seed) =>
   `https://api.dicebear.com/7.x/avataaars/png?seed=${encodeURIComponent(seed)}`;
@@ -38,7 +51,7 @@ async function main() {
       prisma.user.create({
         data: {
           email: "romain@duelfinder.com",
-          passwordHash: hash("password123"),
+          passwordHash: hash(SEED_PASSWORD),
           username: "Romain-TCG",
           bio: "Joueur Pokémon depuis 2010, fan de draft et de tournois locaux. Toujours partant pour une petite session !",
           avatar: avatar("Romain-TCG"),
@@ -50,7 +63,7 @@ async function main() {
       prisma.user.create({
         data: {
           email: "dev@duelfinder.com",
-          passwordHash: hash("password123"),
+          passwordHash: hash(SEED_PASSWORD),
           username: "Dev1234",
           bio: "Testeur officiel de l'app. Je joue à tout, partout, tout le temps.",
           avatar: avatar("Dev1234"),
@@ -62,7 +75,7 @@ async function main() {
       prisma.user.create({
         data: {
           email: "lucas@example.com",
-          passwordHash: hash("password123"),
+          passwordHash: hash(SEED_PASSWORD),
           username: "LucasYugi",
           bio: "Maître du deck Blue-Eyes. Challenge accepted 👁️",
           avatar: avatar("LucasYugi"),
@@ -73,7 +86,7 @@ async function main() {
       prisma.user.create({
         data: {
           email: "emma@example.com",
-          passwordHash: hash("password123"),
+          passwordHash: hash(SEED_PASSWORD),
           username: "EmmaOnePiece",
           bio: "One Piece TCG seulement. Cherche adversaires sérieux pour améliorer mon deck Luffy.",
           avatar: avatar("EmmaOnePiece"),
@@ -84,7 +97,7 @@ async function main() {
       prisma.user.create({
         data: {
           email: "theo@example.com",
-          passwordHash: hash("password123"),
+          passwordHash: hash(SEED_PASSWORD),
           username: "TheoMagic",
           bio: "Magic depuis Revised. Commander et Modern, toujours partant.",
           avatar: avatar("TheoMagic"),
@@ -95,7 +108,7 @@ async function main() {
       prisma.user.create({
         data: {
           email: "sakura@example.com",
-          passwordHash: hash("password123"),
+          passwordHash: hash(SEED_PASSWORD),
           username: "SakuraPika",
           bio: "Collectionneuse et joueuse casual Pokémon. Je joue pour le fun !",
           avatar: avatar("SakuraPika"),
@@ -106,7 +119,7 @@ async function main() {
       prisma.user.create({
         data: {
           email: "zack@example.com",
-          passwordHash: hash("password123"),
+          passwordHash: hash(SEED_PASSWORD),
           username: "ZackDuel",
           bio: "Multi-jeux : Pokémon, Yu-Gi-Oh!, One Piece. Niveau intermédiaire sur tous.",
           avatar: avatar("ZackDuel"),
@@ -117,7 +130,7 @@ async function main() {
       prisma.user.create({
         data: {
           email: "nina@example.com",
-          passwordHash: hash("password123"),
+          passwordHash: hash(SEED_PASSWORD),
           username: "NinaCards",
           bio: "Joueuse compétitive Pokémon VGC & TCG. Top 8 régionale 2024 🏆",
           avatar: avatar("NinaCards"),
@@ -767,11 +780,11 @@ async function main() {
   console.log("📱  COMPTES PRINCIPAUX\n");
   console.log("  Émulateur 1 (Romain-TCG)");
   console.log("    Email    : romain@duelfinder.com");
-  console.log("    Password : password123");
+  console.log(`    Password : ${SEED_PASSWORD}`);
   console.log("    Badges   : GOLD | 42 parties jouées\n");
   console.log("  Émulateur 2 (Dev1234)");
   console.log("    Email    : dev@duelfinder.com");
-  console.log("    Password : password123");
+  console.log(`    Password : ${SEED_PASSWORD}`);
   console.log("    Badges   : BRONZE | 17 parties jouées\n");
   console.log("🎮  PARTIES SUR LA MAP (12 au total)\n");
   console.log("  G1  Pokémon  OPEN   Marais         +3h   (par Romain)");
