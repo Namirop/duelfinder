@@ -332,15 +332,6 @@ npm run npc:cleanup          # Nettoie les données expirées
 
 ---
 
-## Comptes de test
-
-```
-romain@duelfinder.com / password123   → Romain-TCG
-dev@duelfinder.com    / password123   → Dev1234
-```
-
----
-
 ## Déploiement
 
 Le backend est hébergé sur **Railway** avec une base PostgreSQL managée.
