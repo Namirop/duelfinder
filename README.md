@@ -1,8 +1,33 @@
-# DuelFinder
+<p align="center">
+  <img src="docs/branding/logo.png" alt="DuelFinder" width="120">
+</p>
 
-Application mobile de mise en relation de joueurs de TCG (Trading Card Games). Trouvez des parties près de chez vous, rejoignez des sessions, et chattez avec d'autres joueurs en temps réel.
+<h1 align="center">DuelFinder</h1>
+
+<p align="center">
+  Application mobile de mise en relation de joueurs de TCG (Trading Card Games).<br>
+  Trouvez des parties près de chez vous, rejoignez des sessions, et chattez avec d'autres joueurs en temps réel.
+</p>
 
 **Backend déployé sur Railway :** `https://api.duelfinder.com/api`
+
+---
+
+## Aperçu
+
+<p align="center">
+  <img src="docs/screenshots/01-parties-liste.png" alt="Liste des parties disponibles" width="190">
+  &nbsp;
+  <img src="docs/screenshots/02-carte.png" alt="Vue carte interactive" width="190">
+  &nbsp;
+  <img src="docs/screenshots/03-detail-partie.png" alt="Détail d'une partie" width="190">
+  &nbsp;
+  <img src="docs/screenshots/04-mes-parties.png" alt="Mes parties et participations" width="190">
+</p>
+
+<p align="center">
+  <sub>Liste &amp; filtres · Carte interactive (Mapbox) · Détail d'une partie · Mes parties &amp; participations</sub>
+</p>
 
 ---
 
