@@ -2,7 +2,7 @@
 
 Application mobile de mise en relation de joueurs de TCG (Trading Card Games). Trouvez des parties près de chez vous, rejoignez des sessions, et chattez avec d'autres joueurs en temps réel.
 
-**Backend déployé sur Railway :** `https://duelfinder-production.up.railway.app/api`
+**Backend déployé sur Railway :** `https://api.duelfinder.com/api`
 
 ---
 
@@ -319,7 +319,7 @@ npm run npc:cleanup          # Nettoie les données expirées
 Le backend est hébergé sur **Railway** avec une base PostgreSQL managée.
 
 ```
-API : https://duelfinder-production.up.railway.app/api
+API : https://api.duelfinder.com/api
 ```
 
 - `postinstall` exécute `prisma generate` automatiquement au déploiement

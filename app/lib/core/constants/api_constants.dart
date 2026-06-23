@@ -2,8 +2,7 @@
 class ApiConstants {
   ApiConstants._();
 
-  static const String baseUrl =
-      'https://duelfinder-production.up.railway.app/api';
+  static const String baseUrl = 'https://api.duelfinder.com/api';
 
   // Endpoints Auth
   static const String login = '/auth/login';
