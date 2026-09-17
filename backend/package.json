@@ -18,8 +18,8 @@
   "prisma": {
     "seed": "node prisma/seed.js"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Romain Maes",
+  "license": "UNLICENSED",
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
