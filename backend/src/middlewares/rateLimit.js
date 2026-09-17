@@ -3,15 +3,17 @@
  * Protège l'API contre les abus et le spam
  */
 
-// Store en mémoire pour le rate limiting (simple, suffisant pour la V1)
-const requestCounts = new Map();
+// Stores en mémoire, un par limiter (simple, suffisant pour la V1)
+const stores = [];
 
-// Nettoyer le store périodiquement (toutes les minutes)
+// Nettoyer les stores périodiquement (toutes les minutes)
 setInterval(() => {
   const now = Date.now();
-  for (const [key, data] of requestCounts.entries()) {
-    if (now > data.resetTime) {
-      requestCounts.delete(key);
+  for (const requestCounts of stores) {
+    for (const [key, data] of requestCounts.entries()) {
+      if (now > data.resetTime) {
+        requestCounts.delete(key);
+      }
     }
   }
 }, 60 * 1000);
@@ -29,6 +31,12 @@ const createRateLimiter = ({
   max = 100,
   message = "Trop de requêtes, veuillez réessayer plus tard",
 } = {}) => {
+  // Store propre à ce limiter : deux limiters montés sur le même routeur
+  // (création de partie et demandes de participation sur /api/games)
+  // ne doivent pas partager leur compteur.
+  const requestCounts = new Map();
+  stores.push(requestCounts);
+
   return (req, res, next) => {
     // Clé unique par IP + route (pour des limites différentes par endpoint)
     const ip = req.ip || req.connection.remoteAddress || "unknown";
