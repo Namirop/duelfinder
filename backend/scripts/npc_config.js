@@ -2,7 +2,7 @@
  * npc_config.js — Configuration centralisée du seed content NPC
  *
  * ⚠️  METTRE À JOUR avant le lancement :
- *   - Confirmer les villes avec le client (CITIES)
+ *   - Vérifier la liste des villes (CITIES)
  *   - Ajuster MIN_OPEN_GAMES_PER_CITY selon la densité voulue
  *
  * Pour ajouter une ville :
