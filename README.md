@@ -9,25 +9,31 @@
   Trouvez des parties près de chez vous, rejoignez des sessions, et échangez avec les participants dans la messagerie de chaque partie.
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Flutter-3-02569B?logo=flutter&logoColor=white" alt="Flutter">
+  <img src="https://img.shields.io/badge/Riverpod-2-0B7A8C" alt="Riverpod">
+  <img src="https://img.shields.io/badge/Node.js-Express_4-5FA04E?logo=nodedotjs&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/Prisma-5-2D3748?logo=prisma&logoColor=white" alt="Prisma">
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Mapbox-000000?logo=mapbox&logoColor=white" alt="Mapbox">
+  <img src="https://img.shields.io/badge/Firebase-Cloud_Messaging-DD2C00?logo=firebase&logoColor=white" alt="Firebase">
+</p>
+
+<p align="center">
+  <img src="docs/images/01-couverture.jpg" alt="DuelFinder : trouver des joueurs de cartes près de chez soi" width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/images/02-recherche.jpg" alt="Recherche géolocalisée en liste ou sur carte" width="32%">
+  <img src="docs/images/03-detail.jpg" alt="Détail d'une partie et demande de participation" width="32%">
+  <img src="docs/images/04-suivi.jpg" alt="Parties créées ou rejointes" width="32%">
+</p>
+
+<p align="center">
+  <sub>Recherche en liste ou sur carte · Détail d'une partie · Suivi des parties</sub>
+</p>
+
 **Backend déployé sur Railway :** `https://api.duelfinder.com/api`
-
----
-
-## Aperçu
-
-<p align="center">
-  <img src="docs/screenshots/01-parties-liste.png" alt="Liste des parties disponibles" width="190">
-  &nbsp;
-  <img src="docs/screenshots/02-carte.png" alt="Vue carte interactive" width="190">
-  &nbsp;
-  <img src="docs/screenshots/03-detail-partie.png" alt="Détail d'une partie" width="190">
-  &nbsp;
-  <img src="docs/screenshots/04-mes-parties.png" alt="Mes parties et participations" width="190">
-</p>
-
-<p align="center">
-  <sub>Liste &amp; filtres · Carte interactive (Mapbox) · Détail d'une partie · Mes parties &amp; participations</sub>
-</p>
 
 ---
 
