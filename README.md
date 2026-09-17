@@ -6,7 +6,7 @@
 
 <p align="center">
   Application mobile de mise en relation de joueurs de TCG (Trading Card Games).<br>
-  Trouvez des parties près de chez vous, rejoignez des sessions, et chattez avec d'autres joueurs en temps réel.
+  Trouvez des parties près de chez vous, rejoignez des sessions, et échangez avec les participants dans la messagerie de chaque partie.
 </p>
 
 **Backend déployé sur Railway :** `https://api.duelfinder.com/api`
@@ -35,12 +35,12 @@
 
 - **Carte interactive** — Visualisez les parties ouvertes autour de vous (Mapbox)
 - **Recherche géolocalisée** — Filtres par distance, type de jeu, créneau horaire
-- **Création de partie** — Définissez lieu, date, durée et nombre de joueurs
+- **Création de partie** — Définissez lieu, date, durée et nombre de joueurs (une seule partie ouverte à venir à la fois)
 - **Système de participation** — Demandez à rejoindre une partie, acceptation/refus par le créateur
-- **Chat en temps réel** — Messagerie par partie entre participants
-- **Notifications push** — Firebase Cloud Messaging pour les événements clés
-- **Authentification** — Email/mot de passe + OAuth Facebook et Instagram
-- **Profil & avatar** — Upload d'avatar via Cloudinary, historique de parties, niveaux Bronze/Silver/Gold
+- **Messagerie par partie** — Échanges entre le créateur et les participants acceptés (rafraîchissement par polling toutes les 5 s)
+- **Notifications** — Push via Firebase Cloud Messaging pour les événements clés + centre de notifications dans l'app
+- **Authentification** — Email/mot de passe, JWT access + refresh token. L'API expose aussi des routes OAuth Facebook et Instagram, non branchées dans l'app
+- **Profil** — Avatar (appareil photo ou galerie, upload Cloudinary), pseudo, bio ; paramètres notifications, géolocalisation, mot de passe, suppression du compte
 - **Anti-spam** — Limitation de créations et demandes de participation
 - **Archivage & suppression** — Archiver les parties terminées, suppression définitive des parties et participations
 - **Masquage de conversations** — Cacher les conversations archivées
@@ -51,12 +51,12 @@
 
 ## Jeux supportés
 
-| Jeu | Couleur |
-|-----|---------|
-| Pokémon TCG | Jaune `#FFCC00` |
-| Yu-Gi-Oh! | Or `#B8860B` |
-| One Piece Card Game | Rouge `#E63946` |
-| Naruto TCG | Orange `#FF6B35` |
+| Jeu | Valeur `GameType` |
+|-----|-------------------|
+| Pokémon TCG | `POKEMON` |
+| Yu-Gi-Oh! | `YUGIOH` |
+| One Piece Card Game | `ONE_PIECE` |
+| Magic: The Gathering | `MAGIC` |
 
 ---
 
@@ -66,12 +66,12 @@
 
 | Outil | Rôle |
 |-------|------|
-| Flutter 3.2+ | Framework UI cross-platform |
+| Flutter (Dart ≥ 3.2) | Framework UI — cible Android (pas de projet iOS dans le repo) |
 | Riverpod 2.5 | State management |
 | GoRouter 14 | Navigation déclarative |
 | Dio 5 | Client HTTP + intercepteurs |
-| Mapbox / Google Maps | Carte interactive |
-| Firebase Messaging | Notifications push |
+| Mapbox Maps | Carte interactive |
+| Firebase Messaging + flutter_local_notifications | Notifications push |
 | Geolocator | Géolocalisation |
 | flutter_secure_storage | Stockage sécurisé des tokens |
 | Freezed + JsonSerializable | Modèles immuables + sérialisation |
@@ -84,12 +84,12 @@
 | Express.js 4 | Framework HTTP |
 | Prisma 5 | ORM + migrations |
 | PostgreSQL 16 | Base de données |
-| JWT + bcrypt | Authentification |
+| jsonwebtoken + bcryptjs | Authentification |
 | Firebase Admin | Envoi de notifications |
 | Cloudinary | Upload et traitement d'images (avatars) |
 | Multer | Middleware d'upload de fichiers |
 | Helmet | Headers de sécurité |
-| express-rate-limit | Protection anti-abus |
+| Rate limiter maison (en mémoire) | Protection anti-abus — `src/middlewares/rateLimit.js` |
 
 ---
 
@@ -103,6 +103,7 @@ duelfinder/
 │   │   ├── core/
 │   │   │   ├── constants/          # URLs API, pagination, timeouts
 │   │   │   ├── di/                 # Providers Riverpod globaux
+│   │   │   ├── enums/              # Enums transverses (navigation, mode de vue)
 │   │   │   ├── errors/             # Gestion des erreurs Dio
 │   │   │   ├── network/            # Client Dio, connectivité
 │   │   │   ├── router/             # Configuration GoRouter
@@ -139,7 +140,8 @@ duelfinder/
     │   ├── seed_launch.js          # Création des comptes NPC
     │   ├── cron_daily.js           # Tâches de maintenance quotidiennes
     │   ├── cleanup_ghost.js        # Nettoyage des données expirées
-    │   └── npc_config.js           # Configuration des bots
+    │   ├── npc_config.js           # Configuration des bots
+    │   └── utils.js                # Helpers partagés par les scripts NPC
     └── docker-compose.yml          # PostgreSQL local
 ```
 
@@ -158,8 +160,9 @@ hiddenConversations: String[]
 
 ### Game
 ```
-id, gameType: POKEMON | YUGIOH | ONE_PIECE | NARUTO
+id, gameType: POKEMON | YUGIOH | ONE_PIECE | MAGIC
 description, address, latitude, longitude
+approximateLatitude, approximateLongitude
 scheduledAt, duration (minutes), maxPlayers
 status: OPEN | FULL | CANCELLED
 creatorId, wasFilledOnce
@@ -169,7 +172,7 @@ finishedAt, archivedAt, lastReadByCreatorAt
 ### Participation
 ```
 id, status: PENDING | ACCEPTED | REJECTED | CANCELLED
-userId, gameId (unique)
+userId, gameId — unique (userId, gameId)
 acceptedAt, lastReadAt
 ```
 
@@ -260,7 +263,7 @@ DELETE /:id            Supprimer une notification
 
 ### Prérequis
 
-- Flutter SDK 3.2+
+- Flutter SDK (Dart 3.2+) et un appareil ou émulateur Android
 - Node.js 18+
 - Docker & Docker Compose
 - Clés API : Mapbox, Firebase (FCM), Cloudinary
@@ -330,12 +333,14 @@ npm run npc:cleanup          # Nettoie les données expirées
 | Protection | Limite |
 |-----------|--------|
 | Rate limiter global | 100 req/min par IP |
-| Auth (login/register) | 10 tentatives / 15 min |
-| Création de partie | 1 partie non remplie / jour / utilisateur |
-| Demandes de participation | 20 / heure |
-| Tokens JWT | Access : 15 min — Refresh : 7 jours |
+| Auth (login/register/OAuth) | 10 tentatives / 15 min par IP |
+| Création de partie | 5 / heure par IP + une seule partie ouverte à venir par utilisateur |
+| Demandes de participation | 20 / heure par IP |
+| Tokens JWT | Durées via `ACCESS_TOKEN_EXPIRY` / `REFRESH_TOKEN_EXPIRY` (`15m` / `7d` dans `.env.example`) |
 | Upload avatar | Max 5 Mo, JPEG/PNG/WebP uniquement |
 | Headers sécurité | Helmet activé |
+
+> Les compteurs du rate limiter sont stockés en mémoire : ils repartent à zéro au redémarrage et ne sont pas partagés entre instances.
 
 ---
 
@@ -355,3 +360,9 @@ Pour déployer une nouvelle version :
 ```bash
 git push origin main   # Railway déploie automatiquement depuis main
 ```
+
+---
+
+## Licence
+
+Repo public à des fins de portfolio dev — utilisation, reproduction ou réutilisation du code soumise à autorisation préalable.
