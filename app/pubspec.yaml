@@ -42,7 +42,6 @@ dependencies:
   image_picker: ^1.1.2
 
   # Env
-  flutter_dotenv: ^5.2.1
 
   # Utils
   freezed_annotation: ^2.4.1
@@ -74,4 +73,3 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
-    - .env

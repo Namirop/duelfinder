@@ -291,10 +291,12 @@ npm run dev                # Démarre l'API sur le port 3000
 ```bash
 cd app
 flutter pub get
-flutter run
+cp .env.example .env       # Renseigner MAPBOX_TOKEN
+flutter run --dart-define-from-file=.env
 ```
 
-> Pour la carte, renseigner le token Mapbox dans `app/.env` (voir [`app/.env.example`](app/.env.example)).
+> Le token est injecté à la compilation (`--dart-define-from-file`), pas embarqué comme fichier : le même
+> drapeau s'applique à `flutter build apk`.
 
 ---
 
@@ -313,7 +315,7 @@ flutter run
 | `SEED_PASSWORD` | seed | Mot de passe des comptes de démo créés par `npm run prisma:seed` |
 
 > Référence complète avec valeurs par défaut locales : [`backend/.env.example`](backend/.env.example).
-> Côté mobile, renseigner `MAPBOX_TOKEN` dans `app/.env` — cf. [`app/.env.example`](app/.env.example).
+> Côté mobile, renseigner `MAPBOX_TOKEN` dans `app/.env` (cf. [`app/.env.example`](app/.env.example)), passé via `--dart-define-from-file=.env`.
 
 ---
 
